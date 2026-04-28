@@ -1,0 +1,1315 @@
+﻿stop_id,stop_name,latitude,longitude,transport_type,is_hub,city
+M1_MARTYRS,Place des Martyrs,36.7604799932853,3.05710936785121,metro,True,Algiers
+M1_BOUMEN,Ali Boumendjel,36.7812440467473,3.05928299668784,metro,False,Algiers
+M1_TAFOURAH,Tafourah - Grande Poste,36.7730837483244,3.0589762630129,metro,True,Algiers
+M1_KHEL,Khelifa Boukhalfa,36.7662630822654,3.05181286600113,metro,False,Algiers
+M1_1MAI,1er Mai,36.7603097468751,3.05605962475439,metro,True,Algiers
+M1_AISSAT,Aïssat Idir,36.757409635158,3.06154248666378,metro,True,Algiers
+M1_HAMMA,El Hamma,36.7529266211043,3.06626513551542,metro,True,Algiers
+M1_JARDIN,Jardin d'Essai,36.7468481140268,3.07278967729433,metro,True,Algiers
+M1_FUSILLES,Les Fusillés,36.7424883054006,3.08302787535449,metro,True,Algiers
+M1_AMIROU,Cité Amirouche,36.7379982532652,3.09473848650747,metro,False,Algiers
+M1_MER_SOL,Mer et Soleil,36.7336757427082,3.10098572454826,metro,False,Algiers
+M1_HAI_BADR,Haï El Badr,36.7255950582709,3.10242811290605,metro,True,Algiers
+M1_TENNIS,Bachdjarah Tennis,36.7180104155601,3.11120916862885,metro,True,Algiers
+M1_BACHJA,Bachdjarah,36.7217398923606,3.11815190127203,metro,True,Algiers
+M1_H_GARE,El Harrach Gare,36.72232789009,3.13160241529532,metro,True,Algiers
+M1_H_CENTRE,El Harrach Centre,36.722053370535,3.137755960518,metro,False,Algiers
+M1_ATELIER,Les Ateliers,36.7150197094137,3.10068457486571,metro,False,Algiers
+M1_GUE_CON,Gué de Constantine,36.7100484994792,3.09115971660676,metro,False,Algiers
+M1_AIN_NADJ,Ain Naâdja,36.7059130152438,3.08317167133859,metro,False,Algiers
+TR01,Ruisseau ,36.742975045541,3.08347539231581,tram,True,Hussein Dey
+TR02,Les Fusillés,36.7441458996979,3.08468827528815,tram,True, Hussein Dey
+TR03,Tripoli-Thaâlibiya,36.745194141062,3.09226925110682,tram,False,Hussein Dey
+TR04,Tripoli -Mosquée,36.7432286759406,3.0974577381221,tram,True, Hussein Dey
+TR05,Tripoli - Hamadèche,36.7406796962257,3.10408266053135,tram,False, Hussein Dey
+TR06,Tripoli - Makaria,36.7370269420784,3.11362440363129,tram,False, Hussein Dey
+TR07, Carroubier,36.7356745664056,3.11816836459516,tram,True,Hussein Dey
+TR08,La Glacière,36.7329656311457,3.12456533434116,tram,False,Hussein Dey
+TR09,Pont El Harrach,36.7303419484841,3.13010181872371,tram,False,El Harrach
+TR10,Belle Vue,36.7295123353984,3.13599488546519,tram,False,El Harrach
+TR11,Bekri Bouguerra,36.7279717929396,3.14337326931161,tram,False,El Harrach
+TR12,Cinq Maisons,36.7261062825645,3.15102192883213,tram,False, Mohammadia
+TR13,Foire d'Alger,36.7314243749805,3.16135551533958,tram,False,Mohammadia
+TR14,les pins,36.7323624423852,3.16702905442602,tram,False,Mohammadia
+TR15,Tamaris,36.7328168337027,3.17322353908189,tram,False,Mohammadia
+TR16,Cité Mokhtar Zerhouni,36.7293934475319,3.17431621529899,tram,False,Mohammadia
+TR17,Cité RABIA,36.7241553691386,3.17716405758751,tram,False,Bab Ezzouar
+TR18,USTHB,36.720721390648,3.17954272467855,tram,True,Bab Ezzouar
+TR19,Cité 5 Juillet,36.7215095418953,3.18287245341863,tram,False,Bab Ezzouar
+TR20,Bab Ezzouar - Le Pont,36.7243430352299,3.18470462632028,tram,True,Bab Ezzouar
+TR21,Station Cité Universitaire - CUB 1,36.7322406324861,3.18411123009083,tram,False,Bab Ezzouar
+TR22,Cité 8 mai 1945,36.7372363567867,3.18487402349734,tram,False,Bab Ezzouar
+TR23,Bordj El Kiffan - Lycée,36.744909239294,3.18748308438966,tram,False,Bordj El Kiffan
+TR24,Bordj El Kiffan Center,36.7470154196277,3.19087445088531,tram,False,Bordj El Kiffan
+TR25,Bordj El Kiffen - Polyclinique,36.7481842826331,3.1971036634816,tram,False,Bordj El Kiffan
+TR26,Mouhous,36.7503340523095,3.21194174177679,tram,False,Bordj El Kiffan
+TR27,Mimouni Hamoud,36.7551739218688,3.2236426554868,tram,False,Bordj El Kiffan
+TR28,Station Ben Merabet,36.7536345935035,3.22005102799343,tram,False,Bordj El Kiffan
+TR29,Station Ben RADOUAN,36.7557656217915,3.22457442883143,tram,False,Bordj El Kiffan
+TR30,ben merad,36.7591312824008,3.22948224093532,tram,False,Bordj El Kiffan
+TR31,SIDI DRIS,36.7659221412239,3.23827301163275,tram,False,Bordj El Kiffan
+TR32,Station Tramway Benzerga,36.7732389689707,3.24511855442777,tram,False,Bordj El Kiffan
+TR33,café chergui,36.7776145475166,3.25006078141167,tram,False,Bordj El Kiffan
+TR34,Biomedical Faculty,36.7778784535404,3.25882946791982,tram,False,Bordj El Kiffan
+TR35,dergana centre,36.7721916412291,3.26041452559166,tram,True,Bordj El Kiffan
+T1_HAMMA,Hamma (Belouizdad),36.74944444,3.06666667,telepherique,True,Algiers
+T1_MADAN,Diar El Mahçoul,36.74777778,3.06555556,telepherique,True,Algiers
+T2_JARDN,Jardin d'Essai,36.74611111,3.07333333,telepherique,True,Algiers
+T2_MEMOR,Mémorial du Martyr,36.74444444,3.07194444,telepherique,True,Algiers
+T3_FUSIL,El-Annassers (Fusillés),36.74194444,3.08305556,telepherique,True,Algiers
+T3_PALAC,Palais de la Culture,36.73888889,3.08111111,telepherique,True,Algiers
+T4_BOLOG,Bologhine,36.80388889,3.04444444,telepherique,True,Algiers
+T4_NDAFR,Notre-Dame d'Afrique,36.80166667,3.04277778,telepherique,True,Algiers
+TC1_OUED,Oued Koriche,36.78833333,3.04472222,telepherique,True,Algiers
+TC1_FRAI,Frais Vallon,36.79138889,3.02083333,telepherique,True,Algiers
+TC1_BOUZ,Bouzaréah,36.79472222,3.02083333,telepherique,True,Algiers
+TC2_BEO,Bab El Oued,36.78972222,3.04694444,telepherique,True,Algiers
+TC2_VILL,Village Céleste,36.8039170697969,3.03353990640099,telepherique,False,Algiers
+TC2_ZGHA,Z'ghara,36.80416667,3.03333333,telepherique,True,Algiers
+TRN_AGHA,Agha,36.768,3.0577,train,True,Algiers
+TRN_ATELIERS,Ateliers,36.756,3.065,train,False,Algiers
+TRN_HUSSEIN_DAY,Hussein Day,36.745,3.094,train,True,Algiers
+TRN_KHRUBA,Khruba,36.718,3.135,train,False,Algiers
+TRn_HARRACH,Harrach,36.727,3.1324,train,True,Algiers
+TRN_CASR_CONSTANTINE,Casr Constantine,36.697,3.092,train,False,Algiers
+TRN_AIN_NAADJA,Ain Naadja,36.689,3.082,train,False,Algiers
+TRN_BABA_ALI,Baba Ali,36.695,3.072,train,False,Algiers
+TRN_BIR_TOUTA,Bir Touta,36.63,3.009,train,False,Algiers
+TRN_TESSALA_MERDJA,Tessala Merdja,36.63943,2.93506,train,False,Algiers
+TRN_SIDI_ABDALLAH,Sidi Abdallah,36.663,2.892,train,True,Algiers
+TRN_SIDI_ABDALLAH_J,Sidi Abdallah J,36.692,2.871,train,False,Algiers
+TRN_ZERALDA,Zeralda,36.703,2.848,train,True,Algiers
+TRN_Zl_REGHAIA,Zl Reghaia,36.73595619,3.331271754,train,False,Algiers
+TRN_REGHAIA,Reghaia,36.73523812,3.342129504,train,False,Algiers
+TRN_BOUDOUAOU,Boudouaou,36.74064537,3.412883721,train,False,Algiers
+TRN_CORSO,Corso,36.75382859,3.435500611,train,False,Algiers
+TRN_BOUMERDES,Boumerdes,36.75416955,3.47349494,train,False,Algiers
+TRN_THENIA,Thenia,36.72525418,3.552969348,train,True,Algiers
+TRN_SNVI,Snvi,36.73402408,3.318400227,train,False,Algiers
+TRN_LA_ZONE_INDUSTRIELLE_DE_ROUIBA,La Zone Industrielle De Rouiba,36.73347594,3.301627636,train,False,Algiers
+TRN_ROUIBA,Rouiba,36.73431227,3.282739407,train,False,Algiers
+TRN_DAR_EL_BEIDA,Dar El Beida,36.71471684,3.21077911,train,False,Algiers
+TRN_BAB_EZZOUAR,Bab Ezzouar,36.70708676,3.186201672,train,True,Algiers
+TRN_OUED_SMAR,Oued Smar,36.7040947,3.172013665,train,False,Algiers
+TRN_AEROPORT,Aeroport,36.70041765,3.209126976,train,False,Algiers
+TRN_ALGER,Alger,36.7795324,3.061770362,train,True,Algiers
+1,Vieux Kouba,36.72974,3.075135,bus,True,Kouba
+2,CFPA Khoudja Rabah,36.767323,3.322931,bus,False,Hraoua
+3,Caroubier,36.734609,3.11991,bus,True,El Magharia
+4,Gare de Train El Harrach,36.722163,3.132947,bus,True,El Harrach
+5,Commissariat de Police El Hamiz,36.72974,3.22925,bus,True,Dar El Beida
+6,El Karia,36.776114,3.288537,bus,False,Hraoua
+7,Centre International des Conferences,36.767323,2.895863,bus,False,Cheraga
+8,APC Ouled Fayet,36.734609,2.950104,bus,True,Ouled Fayet
+9,Café Chergui,36.776114,3.252011,bus,True,Bordj El Kiffan
+10,La Poste Bachdjarah,36.722163,3.119876,bus,True,Bourouba
+11,Ain Benian Centre,36.800319,2.913801,bus,True,Ain Benian
+12,CEM Ahmed Ben Badis,36.800319,2.917633,bus,False,Ain Benian
+13,Ahmed Bougara,36.766552,3.036058,bus,True,El Biar
+14,Ahmed Bougara 1,36.766932,3.035252,bus,True,El Biar
+15,Ahmed Bougara 2,36.768121,3.032451,bus,True,El Biar
+16,Carnot,36.772267,3.02446,bus,False,El Biar
+17,Carnot,36.772911,3.021918,bus,False,El Biar
+18,Carnot,36.772948,3.024451,bus,False,El Biar
+19,Chateau Neuf,36.768731,3.021607,bus,True,El Biar
+20,Chateau Neuf,36.768836,3.021516,bus,True,El Biar
+21,Cheval Blanc,36.769255,3.02672,bus,True,El Biar
+22,Chevalley,36.768932,3.009917,bus,True,El Biar
+23,Chevalley,36.769045,3.009829,bus,True,El Biar
+24,Fac des langues,36.764369,3.014819,bus,True,El Biar
+25,Fort Empreur,36.773349,3.043929,bus,True,El Biar
+26,Fort Empreur,36.77403,3.044794,bus,True,El Biar
+27,Frais Vallon,36.778479,3.038619,bus,False,El Biar
+28,Les Pins,36.766952,3.030501,bus,True,El Biar
+29,Les Sources,36.77447,3.035695,bus,False,El Biar
+30,Les Sources,36.774992,3.036,bus,False,El Biar
+31,Saint Raphael,36.770141,3.036655,bus,True,El Biar
+32,Saint Raphael,36.770295,3.03718,bus,True,El Biar
+33,Stade El Biar,36.764949,3.023942,bus,False,El Biar
+34,Station de Chateau Neuf,36.767826,3.018776,bus,True,El Biar
+35,Station de Chateau Neuf,36.767866,3.018821,bus,True,El Biar
+36,Aerohabitat,36.765664,3.045458,bus,True,Alger Centre
+37,Beaux Arts,36.761932,3.045294,bus,True,Alger Centre
+38,Beaux Arts,36.762001,3.045146,bus,True,Alger Centre
+39,Bibliotheque Nationale,36.774811,3.053816,bus,True,Alger Centre
+40,Bibliotheque Nationale,36.774943,3.053857,bus,True,Alger Centre
+41,Boulevard KRIM Belkacem,36.772083,3.05156,bus,False,Alger Centre
+42,Boulevard KRIM Belkacem,36.772148,3.051408,bus,False,Alger Centre
+43,CNR Bougara,36.75839,3.042806,bus,True,Alger Centre
+44,CNR Bougara,36.758606,3.042513,bus,True,Alger Centre
+45,Escaliers Mecaniques,36.766069,3.048209,bus,True,Alger Centre
+46,Gare de Train d Alger,36.780456,3.062631,bus,True,Alger Centre
+47,Gare de Train d Alger,36.780484,3.062728,bus,True,Alger Centre
+48,La Grande Poste,36.771531,3.057556,bus,True,Alger Centre
+49,La Grande Poste,36.772169,3.058267,bus,True,Alger Centre
+50,Jardin de Tunis,36.765232,3.039438,bus,True,Alger Centre
+51,Jardin du Tunis,36.765456,3.039898,bus,True,Alger Centre
+52,La Grande Poste (Parc Sofia),36.772614,3.060625,bus,True,Alger Centre
+53,La Grande Poste (Parc Sofia),36.773667,3.059787,bus,True,Alger Centre
+54,La Rochelle,36.760796,3.042547,bus,True,Alger Centre
+55,La Rochelle,36.761016,3.042563,bus,True,Alger Centre
+56,Les Ateliers,36.75646,3.066248,bus,True,Alger Centre
+57,Les Tagarins,36.77613,3.046972,bus,True,Alger Centre
+58,Les Tagarins,36.776586,3.04857,bus,True,Alger Centre
+59,Lycée Zineb Oum El Massakine,36.769488,3.050414,bus,False,Alger Centre
+60,Lycée Zineb Oum El Massakine,36.76952,3.050518,bus,False,Alger Centre
+61,Mauretania,36.76792,3.056233,bus,True,Alger Centre
+62,Moulin,36.765085,3.055929,bus,True,Alger Centre
+63,Mauretania,36.767989,3.056196,bus,True,Alger Centre
+64,Moulin,36.765107,3.055978,bus,True,Alger Centre
+65,Parc de BEYROUTH,36.767308,3.048136,bus,True,Alger Centre
+66,Parc de BEYROUTH,36.767355,3.048124,bus,True,Alger Centre
+67,Parc TIFARITI,36.764282,3.044256,bus,True,Alger Centre
+68,Parc TIFARITI,36.764375,3.044224,bus,True,Alger Centre
+69,Place GEAY,36.770617,3.050004,bus,False,Alger Centre
+70,Port d Alger,36.774246,3.061622,bus,True,Alger Centre
+71,Port d Alger,36.774793,3.061128,bus,True,Alger Centre
+72,Port Said (Square),36.780884,3.061815,bus,True,Alger Centre
+73,Port Said (Square),36.781002,3.061811,bus,True,Alger Centre
+74,Sonelgaz,36.773617,3.052875,bus,True,Alger Centre
+75,Sonelgaz,36.773782,3.053034,bus,True,Alger Centre
+76,Station 2 Mai,36.764564,3.058462,bus,True,Alger Centre
+77,Station 2 Mai,36.7654,3.058379,bus,True,Alger Centre
+78,Tunnel des Facultes,36.770578,3.055472,bus,True,Alger Centre
+79,Ziroud Youcef (Hotel Saphir),36.777664,3.060203,bus,True,Alger Centre
+80,Ziroud Youcef (Hotel Saphir),36.777694,3.060359,bus,True,Alger Centre
+81,Diar Djemaa,36.728387,3.128373,bus,True,El Harrach
+82,Boumati AADL,36.714922,3.139967,bus,False,El Harrach
+83,Boumati,36.714623,3.141177,bus,False,El Harrach
+84,El Harrach,36.721639,3.135912,bus,True,El Harrach
+85,El Harrach,36.722116,3.135782,bus,True,El Harrach
+86,El Mohammadia,36.729626,3.136205,bus,True,El Harrach
+87,Gare de Train El Harrach,36.722148,3.133022,bus,True,El Harrach
+88,Hopital Zmirli,36.704201,3.125536,bus,False,El Harrach
+89,Hopital Zmirli,36.704409,3.125647,bus,False,El Harrach
+90,Kourifa 1,36.704652,3.136178,bus,True,El Harrach
+91,Kourifa 1,36.704261,3.136212,bus,True,El Harrach
+92,Kourifa 2,36.702162,3.137475,bus,True,El Harrach
+93,Kourifa 2,36.702222,3.137524,bus,True,El Harrach
+94,Naftal,36.710381,3.135275,bus,True,El Harrach
+95,Naftal,36.710414,3.135161,bus,True,El Harrach
+96,Trois Caves,36.70768,3.129003,bus,False,El Harrach
+97,Trois Caves,36.707823,3.129065,bus,False,El Harrach
+98,Bainem,36.813654,2.972153,bus,False,El Hammamet
+99,Bainem,36.813748,2.970594,bus,False,El Hammamet
+100,Bainem Falaise,36.813047,2.964288,bus,False,El Hammamet
+101,Bainem Falaise,36.813069,2.96418,bus,False,El Hammamet
+102,Bainem Lafayette,36.813294,2.979843,bus,False,El Hammamet
+103,Bainem Lafayette,36.813497,2.979279,bus,False,El Hammamet
+104,Bains Romains,36.813297,2.99091,bus,False,El Hammamet
+105,Bains Romains,36.813455,2.991112,bus,False,El Hammamet
+106,Belvedere,36.812801,2.983668,bus,False,El Hammamet
+107,Belvedere,36.812847,2.984054,bus,False,El Hammamet
+108,Cité Boukikaz Amar,36.80849,2.948058,bus,False,El Hammamet
+109,Cité Boukikaz Amar,36.808602,2.948142,bus,False,El Hammamet
+110,Grand Rocher,36.807258,2.94413,bus,False,El Hammamet
+111,Grand Rocher,36.807308,2.944181,bus,False,El Hammamet
+112,Le Phare,36.810978,2.954169,bus,False,El Hammamet
+113,Le Phare,36.811023,2.954895,bus,False,El Hammamet
+114,Les Tamaris,36.811604,2.96024,bus,False,El Hammamet
+115,Les Tamaris,36.811747,2.960452,bus,False,El Hammamet
+116,Cité 1200 Logts Sidi Slimane,36.656376,3.011327,bus,False,Khraicia
+117,Cité 1200 Logts Sidi Slimane,36.656378,3.011395,bus,False,Khraicia
+118,Cité Laroussi Hamoud,36.65672,3.016935,bus,False,Khraicia
+119,Cité Laroussi Hamoud,36.65674,3.016836,bus,False,Khraicia
+120,Haouch El Gazouz,36.66457,3.015559,bus,False,Khraicia
+121,Haouche El Gazouz,36.664624,3.015492,bus,False,Khraicia
+122,Aeroport d Alger HOUARI Boumediene,36.702691,3.208742,bus,True,Dar El Beida
+123,Cité 5 Juillet BEZ,36.720309,3.201678,bus,True,Dar El Beida
+124,Cité 5 Juillet BEZ,36.720472,3.201739,bus,True,Dar El Beida
+125,Cité 5 Juillet BEZ (2),36.722757,3.198541,bus,True,Dar El Beida
+126,Commissariat de Police El Hamiz,36.729639,3.229249,bus,True,Dar El Beida
+127,El Hamiz,36.731021,3.239628,bus,True,Dar El Beida
+128,El Hamiz,36.731037,3.240323,bus,True,Dar El Beida
+129,El Merdja,36.725996,3.200049,bus,True,Dar El Beida
+130,El Merdja,36.726003,3.200609,bus,True,Dar El Beida
+131,SNTP,36.728315,3.218127,bus,True,Dar El Beida
+132,SNTP,36.728172,3.217687,bus,True,Dar El Beida
+133,Horizons Bleus,36.815772,3.001552,bus,False,Rais Hamidou
+134,Horizons Bleus,36.815818,3.001922,bus,False,Rais Hamidou
+135,La Vigie,36.812556,3.021574,bus,True,Rais Hamidou
+136,La Vigie,36.813089,3.021138,bus,True,Rais Hamidou
+137,Miramar,36.814715,2.996389,bus,False,Rais Hamidou
+138,Miramar,36.81487,2.997611,bus,False,Rais Hamidou
+139,Rais Hamidou 1,36.816766,3.014317,bus,True,Rais Hamidou
+140,Rais Hamidou 1,36.816828,3.014282,bus,True,Rais Hamidou
+141,Rais Hamidou 2,36.817161,3.009372,bus,True,Rais Hamidou
+142,Rais Hamidou 2,36.817202,3.009303,bus,True,Rais Hamidou
+143,Chentaba,36.697543,2.921558,bus,False,Rahmania
+144,Ciemtiere des Martyrs,36.737326,3.358606,bus,False,Reghaia
+145,Cimetiere des Martyrs,36.737194,3.358886,bus,False,Reghaia
+146,Cité DNC,36.750157,3.34236,bus,False,Reghaia
+147,Cité DNC,36.750456,3.342414,bus,False,Reghaia
+148,Cité Faouci,36.734783,3.350364,bus,False,Reghaia
+149,Cité Faouci,36.734809,3.350261,bus,False,Reghaia
+150,Cité Les Aures,36.731425,3.337338,bus,False,Reghaia
+151,Cité les Aures,36.731523,3.337399,bus,False,Reghaia
+152,Cité AADL 1,36.734262,3.36797,bus,False,Reghaia
+153,Cité AADL 1,36.734545,3.367303,bus,False,Reghaia
+154,Cité AADL 2,36.732923,3.372099,bus,False,Reghaia
+155,Cité AADL 2,36.733168,3.37121,bus,False,Reghaia
+156,Djezzy,36.74622,3.342542,bus,False,Reghaia
+157,Djezzy,36.746455,3.342601,bus,False,Reghaia
+158,El Kerrouche,36.730155,3.371823,bus,False,Reghaia
+159,El Kerrouche,36.7302,3.372144,bus,False,Reghaia
+160,Entree Reghaia,36.738569,3.338837,bus,False,Reghaia
+161,Entreprise de Grands Travaux Petroliers,36.726428,3.326509,bus,False,Reghaia
+162,Entreprise de Grands Travaux Petroliers,36.726449,3.326554,bus,False,Reghaia
+163,Gare Routiere Reghaia,36.734071,3.344306,bus,False,Reghaia
+164,Gare Routiere Reghaia,36.7341,3.344158,bus,False,Reghaia
+165,Marché Reghaia,36.736709,3.342565,bus,False,Reghaia
+166,Marché Reghaia,36.736716,3.342634,bus,False,Reghaia
+167,LSP Batigec,36.738447,3.332586,bus,False,Reghaia
+168,LSP Batigec,36.738564,3.332514,bus,False,Reghaia
+169,Mosquee Tarek Ibn Ziyed,36.729952,3.334525,bus,False,Reghaia
+170,Mosquee Tarek Ibn Ziyed,36.729971,3.334672,bus,False,Reghaia
+171,Place des Martyrs Reghaia,36.741445,3.342904,bus,False,Reghaia
+172,Place des Martyrs Reghaia,36.742348,3.342722,bus,False,Reghaia
+173,Seal Heuraoua,36.759012,3.333096,bus,False,Reghaia
+174,Seal Heuraoua,36.759069,3.333411,bus,False,Reghaia
+175,Seal Heuraoua,36.759234,3.333567,bus,False,Reghaia
+176,Seal Heuraoua,36.759552,3.333625,bus,False,Reghaia
+177,Sortie Reghaia,36.738672,3.338532,bus,False,Reghaia
+178,Ben Choubane - Chateau d eau,36.709272,3.280258,bus,False,Rouiba
+179,Ben Choubane - Chateau d eau,36.709303,3.28025,bus,False,Rouiba
+180,Cimetiere de Rouiba (El Guedehia),36.718682,3.286132,bus,False,Rouiba
+181,Cimetiere de Rouiba (El Guedehia),36.719122,3.285969,bus,False,Rouiba
+182,Cité 1540 Logts,36.756141,3.249778,bus,False,Rouiba
+183,Cité 1540 Logts 2,36.753038,3.25074,bus,False,Rouiba
+184,Cité 1540 Logts 2,36.753178,3.250591,bus,False,Rouiba
+185,Cité Boualem El Aloui,36.773837,3.279822,bus,False,Rouiba
+186,Cité Boualem El Aloui,36.773764,3.280174,bus,False,Rouiba
+187,Cité Chabou,36.777037,3.270501,bus,False,Rouiba
+188,Cité Chabou,36.777109,3.270563,bus,False,Rouiba
+189,Cité Ennasr,36.731895,3.24724,bus,True,Rouiba
+190,Cité Ennasr,36.731955,3.246964,bus,True,Rouiba
+191,Domaine Si Boualem,36.772997,3.281602,bus,False,Rouiba
+192,Domaine Si Boualem,36.773101,3.281611,bus,False,Rouiba
+193,Domaine Si Boualem 1,36.767849,3.287942,bus,False,Rouiba
+194,Douar Ben Ziane,36.757444,3.249484,bus,False,Rouiba
+195,Ecole Primaire,36.70842,3.287847,bus,False,Rouiba
+196,Ecole Primaire,36.708437,3.287922,bus,False,Rouiba
+197,ENMS,36.737539,3.300913,bus,False,Rouiba
+198,ENMS,36.737734,3.300824,bus,False,Rouiba
+199,Genericlab,36.724388,3.302059,bus,False,Rouiba
+200,Genericlab,36.724585,3.302192,bus,False,Rouiba
+201,Hopital Rouiba,36.736782,3.285729,bus,False,Rouiba
+202,INFORBA,36.735198,3.272631,bus,False,Rouiba
+203,INFORBA,36.735455,3.275206,bus,False,Rouiba
+204,La Base,36.721679,3.285515,bus,False,Rouiba
+205,La Base,36.721913,3.285411,bus,False,Rouiba
+206,Mosquee Ali Ben Abi Talab,36.708343,3.290367,bus,False,Rouiba
+207,Mosquee Ali Ben Abi Talab,36.708326,3.290197,bus,False,Rouiba
+208,Mouatsa 1,36.714855,3.284703,bus,False,Rouiba
+209,Mouatsa 1,36.715081,3.284084,bus,False,Rouiba
+210,Mouatsa 2,36.713803,3.289067,bus,False,Rouiba
+211,Mouatsa 2,36.713921,3.288854,bus,False,Rouiba
+212,Polyclinique,36.708781,3.285389,bus,False,Rouiba
+213,Polyclinique,36.708805,3.285421,bus,False,Rouiba
+214,Protection Civile,36.709042,3.283111,bus,False,Rouiba
+215,Rouiba,36.740387,3.283949,bus,True,Rouiba
+216,Rouiba,36.740405,3.284081,bus,True,Rouiba
+217,Gare de Train Rouiba,36.732617,3.283275,bus,False,Rouiba
+218,Gare de Train Rouiba,36.732623,3.283315,bus,False,Rouiba
+219,Gare de Train Rouiba Zone Industrielle,36.733232,3.301424,bus,False,Rouiba
+220,Sbaat,36.71063,3.292436,bus,False,Rouiba
+221,Sbaat,36.710647,3.292342,bus,False,Rouiba
+222,SNVI,36.737911,3.313137,bus,False,Rouiba
+223,SNVI,36.737993,3.313094,bus,False,Rouiba
+224,Souachette,36.744574,3.252294,bus,False,Rouiba
+225,TVC,36.733727,3.261474,bus,False,Rouiba
+226,TVC,36.733728,3.260847,bus,False,Rouiba
+227,Usine Aigle,36.725195,3.311992,bus,False,Rouiba
+228,Usine Aigle,36.725213,3.312031,bus,False,Rouiba
+229,Ain Allah,36.747023,2.99601,bus,True,El Achour
+230,Ain Allah,36.747592,2.994322,bus,True,El Achour
+231,Les Grands Vents,36.736264,2.971177,bus,False,El Achour
+232,Ouled Fayet Chateau d eau,36.732782,2.965818,bus,False,El Achour
+233,ONPS,36.744579,2.996095,bus,False,El Achour
+234,Oued Romane,36.742477,2.994716,bus,False,El Achour
+235,Oued Romane,36.742552,2.99492,bus,False,El Achour
+236,Residence Sahraoui,36.746062,2.997974,bus,False,El Achour
+237,APC Kouba,36.73389,3.086829,bus,True,Kouba
+238,Parc Dounia,36.742126,2.973881,bus,False,El Achour
+239,APC Kouba,36.73402,3.086723,bus,True,Kouba
+240,Ben Omar,36.72635,3.089371,bus,False,Kouba
+241,Ben Omar,36.726353,3.089759,bus,False,Kouba
+242,Ben Omar,36.726771,3.089317,bus,False,Kouba
+243,Ben Omar,36.726948,3.088696,bus,False,Kouba
+244,Calvaire,36.737105,3.091422,bus,True,Kouba
+245,Calvaire,36.737161,3.0914,bus,True,Kouba
+246,Cité Copemade,36.735421,3.071601,bus,False,Kouba
+247,Cité Copemade,36.73556,3.071401,bus,False,Kouba
+248,Cité des Annassers,36.735865,3.075596,bus,False,Kouba
+249,Cité des Annassers,36.735891,3.07528,bus,False,Kouba
+250,Diar El Afia,36.735497,3.06574,bus,False,Kouba
+251,Diar El Afia,36.735556,3.06567,bus,False,Kouba
+252,El Annasser S.M.M,36.742824,3.08316,bus,True,Kouba
+253,Freres Abdeslami,36.729274,3.079804,bus,True,Kouba
+254,Freres Abdeslami,36.729445,3.079391,bus,True,Kouba
+255,Garidi 1,36.728906,3.069434,bus,True,Kouba
+256,Garidi 2,36.733339,3.063236,bus,True,Kouba
+257,Garidi 2,36.733387,3.062631,bus,True,Kouba
+258,Garidi 2,36.733974,3.063417,bus,True,Kouba
+259,Hopital Militaire,36.722629,3.06823,bus,True,Kouba
+260,Hopital Militaire,36.722904,3.064709,bus,True,Kouba
+261,La Croix,36.729943,3.084107,bus,True,Kouba
+262,La Croix,36.729979,3.084068,bus,True,Kouba
+263,La Provale 2,36.724503,3.091048,bus,False,Kouba
+264,Les Oasis,36.739103,3.08842,bus,True,Kouba
+265,Les Oasis,36.739122,3.088254,bus,True,Kouba
+266,Oued Kniss,36.741172,3.081008,bus,False,Kouba
+267,Oued kniss,36.741231,3.084227,bus,True,Kouba
+268,Oued Kniss,36.741313,3.081341,bus,True,Kouba
+269,Oued kniss,36.741667,3.083293,bus,True,Kouba
+270,Stade Ben Haddad (Ben Omar),36.729136,3.089521,bus,True,Kouba
+271,Stade Ben Haddad (Ben Omar),36.729394,3.089472,bus,True,Kouba
+272,Stade Ben Haddad (Ben Omar),36.729663,3.089344,bus,True,Kouba
+273,Station Intermodale de KOUBA,36.730228,3.073109,bus,True,Kouba
+274,Station Intermodale de KOUBA,36.730244,3.073061,bus,True,Kouba
+275,Vieux Kouba,36.729634,3.075038,bus,True,Kouba
+276,Place des Martyrs,36.785291,3.063398,bus,True,Casbah
+277,Bab El Djadid,36.785655,3.055953,bus,False,Casbah
+278,Bab El Djadid,36.785714,3.055847,bus,False,Casbah
+279,CHU Ali AIT IDIR,36.787009,3.057941,bus,False,Casbah
+280,CHU Ali AIT IDIR,36.787116,3.057097,bus,False,Casbah
+281,El Kettar,36.785282,3.052789,bus,False,Casbah
+282,El Kettar,36.785373,3.05294,bus,False,Casbah
+283,Place des Martyrs,36.785488,3.062753,bus,True,Casbah
+284,Place des Martyrs,36.785511,3.06301,bus,True,Casbah
+285,Place des Martyrs,36.786344,3.063264,bus,True,Casbah
+286,Rue Rachid Khelfallah,36.78824,3.056347,bus,False,Casbah
+287,Sidi Abderrahmane,36.788834,3.057859,bus,False,Casbah
+288,APC Eucalyptus,36.669743,3.143995,bus,True,Les Eucalyptus
+289,APC Eucalyptus,36.669944,3.144058,bus,True,Les Eucalyptus
+290,Cimetiere Mahieddine,36.647699,3.17997,bus,False,Les Eucalyptus
+291,Cimetiere Mahieddine,36.647817,3.180084,bus,False,Les Eucalyptus
+292,Cité 648 Logts Laaraibia,36.642108,3.174816,bus,False,Les Eucalyptus
+293,Cité 648 Logts Laaraibia,36.642161,3.174771,bus,False,Les Eucalyptus
+294,Cité 668 Logts,36.677247,3.167901,bus,False,Les Eucalyptus
+295,Cité 668 Logts,36.677485,3.167671,bus,False,Les Eucalyptus
+296,Cité AADL,36.660599,3.145793,bus,True,Les Eucalyptus
+297,Cité AADL,36.660969,3.145815,bus,True,Les Eucalyptus
+298,Cité Ed-Dalia,36.668796,3.171361,bus,False,Les Eucalyptus
+299,Cité Ed-Dalia,36.668831,3.171038,bus,False,Les Eucalyptus
+300,Cité Ed-Dalia 1,36.670588,3.170867,bus,False,Les Eucalyptus
+301,Cité Pierre,36.650318,3.181016,bus,False,Les Eucalyptus
+302,Cité Emir Abdelkader,36.674602,3.170794,bus,False,Les Eucalyptus
+303,Cité Pierre,36.650534,3.181029,bus,False,Les Eucalyptus
+304,Cité Vasely,36.663915,3.182494,bus,False,Les Eucalyptus
+305,Cité Vasely,36.664001,3.182313,bus,False,Les Eucalyptus
+306,Ecole Emir Abdelkader,36.675174,3.170233,bus,False,Les Eucalyptus
+307,Ecole Salah Mugafi,36.656191,3.183316,bus,False,Les Eucalyptus
+308,Ecole Salah Mugafi,36.656221,3.183264,bus,False,Les Eucalyptus
+309,Eucalyptus,36.656438,3.151012,bus,True,Les Eucalyptus
+310,Eucalyptus,36.656946,3.151554,bus,True,Les Eucalyptus
+311,Hotel Solux,36.681631,3.141679,bus,True,Les Eucalyptus
+312,Hotel Solux,36.682145,3.141666,bus,True,Les Eucalyptus
+313,Laaraibia,36.642035,3.177431,bus,False,Les Eucalyptus
+314,Laaraibia,36.642147,3.177541,bus,False,Les Eucalyptus
+315,Le Foyer,36.663444,3.145286,bus,True,Les Eucalyptus
+316,Le Foyer,36.663715,3.145137,bus,True,Les Eucalyptus
+317,Les 4 Chemins,36.654474,3.146937,bus,True,Les Eucalyptus
+318,Lotissement,36.665876,3.144682,bus,True,Les Eucalyptus
+319,Lycée Rmadnia,36.667134,3.179011,bus,False,Les Eucalyptus
+320,Lotissement,36.665934,3.144781,bus,True,Les Eucalyptus
+321,Lycée Rmadnia,36.666914,3.179161,bus,False,Les Eucalyptus
+322,Marché  de gros,36.689103,3.14022,bus,True,Les Eucalyptus
+323,Marché  de gros,36.690189,3.140174,bus,True,Les Eucalyptus
+324,Marché de gros,36.689671,3.140866,bus,True,Les Eucalyptus
+325,Mosquee Moussaab Ibn Oumair,36.68144,3.161739,bus,False,Les Eucalyptus
+326,Mosquee Moussaab Ibn Oumair,36.681461,3.161806,bus,False,Les Eucalyptus
+327,Mosquee Prophète Ismail,36.66252,3.184028,bus,False,Les Eucalyptus
+328,Mosquee Prophète Ismail,36.662581,3.183879,bus,False,Les Eucalyptus
+329,Salle Omnisports Chateau Rouge,36.673096,3.143311,bus,True,Les Eucalyptus
+330,Salle Omnisports Eucalyptus,36.673365,3.143365,bus,True,Les Eucalyptus
+331,Cimetiere,36.747857,3.059106,bus,False,El Madania
+332,Cité Comfort,36.746617,3.064333,bus,True,El Madania
+333,Cité Comfort,36.746713,3.064297,bus,True,El Madania
+334,Diar El Mahçoul (Passerelle),36.745509,3.066465,bus,False,El Madania
+335,Diar El Mahçoul (Passerelle),36.745582,3.066595,bus,False,El Madania
+336,Diar Saada,36.747468,3.061,bus,False,El Madania
+337,Diar Saada,36.747485,3.061437,bus,True,El Madania
+338,El Madania,36.742146,3.065238,bus,False,El Madania
+339,El Madania,36.742158,3.065401,bus,False,El Madania
+340,Freres Madani,36.738532,3.068798,bus,False,El Madania
+341,Freres Madani,36.73854,3.070638,bus,False,El Madania
+342,Les Sources,36.738375,3.064166,bus,False,El Madania
+343,Les Sources,36.738389,3.064326,bus,False,El Madania
+344,Memorial du Martyr,36.74506,3.06859,bus,False,El Madania
+345,Memorial du Martyr,36.745145,3.068579,bus,False,El Madania
+346,Panorama,36.750458,3.057136,bus,False,El Madania
+347,Panorama,36.750469,3.057011,bus,False,El Madania
+348,Riadh El Feth,36.739655,3.075471,bus,False,El Madania
+349,Riadh El Feth,36.739673,3.075408,bus,False,El Madania
+350,Avenue Pekin,36.750209,3.049604,bus,False,El Mouradia
+351,El Bitoum,36.752248,3.04106,bus,True,El Mouradia
+352,El Bitoum,36.753858,3.043334,bus,True,El Mouradia
+353,El Mouradia,36.747665,3.050759,bus,False,El Mouradia
+354,Lycée Descarte,36.749189,3.050797,bus,False,El Mouradia
+355,Mohammedi,36.751245,3.041789,bus,True,El Mouradia
+356,Mohammedi,36.751369,3.041498,bus,True,El Mouradia
+357,Polyclinique Guerni Amar,36.747943,3.054386,bus,False,El Mouradia
+358,Souidani Boudjemaa,36.75249,3.048739,bus,True,El Mouradia
+359,Souidani Boudjemaa,36.752614,3.047847,bus,True,El Mouradia
+360,Caroubier,36.734685,3.11988,bus,True,El Magharia
+361,Cité Maya,36.730406,3.103202,bus,False,El Magharia
+362,Cité Maya,36.731553,3.104055,bus,False,El Magharia
+363,Hai El Badr,36.724033,3.101774,bus,True,El Magharia
+364,Hai El Badr,36.724057,3.102025,bus,True,El Magharia
+365,Hai El Badr,36.724457,3.101309,bus,True,El Magharia
+366,Parnet,36.733102,3.103475,bus,False,El Magharia
+367,Parnet,36.733335,3.104094,bus,False,El Magharia
+368,Ain El Kahla,36.765451,3.328118,bus,False,Hraoua
+369,Ain El Kahla,36.765463,3.327951,bus,False,Hraoua
+370,Braidia,36.757564,3.327719,bus,False,Hraoua
+371,Braidia,36.757657,3.32793,bus,False,Hraoua
+372,CFPA Ali Khoudja,36.767452,3.322752,bus,False,Hraoua
+373,Domaine Si Boualem,36.771016,3.288007,bus,False,Hraoua
+374,Domaine Si Boualem 2,36.770858,3.288097,bus,False,Hraoua
+375,Ecole Houari Boumediene,36.781503,3.288824,bus,False,Hraoua
+376,El Karia,36.776344,3.288415,bus,False,Hraoua
+377,Haouch Rmel,36.759976,3.287464,bus,False,Hraoua
+378,Haouch Rmel,36.760719,3.287395,bus,False,Hraoua
+379,Hraoua,36.776699,3.305414,bus,False,Hraoua
+380,Hraoua,36.777047,3.305325,bus,False,Hraoua
+381,Maamria,36.76444,3.300257,bus,False,Hraoua
+382,Maamria,36.76445,3.299982,bus,False,Hraoua
+383,Ouled Larbi,36.757595,3.314404,bus,False,Hraoua
+384,Ouled Larbi,36.757704,3.314837,bus,False,Hraoua
+385,Stop,36.769665,3.288742,bus,False,Hraoua
+386,Cité Ali BOUHADJA,36.635071,3.005527,bus,True,Ouled Chebel
+387,Cité Ali BOUHADJA,36.635142,3.005636,bus,True,Ouled Chebel
+388,Cité Chaibia,36.623141,2.988573,bus,True,Ouled Chebel
+389,Cité Chaibia,36.623421,2.988576,bus,True,Ouled Chebel
+390,Gare du Train Birtouta,36.630607,3.008995,bus,False,Ouled Chebel
+391,Gare du Train Birtouta,36.630886,3.009124,bus,False,Ouled Chebel
+392,Hai Hamidou 2,36.609786,2.996202,bus,False,Ouled Chebel
+393,Hai Hamidou 2,36.609825,2.99615,bus,False,Ouled Chebel
+394,Hai M hamdia,36.617808,3.004011,bus,False,Ouled Chebel
+395,Hai M hamdia,36.617907,3.004036,bus,False,Ouled Chebel
+396,Intersection  Cité Ali BOUHADJA,36.623738,2.991379,bus,True,Ouled Chebel
+397,Intersection  Cité Ali BOUHADJA,36.624089,2.990743,bus,True,Ouled Chebel
+398,Intersection Chaibia,36.624622,3.002117,bus,False,Ouled Chebel
+399,Intersection Chaibia,36.624725,3.002217,bus,False,Ouled Chebel
+400,Intersection El Hadjra,36.603269,2.996784,bus,False,Ouled Chebel
+401,Intersection El Hadjra,36.603426,2.996683,bus,False,Ouled Chebel
+402,Koufi,36.601083,3.000191,bus,False,Ouled Chebel
+403,Koufi,36.601138,3.000202,bus,False,Ouled Chebel
+404,Lycée Chaibia,36.626327,2.991126,bus,True,Ouled Chebel
+405,Lycée Chaibia,36.626524,2.991171,bus,True,Ouled Chebel
+406,Mosquee Quoba,36.61479,3.000495,bus,False,Ouled Chebel
+407,Mosquee Quoba,36.614842,3.000494,bus,False,Ouled Chebel
+408,Ouled Chbel,36.595709,2.994487,bus,False,Ouled Chebel
+409,Ouled Chbel,36.595712,2.994569,bus,False,Ouled Chebel
+410,Quartier Hamidou 1,36.612729,2.997202,bus,False,Ouled Chebel
+411,Quartier Hamidou 1,36.613008,2.997316,bus,False,Ouled Chebel
+412,APC Ouled Fayet,36.734493,2.949958,bus,True,Ouled Fayet
+413,CC3,36.738906,2.950746,bus,False,Ouled Fayet
+414,CC3,36.739216,2.950612,bus,False,Ouled Fayet
+415,Cité Abderahmane Djadi,36.720396,2.948251,bus,False,Ouled Fayet
+416,Cité Abderahmane Djadi,36.720399,2.948331,bus,False,Ouled Fayet
+417,Cité Souidani Boudjemaa,36.721571,2.91566,bus,False,Ouled Fayet
+418,Cité Souidani Boudjemaa,36.721657,2.915614,bus,False,Ouled Fayet
+419,Cités Vertes,36.713722,2.951717,bus,False,Ouled Fayet
+420,Cités Vertes,36.713836,2.951721,bus,False,Ouled Fayet
+421,ENAGEO,36.736847,2.949503,bus,False,Ouled Fayet
+422,ENAGEO,36.737039,2.949714,bus,False,Ouled Fayet
+423,Entree Bouchaoui,36.737239,2.91481,bus,False,Ouled Fayet
+424,Entree Ouled Fayet,36.730521,2.958753,bus,False,Ouled Fayet
+425,Haouch Lyes,36.725368,2.919098,bus,False,Ouled Fayet
+426,Hotel Le Beau Fayet,36.732708,2.923741,bus,False,Ouled Fayet
+427,Hotel Le Beau Fayet,36.732852,2.923706,bus,False,Ouled Fayet
+428,Houch Lyes,36.725103,2.918961,bus,False,Ouled Fayet
+429,L Institut,36.731198,2.951652,bus,True,Ouled Fayet
+430,L Institut,36.730832,2.952545,bus,True,Ouled Fayet
+431,Lycée Colonel Lotfi,36.735172,2.943902,bus,True,Ouled Fayet
+432,Lycée Colonel Lotfi,36.735244,2.943564,bus,True,Ouled Fayet
+433,Opera d Alger,36.733944,2.933536,bus,False,Ouled Fayet
+434,Opera d Alger,36.733965,2.933997,bus,False,Ouled Fayet
+435,Pharmalliance,36.732301,2.963344,bus,False,Ouled Fayet
+436,Plateau,36.717188,2.945732,bus,False,Ouled Fayet
+437,Plateau,36.717235,2.945833,bus,False,Ouled Fayet
+438,Residence Universitaire 3,36.728839,2.954462,bus,True,Ouled Fayet
+439,Residence Universitaire 3,36.728908,2.955082,bus,True,Ouled Fayet
+440,Residence Universitaire 3,36.728925,2.955273,bus,True,Ouled Fayet
+441,Residence Universitaire 3,36.72895,2.954327,bus,True,Ouled Fayet
+442,Sortie Bouchaoui,36.736435,2.914948,bus,False,Ouled Fayet
+443,Sortie Ouled Fayet,36.730461,2.958974,bus,False,Ouled Fayet
+444,Bab Ezzouar,36.725995,3.184152,bus,True,Bab Ezzouar
+445,Bab Ezzouar,36.726097,3.184328,bus,True,Bab Ezzouar
+446,Fital,36.724481,3.169318,bus,True,Bab Ezzouar
+447,Les Hotels,36.715185,3.197921,bus,False,Bab Ezzouar
+448,Les Hotels,36.715218,3.198027,bus,False,Bab Ezzouar
+449,Rabia Tahar,36.725229,3.177275,bus,True,Bab Ezzouar
+450,Rabia Tahar,36.725232,3.176793,bus,True,Bab Ezzouar
+451,Rabia Tahar,36.725508,3.177419,bus,True,Bab Ezzouar
+452,Soumam,36.726041,3.190173,bus,True,Bab Ezzouar
+453,Soumam,36.726079,3.19035,bus,True,Bab Ezzouar
+454,Université USTHB 1,36.71907,3.181491,bus,False,Bab Ezzouar
+455,Université USTHB 2,36.716153,3.186514,bus,False,Bab Ezzouar
+456,Basta Ali,36.791872,3.052606,bus,False,Beb El Oued
+457,Bazetta,36.790036,3.047581,bus,False,Beb El Oued
+458,Bazetta,36.790114,3.047583,bus,False,Beb El Oued
+459,Boulevard Abderrahmane Taleb,36.788793,3.051047,bus,False,Beb El Oued
+460,Boulevard Abderrahmane Mira,36.79239,3.056344,bus,True,Beb El Oued
+461,Boulevard TALEB Abderahmane,36.790786,3.057704,bus,True,Beb El Oued
+462,Boulevard TALEB Abderahmane,36.790866,3.057629,bus,True,Beb El Oued
+463,Hopital Maillot,36.793052,3.049782,bus,False,Beb El Oued
+464,Hopital Maillot,36.793159,3.050075,bus,False,Beb El Oued
+465,Lycée Okba,36.789399,3.057946,bus,True,Beb El Oued
+466,Lycée Okba,36.78956,3.058651,bus,True,Beb El Oued
+467,Oued Koriche (Station Telepherique),36.787942,3.045158,bus,False,Beb El Oued
+468,Oued Koriche (Station Telepherique),36.787912,3.044689,bus,False,Beb El Oued
+469,Oued Koriche(Station Telepherique),36.787886,3.044195,bus,False,Beb El Oued
+470,Place El Kettani,36.791694,3.058311,bus,True,Beb El Oued
+471,Place Ferhani,36.793493,3.053524,bus,True,Beb El Oued
+472,Place Ferhani,36.794223,3.053061,bus,True,Beb El Oued
+473,Sidi Abderrahmane,36.788907,3.057595,bus,False,Beb El Oued
+474,Baba Hassen (AADL),36.688353,2.965781,bus,False,Baba Hassen
+475,Baba Hassen (AADL),36.688372,2.965811,bus,False,Baba Hassen
+476,Baba Hassen  Place Ennasr,36.695831,2.97433,bus,False,Baba Hassen
+477,Baba Hassen Place Ennasr,36.696109,2.973749,bus,False,Baba Hassen
+478,CEM Baba Hassen,36.696996,2.969727,bus,False,Baba Hassen
+479,CEM Baba Hassen,36.697257,2.969378,bus,False,Baba Hassen
+480,Haouch Khoudja,36.696982,2.985892,bus,False,Baba Hassen
+481,Haouch Khoudja,36.697308,2.98741,bus,False,Baba Hassen
+482,Kartala,36.696755,2.981773,bus,False,Baba Hassen
+483,Djenane Mabrouk,36.723219,3.125401,bus,True,Bachdjerrah
+484,Djenane Mabrouk,36.723254,3.126388,bus,True,Bachdjerrah
+485,La Provale,36.719045,3.09238,bus,False,Bachdjerrah
+486,La Provale,36.720524,3.093023,bus,False,Bachdjerrah
+487,Lotissement Michel,36.720974,3.102032,bus,True,Bachdjerrah
+488,Lotissement Michel,36.721035,3.101793,bus,True,Bachdjerrah
+489,Baraki,36.670525,3.086144,bus,True,Baraki
+490,Baraki,36.670633,3.086374,bus,True,Baraki
+491,Baraki,36.672877,3.086165,bus,True,Baraki
+492,Baraki,36.672899,3.086157,bus,True,Baraki
+493,Baraki Rond Point,36.675722,3.090413,bus,True,Baraki
+494,Centre Medical Foyer,36.677613,3.090939,bus,True,Baraki
+495,Centre Medical Foyer,36.677955,3.090891,bus,True,Baraki
+496,Cité 2004 Logts,36.658746,3.098365,bus,False,Baraki
+497,Cité 2004 Logts,36.658805,3.098229,bus,False,Baraki
+498,Cité 500 Logts,36.652576,3.103882,bus,False,Baraki
+499,Cité 500 Logts,36.652726,3.103818,bus,False,Baraki
+500,Cité 700 Logts,36.645689,3.086163,bus,False,Baraki
+501,Cité 700 Logts,36.646175,3.086266,bus,False,Baraki
+502,Cité Boukaraa,36.661843,3.09537,bus,False,Baraki
+503,Cité Boukaraa,36.661978,3.095293,bus,False,Baraki
+504,Cité Laamirat 2,36.644397,3.109519,bus,False,Baraki
+505,Cité Laamirat 2,36.644473,3.109408,bus,False,Baraki
+506,Cité Mahmoudi,36.650295,3.085875,bus,False,Baraki
+507,Cité Slamani Mohamed,36.648426,3.086038,bus,False,Baraki
+508,Cité Mahmoudi,36.650828,3.085939,bus,False,Baraki
+509,Cité Slamani Mohamed,36.648882,3.086068,bus,False,Baraki
+510,Cité Youcef Boubaya (SOBIMAF),36.677292,3.093105,bus,True,Baraki
+511,Cité Youcef Boubaye (SOBIMAF),36.676944,3.092616,bus,True,Baraki
+512,Ecole Ahmed Ben Khoudja,36.667099,3.08954,bus,False,Baraki
+513,Ecole Ahmed Ben Khoudja,36.667243,3.089355,bus,False,Baraki
+514,Haouch Mihoub,36.655528,3.085695,bus,False,Baraki
+515,Haouch Mihoub,36.653134,3.085724,bus,False,Baraki
+516,Hotel El Forssen Beraki,36.674593,3.0887,bus,True,Baraki
+517,Mahdi Boualem,36.68671,3.106165,bus,True,Baraki
+518,Mosquee Benghazi,36.683709,3.101414,bus,True,Baraki
+519,Mosquee Benghazi,36.683614,3.101183,bus,True,Baraki
+520,Mahdi Boualem,36.686492,3.10605,bus,True,Baraki
+521,Mosquee El Bachir El Ibrahimi,36.664279,3.092662,bus,False,Baraki
+522,Mosquee El Bachir El Ibrahimi,36.664404,3.092448,bus,False,Baraki
+523,Sidi Rezine,36.689805,3.108962,bus,True,Baraki
+524,Nouveau Stade Baraki,36.695115,3.115255,bus,True,Baraki
+525,Nouveau Stade Baraki,36.697448,3.118387,bus,True,Baraki
+526,Alger Plage,36.79168,3.238125,bus,False,Bordj El Bahri
+527,Alger Plage,36.791708,3.238202,bus,False,Bordj El Bahri
+528,Bordj El Bahri,36.789706,3.249806,bus,False,Bordj El Bahri
+529,Bordj El Bahri,36.790099,3.249913,bus,False,Bordj El Bahri
+530,Brise Marine,36.783448,3.249246,bus,False,Bordj El Bahri
+531,Brise Marine,36.783553,3.249185,bus,False,Bordj El Bahri
+532,Café Chergui,36.778506,3.249941,bus,True,Bordj El Bahri
+533,Café Chergui,36.778642,3.248097,bus,False,Bordj El Bahri
+534,Carrefour El Marsa,36.803959,3.252128,bus,False,Bordj El Bahri
+535,Carrefour El Marsa,36.804037,3.251631,bus,False,Bordj El Bahri
+536,Carrefour El Marsa,36.804069,3.250986,bus,False,Bordj El Bahri
+537,CEM Alger Plage,36.780774,3.236913,bus,False,Bordj El Bahri
+538,CEM Alger Plage,36.780959,3.236886,bus,False,Bordj El Bahri
+539,Cité Azur et Mer,36.787211,3.237614,bus,False,Bordj El Bahri
+540,Cité Azur et Mer,36.787425,3.237698,bus,False,Bordj El Bahri
+541,Cosider,36.779325,3.237427,bus,False,Bordj El Bahri
+542,Cosider,36.779387,3.237198,bus,False,Bordj El Bahri
+543,Les Ondines,36.798065,3.238852,bus,False,Bordj El Bahri
+544,Les Ondines,36.798276,3.238934,bus,False,Bordj El Bahri
+545,Mosquee El Bachir El Ibrahimi,36.793087,3.250178,bus,False,Bordj El Bahri
+546,Mosquee El Bachir El Ibrahimi,36.793166,3.250246,bus,False,Bordj El Bahri
+547,Mosquee Sunna,36.779158,3.23976,bus,False,Bordj El Bahri
+548,Mosquee Sunna,36.779191,3.240117,bus,False,Bordj El Bahri
+549,Mosquee Khaled Ibn El Walid,36.795433,3.238572,bus,False,Bordj El Bahri
+550,Pharmacie,36.783808,3.237219,bus,False,Bordj El Bahri
+551,Mosquee Kheled Ibn El Walid,36.795564,3.238646,bus,False,Bordj El Bahri
+552,Pharmacie,36.784031,3.237298,bus,False,Bordj El Bahri
+553,Ben Zerga,36.763322,3.248218,bus,False,Bordj El Kiffan
+554,Ben Zerga,36.763713,3.248155,bus,False,Bordj El Kiffan
+555,Café Chergui,36.777036,3.250857,bus,True,Bordj El Kiffan
+556,Dergana,36.772497,3.260464,bus,True,Bordj El Kiffan
+557,Dergana,36.772533,3.259893,bus,True,Bordj El Kiffan
+558,Douar Ben Ziane,36.757918,3.249296,bus,False,Bordj El Kiffan
+559,Lycée Diplomatique Dergana,36.777578,3.262985,bus,True,Bordj El Kiffan
+560,Lycée Diplomatique Dergana,36.777663,3.262903,bus,True,Bordj El Kiffan
+561,Station de Service,36.767983,3.250002,bus,False,Bordj El Kiffan
+562,Station de Service,36.768431,3.250008,bus,False,Bordj El Kiffan
+563,Belcourt,36.755107,3.066356,bus,True,Belouizdad
+564,Cité Universitaire Ahmed YOUSFI,36.74526,3.082372,bus,False,Belouizdad
+565,El Annasser,36.743978,3.078623,bus,True,Belouizdad
+566,El Hamma,36.74855,3.069152,bus,True,Belouizdad
+567,Hamoud Boualem,36.747469,3.085541,bus,True,Belouizdad
+568,Jardin d Essai,36.746385,3.073127,bus,True,Belouizdad
+569,Jardin d Essai,36.750957,3.075906,bus,True,Belouizdad
+570,Les Ateliers,36.752105,3.070514,bus,True,Belouizdad
+571,Musset,36.755124,3.059896,bus,True,Belouizdad
+572,Place du 11 Decembre 1960,36.752749,3.062106,bus,True,Belouizdad
+573,Ben Aknoun,36.752568,3.005282,bus,True,Ben Aknoun
+574,Sidi M hamed,36.749866,3.066375,bus,True,Belouizdad
+575,Ben Aknoun,36.752828,3.003983,bus,True,Ben Aknoun
+576,Ben Aknoun,36.752999,3.004604,bus,True,Ben Aknoun
+577,Ben Aknoun,36.753146,3.005071,bus,True,Ben Aknoun
+578,Ben Aknoun,36.753155,3.005069,bus,True,Ben Aknoun
+579,Cité de Jeunes Filles,36.759569,3.01392,bus,True,Ben Aknoun
+580,Cité de Jeunes Filles,36.759952,3.014115,bus,True,Ben Aknoun
+581,Cité Malki,36.753649,3.020192,bus,True,Ben Aknoun
+582,Fac des Langues,36.763888,3.014303,bus,True,Ben Aknoun
+583,Gue de Soleil,36.768746,3.013257,bus,False,Ben Aknoun
+584,Lycée Mokrani 1,36.755967,3.008248,bus,True,Ben Aknoun
+585,Lycée Mokrani 1,36.756218,3.00839,bus,True,Ben Aknoun
+586,Ministere des Finances,36.754973,3.01722,bus,True,Ben Aknoun
+587,R.U Taleb Abderahmane,36.759352,3.009071,bus,False,Ben Aknoun
+588,Tennis Club,36.758678,3.013776,bus,True,Ben Aknoun
+589,Carriere,36.784508,2.969544,bus,False,Beni Messous
+590,Carriere,36.784986,2.97128,bus,False,Beni Messous
+591,CFPA Beni Messous,36.780059,2.99195,bus,False,Beni Messous
+592,CFPA Beni Messous,36.780153,2.991714,bus,False,Beni Messous
+593,Cité 24 Fevrier,36.781107,2.975078,bus,False,Beni Messous
+594,Cité 24 Fevrier,36.781143,2.975109,bus,False,Beni Messous
+595,Hopital Beni Messous,36.780377,2.981184,bus,False,Beni Messous
+596,Hopital Beni Messous,36.780626,2.98184,bus,False,Beni Messous
+597,Caroubier,36.77945,2.977351,bus,False,Beni Messous
+598,Caroubier,36.779458,2.977955,bus,False,Beni Messous
+599,La Poste Beni Messous,36.781585,2.983867,bus,False,Beni Messous
+600,La Poste Beni Messous,36.781635,2.983783,bus,False,Beni Messous
+601,Les Challets,36.783751,2.969999,bus,False,Beni Messous
+602,Les Challets,36.784004,2.970115,bus,False,Beni Messous
+603,Rmila,36.782704,2.971761,bus,False,Beni Messous
+604,Rmila,36.782959,2.970831,bus,False,Beni Messous
+605,Sidi Youcef,36.783885,2.964839,bus,False,Beni Messous
+606,Sidi Youcef,36.783996,2.964281,bus,False,Beni Messous
+607,AOTU-A,36.713922,3.098333,bus,True,Bourouba
+608,AOTU-A,36.713966,3.098245,bus,True,Bourouba
+609,Bachdjarah,36.7212,3.115319,bus,True,Bourouba
+610,Bachdjarah,36.721405,3.116025,bus,True,Bourouba
+611,Boubssila,36.712642,3.122567,bus,True,Bourouba
+612,Boubssila,36.713023,3.123365,bus,True,Bourouba
+613,Bourouba,36.715387,3.108573,bus,True,Bourouba
+614,Bourouba,36.715495,3.108781,bus,True,Bourouba
+615,Cité Evolutifs,36.722681,3.123057,bus,True,Bourouba
+616,Cité Evolutifs,36.723011,3.124017,bus,True,Bourouba
+617,La Montagne,36.709344,3.115059,bus,True,Bourouba
+618,La Montagne,36.709467,3.115427,bus,True,Bourouba
+619,La Poste Bachdjarah,36.721966,3.119331,bus,True,Bourouba
+620,Quatre Chemins,36.713854,3.093767,bus,True,Bourouba
+621,Quatre Chemins,36.713964,3.094847,bus,True,Bourouba
+622,Station Métro Bachdjarah Tennis,36.717587,3.111234,bus,True,Bourouba
+623,Air de France,36.780017,3.010319,bus,False,Bouzareah
+624,Baranes,36.776748,3.016492,bus,False,Bouzareah
+625,Air de France,36.780254,3.010394,bus,False,Bouzareah
+626,Baranes,36.777171,3.016204,bus,False,Bouzareah
+627,Bouskour,36.797037,3.007869,bus,False,Bouzareah
+628,Bouskour,36.797127,3.008116,bus,False,Bouzareah
+629,Bousmaha,36.796575,2.994804,bus,False,Bouzareah
+630,Bouzareah,36.789944,3.017436,bus,False,Bouzareah
+631,Bousmaha,36.796541,2.994951,bus,False,Bouzareah
+632,Bouzareah,36.789967,3.01749,bus,False,Bouzareah
+633,Bouzareah,36.790188,3.017201,bus,False,Bouzareah
+634,Bouzareah,36.790897,3.016944,bus,False,Bouzareah
+635,Bouzareah,36.791096,3.016467,bus,False,Bouzareah
+636,Chaaba,36.796189,3.00595,bus,False,Bouzareah
+637,Chaaba,36.79624,3.00614,bus,False,Bouzareah
+638,Cheni,36.778215,2.997185,bus,False,Bouzareah
+639,Cheni,36.778516,2.996812,bus,False,Bouzareah
+640,Chevalley,36.768901,3.007868,bus,True,Bouzareah
+641,Chevalley,36.768912,3.008185,bus,True,Bouzareah
+642,Chevalley,36.769254,3.007275,bus,True,Bouzareah
+643,Chevalley,36.769783,3.005546,bus,True,Bouzareah
+644,Cité Bouhmam,36.796782,2.99822,bus,False,Bouzareah
+645,Cité Bouhmam,36.796815,2.998495,bus,False,Bouzareah
+646,Deux Pilliers,36.784627,3.013089,bus,False,Bouzareah
+647,Deux Pilliers,36.785085,3.013223,bus,False,Bouzareah
+648,El Idrissi,36.773479,3.02958,bus,False,Bouzareah
+649,El Idrissi,36.773602,3.029535,bus,False,Bouzareah
+650,Hermain,36.787507,3.016881,bus,False,Bouzareah
+651,Hermain,36.787518,3.016787,bus,False,Bouzareah
+652,Cité Blanche,36.796787,3.004149,bus,False,Bouzareah
+653,Cité Blanche,36.796867,3.003989,bus,False,Bouzareah
+654,Laamara,36.794805,3.010627,bus,False,Bouzareah
+655,Laamara,36.795015,3.010448,bus,False,Bouzareah
+656,Lotissement Robert,36.77482,3.02621,bus,False,Bouzareah
+657,Lotissement Robert,36.774988,3.025529,bus,False,Bouzareah
+658,Pascal,36.776977,3.010749,bus,False,Bouzareah
+659,Pascal,36.777045,3.010701,bus,False,Bouzareah
+660,Petits Bois,36.783596,3.015984,bus,False,Bouzareah
+661,Petits Bois,36.784122,3.016084,bus,False,Bouzareah
+662,Quatre Saisons,36.780092,3.016336,bus,False,Bouzareah
+663,Quatre saisons,36.780176,3.016311,bus,False,Bouzareah
+664,Sidi Youcef,36.796696,2.988736,bus,False,Bouzareah
+665,Sidi Youcef,36.796792,2.98896,bus,False,Bouzareah
+666,SNS,36.775295,3.021225,bus,False,Bouzareah
+667,SNS,36.775307,3.020986,bus,False,Bouzareah
+668,Telediffusion d Algerie,36.792302,3.012786,bus,False,Bouzareah
+669,APC Bologhine,36.805505,3.043832,bus,True,Bologhine
+670,APC Bologhine,36.805622,3.043722,bus,True,Bologhine
+671,Deux Moulins,36.811556,3.028881,bus,True,Bologhine
+672,Deux Moulins,36.81159,3.028918,bus,True,Bologhine
+673,Plateau Bologhine,36.809264,3.038168,bus,True,Bologhine
+674,Plateau Bologhine,36.809362,3.038276,bus,True,Bologhine
+675,Stade Bologhine,36.801775,3.048426,bus,True,Bologhine
+676,Stade Bologhine,36.801843,3.048442,bus,True,Bologhine
+677,Birtouta (Station Multi services),36.648219,3.007715,bus,True,Birtouta
+678,Birtouta CFPA,36.643513,2.992682,bus,True,Birtouta
+679,Birtouta CFPA,36.643533,2.992708,bus,True,Birtouta
+680,Station de Birtouta,36.641701,2.999875,bus,True,Birtouta
+681,Cité AADL Birtouta,36.646245,2.98735,bus,False,Birtouta
+682,Cité AADL Birtouta,36.646863,2.988725,bus,True,Birtouta
+683,Cité AADL Birtouta,36.646876,2.98867,bus,True,Birtouta
+684,Cité Ali BOUHADJA,36.635206,3.005769,bus,True,Birtouta
+685,Cité Ali BOUHADJA,36.635252,3.005799,bus,True,Birtouta
+686,Haouch El Hadj,36.660087,3.029014,bus,True,Birtouta
+687,Haouch El Hadj,36.660153,3.029055,bus,True,Birtouta
+688,Marché Birtouta,36.642887,2.992873,bus,True,Birtouta
+689,Marché Birtouta,36.642888,2.992729,bus,True,Birtouta
+690,Rond Point Sidi Mhamed,36.636682,2.971072,bus,True,Birtouta
+691,Rond Point Sidi Mhamed,36.636962,2.969941,bus,True,Birtouta
+692,Sidi Mhamed,36.623021,2.957769,bus,False,Birtouta
+693,Sidi Mhamed,36.62323,2.958122,bus,False,Birtouta
+694,Sidi Mhamed 1,36.624518,2.963749,bus,False,Birtouta
+695,Sidi Mhamed 2,36.623686,2.960113,bus,False,Birtouta
+696,Lycée Sidi Mhamed,36.624241,2.963049,bus,False,Birtouta
+697,Birkhadem,36.715052,3.049159,bus,True,Birkhadem
+698,Birkhadem,36.715596,3.049488,bus,True,Birkhadem
+699,Birkhadem (Agence),36.718121,3.044525,bus,True,Birkhadem
+700,Birkhadem (Agence),36.718621,3.044996,bus,True,Birkhadem
+701,Marché Birkhadem,36.713606,3.04624,bus,True,Birkhadem
+702,CFPA Freres Boumaaza,36.708413,3.062613,bus,True,Birkhadem
+703,CFPA Freres Boumaaza,36.708567,3.062482,bus,True,Birkhadem
+704,Cité Sorecal,36.706315,3.064181,bus,True,Birkhadem
+705,Cité Sorecal,36.70635,3.064053,bus,True,Birkhadem
+706,Intersection Saoula,36.711048,3.045022,bus,True,Birkhadem
+707,La Cote,36.727475,3.04457,bus,True,Birkhadem
+708,Les Vergers 1,36.723311,3.051366,bus,False,Birkhadem
+709,Sidi M barek,36.714764,3.056591,bus,True,Birkhadem
+710,Sidi M barek,36.714901,3.056524,bus,True,Birkhadem
+711,Stade,36.711837,3.06072,bus,True,Birkhadem
+712,Stade,36.711973,3.060381,bus,True,Birkhadem
+713,Zonka,36.710746,3.062211,bus,True,Birkhadem
+714,Zonka,36.710837,3.06214,bus,True,Birkhadem
+715,Bir Mourad Rais,36.739545,3.051283,bus,True,Bir Mourad Rais
+716,Bir Mourad Rais,36.7401,3.049056,bus,True,Bir Mourad Rais
+717,La Concorde,36.733333,3.044803,bus,True,Bir Mourad Rais
+718,La Cote,36.73077,3.048146,bus,True,Bir Mourad Rais
+719,Les Jasmins,36.739597,3.059283,bus,False,Bir Mourad Rais
+720,Les Jasmins,36.739734,3.058887,bus,False,Bir Mourad Rais
+721,Les Vergers 2,36.727098,3.050037,bus,False,Bir Mourad Rais
+722,Said Hamdine,36.733674,3.038437,bus,True,Bir Mourad Rais
+723,Said Hamdine,36.733998,3.035932,bus,True,Bir Mourad Rais
+724,Stade de Mohamed IGUER,36.734648,3.048967,bus,True,Bir Mourad Rais
+725,Stade de Mohamed IGUER,36.734874,3.048823,bus,True,Bir Mourad Rais
+726,CEM Abdelkader Remdhani,36.63574,2.949446,bus,False,Tessala El Merdja
+727,CEM Abdelkader Remdhani,36.635635,2.949432,bus,False,Tessala El Merdja
+728,Centre Boumenir,36.630202,2.929346,bus,False,Tessala El Merdja
+729,Centre Boumenir,36.630272,2.929731,bus,False,Tessala El Merdja
+730,Centre Med Ben Mohamed,36.631176,2.897982,bus,False,Tessala El Merdja
+731,Centre Med Ben Mohamed,36.631213,2.898172,bus,False,Tessala El Merdja
+732,Centre Reguigue,36.630148,2.91168,bus,False,Tessala El Merdja
+733,Centre Reguigue,36.630319,2.908829,bus,False,Tessala El Merdja
+734,Centre Tayeb Djeghlali,36.629866,2.91857,bus,False,Tessala El Merdja
+735,Centre Tayeb Djeghlali,36.629911,2.918344,bus,False,Tessala El Merdja
+736,Cité 1300 Logts,36.632187,2.946765,bus,False,Tessala El Merdja
+737,Cité 1310 Logts,36.632455,2.947037,bus,False,Tessala El Merdja
+738,Entrée Tessala El Merdja,36.630602,2.941985,bus,False,Tessala El Merdja
+739,Intersection Cité Hadj Yakoub,36.629981,2.922135,bus,False,Tessala El Merdja
+740,Intersection Cité Hadj Yakoub,36.630024,2.922054,bus,False,Tessala El Merdja
+741,Intersection Dekakna,36.630852,2.902165,bus,False,Tessala El Merdja
+742,Intersection Dekakna,36.630918,2.901954,bus,False,Tessala El Merdja
+743,Mosquée Errahma,36.632428,2.88209,bus,False,Tessala El Merdja
+744,Sortie Tessala El Merdja,36.63065,2.941891,bus,False,Tessala El Merdja
+745,Station de Tessala El Merdja,36.630764,2.944739,bus,False,Tessala El Merdja
+746,Station de Tessala El Merdja,36.630888,2.945838,bus,False,Tessala El Merdja
+747,Ain Naadja,36.695531,3.077153,bus,True,Gue de Constantine
+748,Ain Naadja,36.695568,3.076977,bus,True,Gue de Constantine
+749,Station Metro Ain Naadja 720 Lgts,36.706902,3.082224,bus,False,Gue de Constantine
+750,Station Metro Ain Naadja 720 Lgts,36.70698,3.082537,bus,False,Gue de Constantine
+751,Biotic,36.691436,3.090793,bus,True,Gue de Constantine
+752,Biotic,36.691851,3.090733,bus,True,Gue de Constantine
+753,CEM El Hachemi Zeddam,36.692243,3.073605,bus,True,Gue de Constantine
+754,CEM El Hachemi Zeddam,36.692455,3.072405,bus,True,Gue de Constantine
+755,CEM Zouaoui Mohamed,36.692846,3.065263,bus,True,Gue de Constantine
+756,CEM Zouaoui Mohamed,36.692973,3.065381,bus,True,Gue de Constantine
+757,Chateau d eau,36.701848,3.072522,bus,True,Gue de Constantine
+758,Chateau d eau,36.70187,3.07235,bus,True,Gue de Constantine
+759,Chateau d eau,36.703219,3.071227,bus,True,Gue de Constantine
+760,Chateau d eau 2,36.700915,3.073053,bus,True,Gue de Constantine
+761,Chateau d eau,36.703117,3.071301,bus,True,Gue de Constantine
+762,Cité 720 Lgts 2,36.704886,3.076704,bus,True,Gue de Constantine
+763,Cité 720 Logts (1),36.706847,3.078882,bus,True,Gue de Constantine
+764,Cité 720 Logts (1),36.707094,3.079156,bus,True,Gue de Constantine
+765,Cité 720 Logts (2),36.70463,3.07396,bus,True,Gue de Constantine
+766,Cité 720 Logts (2),36.705001,3.075045,bus,True,Gue de Constantine
+767,Cité 720 Logts 1,36.706578,3.080438,bus,True,Gue de Constantine
+768,Cité 720 Logts 1,36.706665,3.080469,bus,True,Gue de Constantine
+769,Cité 720 Logts 2,36.70477,3.076623,bus,True,Gue de Constantine
+770,Cité Aadl (El Karas),36.712176,3.085588,bus,True,Gue de Constantine
+771,Cité Aadl (El Karas),36.712856,3.086695,bus,True,Gue de Constantine
+772,Cité AADL Ain El Malha,36.692339,3.069498,bus,True,Gue de Constantine
+773,Cité AADL Ain El Malha,36.692577,3.069054,bus,True,Gue de Constantine
+774,Cité du Martyr Abdelkader Hadhria,36.701862,3.073602,bus,True,Gue de Constantine
+775,Cité du Martyr Abdelkader Hadhria,36.70194,3.073622,bus,True,Gue de Constantine
+776,Cité Hayat,36.705174,3.094617,bus,False,Gue de Constantine
+777,Cité Hayat,36.705385,3.094736,bus,False,Gue de Constantine
+778,Cité Tahar El Ayeb,36.702062,3.093006,bus,False,Gue de Constantine
+779,Cité Tahar El Ayeb,36.702547,3.092864,bus,False,Gue de Constantine
+780,Ecole Ain El Malha El Djadida,36.692228,3.061657,bus,True,Gue de Constantine
+781,EMB Pont Smar,36.693484,3.08994,bus,True,Gue de Constantine
+782,Gare de Train Ain Naadja,36.689227,3.077574,bus,True,Gue de Constantine
+783,EMB Pont Smar,36.693618,3.089944,bus,True,Gue de Constantine
+784,Gare de Train Ain Naadja,36.689798,3.079296,bus,True,Gue de Constantine
+785,Gare de Train Ain Naadja,36.690033,3.079873,bus,True,Gue de Constantine
+786,Gue de Constantine,36.697702,3.09571,bus,True,Gue de Constantine
+787,Gue de Constantine,36.697778,3.096006,bus,True,Gue de Constantine
+788,Gue de Constantine,36.698366,3.095109,bus,True,Gue de Constantine
+789,Gue de Constantine,36.698807,3.095194,bus,True,Gue de Constantine
+790,Gare Routiere Gue de Constantine,36.697037,3.091368,bus,True,Gue de Constantine
+791,Gare Routiere Gue de Constantine,36.697075,3.091577,bus,True,Gue de Constantine
+792,Intersection Ain El Malha,36.691146,3.059174,bus,True,Gue de Constantine
+793,Intersection Ain El Malha,36.691451,3.059435,bus,True,Gue de Constantine
+794,Intersection Ain El Malha,36.691731,3.059309,bus,True,Gue de Constantine
+795,Marché Ain Naadja,36.698152,3.074124,bus,True,Gue de Constantine
+796,Marché Ain Naadja,36.698173,3.073958,bus,True,Gue de Constantine
+797,Mosquee Abou Bakr Essedik,36.695224,3.054915,bus,True,Gue de Constantine
+798,Mosquee El Ikhlas Ain El Malha,36.687726,3.073191,bus,True,Gue de Constantine
+799,Mosquee El Ikhlas Ain El Malha,36.68786,3.073078,bus,True,Gue de Constantine
+800,ONAB,36.711181,3.094002,bus,True,Gue de Constantine
+801,ONAB,36.711346,3.093886,bus,True,Gue de Constantine
+802,Oued El Karma,36.683824,3.060893,bus,False,Gue de Constantine
+803,Safsafa,36.702515,3.068573,bus,True,Gue de Constantine
+804,Safsafa,36.70265,3.068777,bus,True,Gue de Constantine
+805,Sonelgaz,36.702991,3.105004,bus,True,Gue de Constantine
+806,Sonelgaz,36.703088,3.10502,bus,True,Gue de Constantine
+807,Sonelgaz 2,36.706353,3.10913,bus,True,Gue de Constantine
+808,Usine Cablerie Electrique d Alger,36.69203,3.084275,bus,True,Gue de Constantine
+809,Usine Cablerie Electrique d Alger,36.691956,3.084027,bus,True,Gue de Constantine
+810,Amirouche,36.738039,3.094524,bus,False,Hussein Dey
+811,Amirouche,36.738097,3.094169,bus,False,Hussein Dey
+812,Bel Air (La Glaciere),36.732095,3.124945,bus,True,Hussein Dey
+813,Bel Air (La Glaciere),36.732324,3.124578,bus,True,Hussein Dey
+814,Bel Air (La Glaciere),36.732701,3.124944,bus,True,Hussein Dey
+815,Bel Air (La Glaciere),36.732981,3.124708,bus,True,Hussein Dey
+816,Caroubier,36.735807,3.119299,bus,True,Hussein Dey
+817,Caroubier,36.736597,3.116994,bus,True,Hussein Dey
+818,Station de Taxi Caroubier,36.745162,3.100735,bus,True,Hussein Dey
+819,Station de Taxi Caroubier,36.744729,3.098224,bus,True,Hussein Dey
+820,Gare Routière Caroubier,36.742436,3.106695,bus,True,Hussein Dey
+821,Gare Routiere Caroubier,36.742519,3.105965,bus,True,Hussein Dey
+822,Gare Routiere Caroubier,36.743223,3.107677,bus,True,Hussein Dey
+823,Gare Routière Caroubier,36.743432,3.103644,bus,True,Hussein Dey
+824,Les Sablettes,36.741234,3.123464,bus,True,Hussein Dey
+825,Les Sablettes,36.741603,3.123512,bus,True,Hussein Dey
+826,Les Sablettes,36.741657,3.123523,bus,True,Hussein Dey
+827,Mer et Soleil,36.734116,3.099445,bus,False,Hussein Dey
+828,Mer et Soleil,36.734142,3.099542,bus,False,Hussein Dey
+829,Residence,36.739646,3.091624,bus,False,Hussein Dey
+830,Residence,36.739726,3.091303,bus,False,Hussein Dey
+831,Ruisseau,36.74268,3.086245,bus,True,Hussein Dey
+832,Ruisseau (Avenue ALN),36.747457,3.088788,bus,True,Hussein Dey
+833,Ruisseau (La Farge),36.742873,3.087892,bus,True,Hussein Dey
+834,Les Sablettes,36.740603,3.117962,bus,True,Hussein Dey
+835,Faculte ITFC,36.751346,3.013867,bus,True,Hydra
+836,Intersection SONATRACH,36.743853,3.027187,bus,True,Hydra
+837,Paradou,36.745122,3.0286,bus,False,Hydra
+838,Paradou,36.745407,3.029231,bus,False,Hydra
+839,Place Al Smaa,36.743266,3.042154,bus,True,Hydra
+840,Place El Quods,36.747423,3.0401,bus,True,Hydra
+841,Place El Quods,36.747559,3.040165,bus,True,Hydra
+842,Ain Allah,36.751889,2.990561,bus,False,Dely Ibrahim
+843,Ain Allah,36.751943,2.990812,bus,False,Dely Ibrahim
+844,Bois des Cars,36.753876,2.981742,bus,False,Dely Ibrahim
+845,Bois des Cars,36.754551,2.981447,bus,False,Dely Ibrahim
+846,Cercle National de l Armee 1,36.770167,2.993507,bus,True,Dely Ibrahim
+847,Cercle National de l Armee 1,36.770287,2.993677,bus,True,Dely Ibrahim
+848,Cercle National de l Armee 2,36.769248,2.986147,bus,True,Dely Ibrahim
+849,Cercle Nationale de l Armee 2,36.769116,2.983989,bus,True,Dely Ibrahim
+850,Cité Delili Ali,36.750063,2.9882,bus,False,Dely Ibrahim
+851,Cité Delili Ali,36.750111,2.988197,bus,False,Dely Ibrahim
+852,Cité des Grands Vents,36.744562,2.950097,bus,False,Dely Ibrahim
+853,Cité des Grands Vents,36.74497,2.950234,bus,False,Dely Ibrahim
+854,Dely Brahim,36.751542,2.982855,bus,False,Dely Ibrahim
+855,Dely Brahim,36.751811,2.983574,bus,False,Dely Ibrahim
+856,Hai El Bina,36.7603,2.986999,bus,False,Dely Ibrahim
+857,Hai El Bina,36.760321,2.987257,bus,False,Dely Ibrahim
+858,La FAF,36.761762,2.992449,bus,False,Dely Ibrahim
+859,La FAF,36.761819,2.992703,bus,False,Dely Ibrahim
+860,Le Ferailleur,36.750152,2.951179,bus,False,Dely Ibrahim
+861,Le Ferailleur,36.750638,2.951198,bus,False,Dely Ibrahim
+862,Rue Ahmed Ouaked,36.765696,2.993099,bus,False,Dely Ibrahim
+863,Sonacome,36.76931,2.993147,bus,True,Dely Ibrahim
+864,Université de Dely Ibrahim,36.75755,2.981139,bus,False,Dely Ibrahim
+865,Université de Dely Ibrahim,36.758221,2.981873,bus,False,Dely Ibrahim
+866,Boudjemaa Temim,36.707181,2.996495,bus,False,Draria
+867,Boudjemaa Temim,36.707997,2.996601,bus,False,Draria
+868,CFPA Draria,36.724662,2.990189,bus,False,Draria
+869,CFPA Draria,36.724747,2.990241,bus,False,Draria
+870,Cité 617 Lgts Draria,36.720958,2.994055,bus,False,Draria
+871,Cité 617 Lgts Draria,36.721406,2.993378,bus,False,Draria
+872,Draria,36.716507,2.997172,bus,False,Draria
+873,Draria,36.716861,2.996837,bus,False,Draria
+874,El Achour,36.731505,2.992843,bus,False,Draria
+875,El Achour,36.731751,2.992746,bus,False,Draria
+876,Marché Draria,36.711407,2.997426,bus,False,Draria
+877,Marché Draria,36.712114,2.996205,bus,False,Draria
+878,Pepiniere,36.698491,2.992704,bus,False,Draria
+879,Pepiniere,36.697742,2.992277,bus,False,Draria
+880,Serrurier,36.703628,2.994027,bus,False,Draria
+881,Serrurier,36.704387,2.994604,bus,False,Draria
+882,Village d enfants,36.727212,2.990813,bus,False,Draria
+883,Village d enfants,36.727336,2.991016,bus,False,Draria
+884,Cité 250 Logts CNEP,36.675134,2.943167,bus,False,Douera
+885,Cité Aadl Douera,36.682157,2.945517,bus,False,Douera
+886,Cité Aadl Douéra,36.682397,2.946071,bus,False,Douera
+887,Cité Abziou 1,36.689934,2.93771,bus,False,Douera
+888,Cité Abziou 2,36.683798,2.950365,bus,False,Douera
+889,Cité Abziou 2,36.684084,2.950204,bus,False,Douera
+890,Cité Abziou 2,36.684205,2.950392,bus,False,Douera
+891,Ain Dzaier,36.676712,2.953398,bus,True,Douera
+892,Ain Dzaier,36.676713,2.951772,bus,True,Douera
+893,Gare Routiere Douera,36.66652,2.95046,bus,False,Douera
+894,Gare Routiere Douera,36.667429,2.950067,bus,False,Douera
+895,Ecole Nouveau Monde,36.68107,2.940795,bus,False,Douera
+896,Gare Routiere Douera,36.667616,2.949896,bus,False,Douera
+897,Gare Tessala El Merdja,36.639247,2.935533,bus,False,Douera
+898,Quartier 22 Sidi Bennour,36.641746,2.887663,bus,False,Douera
+899,Mosquee El Firdaous,36.679432,2.941226,bus,False,Douera
+900,Marché Douera,36.67148,2.949117,bus,False,Douera
+901,Quartier 23 Sidi Bennour,36.64193,2.885167,bus,False,Douera
+902,Quartier 23 Sidi Bennour,36.642141,2.885103,bus,False,Douera
+903,Quartier 23 Sidi Bennour,36.642244,2.885192,bus,False,Douera
+904,Sortie Douera,36.669695,2.952265,bus,False,Douera
+905,CEM Nouvelle Sidi Abdellah,36.688903,2.849426,bus,False,Zeralda
+906,Cimetiere Sidi Menif,36.695131,2.824222,bus,False,Zeralda
+907,Cimetiere Sidi Menif,36.695196,2.824295,bus,False,Zeralda
+908,Cité 150 Logts,36.699065,2.824948,bus,False,Zeralda
+909,Cité 2500 Logts,36.68339,2.851293,bus,False,Zeralda
+910,Cité 2500 Logts,36.683393,2.851443,bus,False,Zeralda
+911,Cité Aslan,36.677868,2.842073,bus,False,Zeralda
+912,Cité 5000 Logts,36.67534,2.850555,bus,False,Zeralda
+913,Cité 5000 Logts,36.675525,2.850357,bus,False,Zeralda
+914,Cité Aslan,36.677912,2.842277,bus,False,Zeralda
+915,Cité Aslan 2,36.674418,2.842489,bus,False,Zeralda
+916,Cité Aslan 2,36.674529,2.842576,bus,False,Zeralda
+917,Cité Atlas Quartier 29,36.6726,2.842959,bus,False,Zeralda
+918,Cité Atlas Quartier 29,36.672696,2.842874,bus,False,Zeralda
+919,Cité Ennadjd,36.675871,2.835771,bus,False,Zeralda
+920,Cité Ennadjd,36.675896,2.83574,bus,False,Zeralda
+921,Domaine Khaloufi,36.702134,2.82195,bus,False,Zeralda
+922,Domaine Khaloufi,36.702248,2.8219,bus,False,Zeralda
+923,Hopital Zeralda,36.699682,2.843336,bus,False,Zeralda
+924,Hopital Zeralda,36.699932,2.843151,bus,False,Zeralda
+925,Plage Familiale,36.711043,2.829503,bus,False,Zeralda
+926,Plage Familiale,36.711183,2.829577,bus,False,Zeralda
+927,Polyclinique Sidi Menif,36.6938,2.824111,bus,False,Zeralda
+928,Polyclinique Sidi Menif,36.693989,2.824053,bus,False,Zeralda
+929,Sidi Abdallah,36.690228,2.853271,bus,True,Zeralda
+930,Sidi Abdallah,36.690328,2.852751,bus,True,Zeralda
+931,Sidi Abdallah,36.690839,2.851141,bus,False,Zeralda
+932,Village des Artistes,36.688927,2.827833,bus,False,Zeralda
+933,Village des Artistes,36.689092,2.827665,bus,False,Zeralda
+934,Cité Militaire,36.713642,2.845137,bus,False,Zeralda
+935,Cité Militaire,36.713643,2.845253,bus,False,Zeralda
+936,Complexe Touristique,36.718728,2.840671,bus,True,Zeralda
+937,Complexe Touristique,36.71888,2.840962,bus,True,Zeralda
+938,Gare Routiere Zeralda,36.712971,2.834314,bus,True,Zeralda
+939,Protection Civile Zeralda,36.719363,2.849683,bus,False,Zeralda
+940,Gare Routiere Zeralda,36.712988,2.834313,bus,True,Zeralda
+941,Protection Civile Zeralda,36.719445,2.849847,bus,False,Zeralda
+942,Station Multimodale Zeralda,36.701857,2.849223,bus,False,Zeralda
+943,Baba Ali,36.671209,3.048641,bus,True,Saoula
+944,Baba Ali,36.672105,3.04935,bus,True,Saoula
+945,Cité 648 Logts SAOULA,36.669923,3.045329,bus,True,Saoula
+946,Cité 648 Logts SAOULA,36.669998,3.04538,bus,True,Saoula
+947,Residence Belhadj Othmane,36.667419,3.041345,bus,True,Saoula
+948,Residence Belhadj Othmane,36.667457,3.04149,bus,True,Saoula
+949,Azur Plage,36.726833,2.853911,bus,False,Staoueli
+950,Azur Plage,36.726958,2.854091,bus,False,Staoueli
+951,CEM Les Freres Boudouara,36.750928,2.891391,bus,False,Staoueli
+952,CEM Les Freres Boudouara,36.751314,2.891113,bus,False,Staoueli
+953,Cité Mauriace,36.747522,2.900479,bus,False,Staoueli
+954,Cité Mauriace,36.747538,2.900615,bus,False,Staoueli
+955,Domaine Hadjeri Ahmed,36.732801,2.861592,bus,False,Staoueli
+956,Domaine Hadjeri Ahmed,36.740123,2.866562,bus,False,Staoueli
+957,La Bridja,36.741651,2.87192,bus,False,Staoueli
+958,La Bridja,36.741663,2.872023,bus,False,Staoueli
+959,Mimosa,36.74548,2.882556,bus,False,Staoueli
+960,Mimosa,36.745584,2.882753,bus,False,Staoueli
+961,Palm Beach,36.742037,2.868163,bus,False,Staoueli
+962,Polyclinique,36.750527,2.886842,bus,False,Staoueli
+963,Residence El Baraka,36.742107,2.877274,bus,False,Staoueli
+964,Palm Beach,36.742093,2.868291,bus,False,Staoueli
+965,Residence El Baraka,36.742392,2.877647,bus,False,Staoueli
+966,Rue Kaci Amar,36.74952,2.886094,bus,False,Staoueli
+967,Staoueli,36.757611,2.8908,bus,False,Staoueli
+968,Staoueli,36.757626,2.890818,bus,False,Staoueli
+969,Staoueli,36.757647,2.890511,bus,False,Staoueli
+970,Staoueli,36.757658,2.890578,bus,False,Staoueli
+971,APC Souidania,36.708844,2.910876,bus,False,Souidania
+972,APC Souidania,36.708815,2.910655,bus,False,Souidania
+973,3 chemins,36.702351,2.925715,bus,False,Souidania
+974,Complexe,36.699138,2.913312,bus,False,Souidania
+975,La Cave,36.713063,2.907562,bus,False,Souidania
+976,La Cave,36.713197,2.907318,bus,False,Souidania
+977,La Cote Blanche,36.714445,2.907791,bus,False,Souidania
+978,La Cote Blanche,36.714488,2.907928,bus,False,Souidania
+979,Souidania,36.701338,2.911207,bus,False,Souidania
+980,Souidania,36.70141,2.910743,bus,False,Souidania
+981,Ahmed Gharmoul 1,36.760303,3.050246,bus,True,Sidi Mhamed
+982,Ahmed Gharmoul 2,36.760888,3.048976,bus,True,Sidi Mhamed
+983,Musee BARDO,36.762122,3.047583,bus,True,Sidi Mhamed
+984,Boulevard des Martyrs,36.751076,3.053546,bus,False,Sidi Mhamed
+985,Boulevard des Martyrs,36.751134,3.053477,bus,False,Sidi Mhamed
+986,ENTV,36.753256,3.048937,bus,True,Sidi Mhamed
+987,ENTV,36.753295,3.048799,bus,True,Sidi Mhamed
+988,Meissonier,36.766179,3.052027,bus,True,Sidi Mhamed
+989,Palais du Peuple,36.761317,3.046627,bus,True,Sidi Mhamed
+990,Palais du Peuple,36.761485,3.046792,bus,True,Sidi Mhamed
+991,Place Aissat Idir,36.757069,3.061274,bus,True,Sidi Mhamed
+992,Place Aissat Idir,36.757223,3.061468,bus,True,Sidi Mhamed
+993,Place Audin,36.768729,3.05463,bus,True,Sidi Mhamed
+994,Place Audin,36.769066,3.05482,bus,True,Sidi Mhamed
+995,Place du 1er Mai,36.759973,3.057347,bus,True,Sidi Mhamed
+996,Place du 1er Mai,36.760117,3.057037,bus,True,Sidi Mhamed
+997,Place du 1er Mai,36.760156,3.056311,bus,True,Sidi Mhamed
+998,Place du 1er Mai,36.76025,3.056112,bus,True,Sidi Mhamed
+999,Place du 1er Mai,36.760541,3.057125,bus,True,Sidi Mhamed
+1000,Sacre Coeur,36.763464,3.047565,bus,True,Sidi Mhamed
+1001,Cité Heuaoura,36.620834,3.108662,bus,False,Sidi Moussa
+1002,Cité Heuaoura,36.621143,3.108963,bus,False,Sidi Moussa
+1003,Cite Laamirat 1,36.63833,3.112966,bus,False,Sidi Moussa
+1004,Cite Laamirat 1,36.638537,3.112916,bus,False,Sidi Moussa
+1005,Cite Zouaoui,36.616364,3.103123,bus,False,Sidi Moussa
+1006,Cite Zouaoui,36.616365,3.103038,bus,False,Sidi Moussa
+1007,Domaine Si Belaid,36.639854,3.132149,bus,False,Sidi Moussa
+1008,Entree Eucalyptus,36.652002,3.146268,bus,True,Sidi Moussa
+1009,Domaine Si Belaid,36.640215,3.132505,bus,False,Sidi Moussa
+1010,Haouch Benidja,36.617571,3.087896,bus,False,Sidi Moussa
+1011,Haouch Benidja,36.623744,3.087404,bus,False,Sidi Moussa
+1012,Haouch Tafil,36.636212,3.086636,bus,False,Sidi Moussa
+1013,Haouch Tafil,36.636372,3.086728,bus,False,Sidi Moussa
+1014,La DUC d Alger,36.643393,3.136514,bus,False,Sidi Moussa
+1015,La DUC d Alger,36.64354,3.136604,bus,False,Sidi Moussa
+1016,Maison de repos,36.639818,3.08654,bus,False,Sidi Moussa
+1017,Polyclinique,36.607332,3.091825,bus,False,Sidi Moussa
+1018,Polyclinique,36.60737,3.091967,bus,False,Sidi Moussa
+1019,Ronda,36.628431,3.117878,bus,False,Sidi Moussa
+1020,Ronda,36.62931,3.118424,bus,False,Sidi Moussa
+1021,Sidi Moussa,36.609094,3.0883,bus,False,Sidi Moussa
+1022,Ronda,36.629389,3.119202,bus,False,Sidi Moussa
+1023,Sidi Moussa,36.609233,3.088265,bus,False,Sidi Moussa
+1024,Sortie Eucalyptus,36.651979,3.146156,bus,True,Sidi Moussa
+1025,Bouchaoui,36.741409,2.915303,bus,True,Cheraga
+1026,Bouchaoui,36.74148,2.914868,bus,True,Cheraga
+1027,CNR Bouchaoui,36.744836,2.915152,bus,False,Cheraga
+1028,CNR Bouchaoui,36.744892,2.915185,bus,False,Cheraga
+1029,Bouchaoui Ecole Mouloud Feraoun,36.743843,2.914439,bus,False,Cheraga
+1030,Bouchaoui Polyclinique,36.744342,2.913854,bus,False,Cheraga
+1031,Bouchaoui Ecole Mouloud Feraoun,36.744075,2.914208,bus,False,Cheraga
+1032,Casorale,36.7568,2.949413,bus,False,Cheraga
+1033,Casorale,36.756272,2.95028,bus,False,Cheraga
+1034,Centre International des Conferences,36.767426,2.895721,bus,False,Cheraga
+1035,Gare Routiere Cheraga,36.766445,2.953121,bus,False,Cheraga
+1036,Cheraga (Rond Point),36.771375,2.953273,bus,True,Cheraga
+1037,Cheraga (Rond Point),36.771565,2.953174,bus,True,Cheraga
+1038,Dar Dhiaf,36.771774,2.965617,bus,True,Cheraga
+1039,Dar Dhiaf,36.771954,2.964887,bus,True,Cheraga
+1040,Gare Routiere Cheraga,36.767397,2.951649,bus,True,Cheraga
+1041,El Karia (Les Dunes),36.757717,2.933684,bus,False,Cheraga
+1042,El Karia (Les Dunes),36.758282,2.934466,bus,False,Cheraga
+1043,El Karma,36.75412,2.930411,bus,False,Cheraga
+1044,El Karma,36.754702,2.93082,bus,False,Cheraga
+1045,L Academie d Alger Ouest,36.763174,2.94429,bus,False,Cheraga
+1046,L Academie d Alger Ouest,36.763989,2.94386,bus,False,Cheraga
+1047,Lamara,36.755175,2.951893,bus,False,Cheraga
+1048,Lamara,36.755457,2.951074,bus,False,Cheraga
+1049,Ecole Primaire,36.758945,2.946221,bus,False,Cheraga
+1050,Les Dunes,36.779785,2.898678,bus,False,Cheraga
+1051,Les Dunes,36.779426,2.898619,bus,False,Cheraga
+1052,Mosquee Ennasr Bouchaoui,36.743018,2.910343,bus,False,Cheraga
+1053,Ecole Primaire,36.759042,2.946108,bus,False,Cheraga
+1054,Mosquee Ennasr Bouchaoui,36.743123,2.910837,bus,False,Cheraga
+1055,Souk El Fellah,36.765991,2.942996,bus,True,Cheraga
+1056,Souk El Fellah,36.766029,2.942523,bus,True,Cheraga
+1057,Souk El Fellah,36.766319,2.943164,bus,True,Cheraga
+1058,Ain Benian,36.801528,2.911751,bus,True,Ain Benian
+1059,Ain Benian,36.80264,2.911279,bus,True,Ain Benian
+1060,Ain Benian Centre,36.799992,2.912455,bus,True,Ain Benian
+1061,Ain Benian Centre,36.800049,2.912506,bus,True,Ain Benian
+1062,APC Ain Benian,36.804043,2.921581,bus,False,Ain Benian
+1063,CEM Abd El Hamid Ben Badis,36.80226,2.919221,bus,False,Ain Benian
+1064,CEM Abd El Hamid Ben Badis,36.803608,2.91773,bus,False,Ain Benian
+1065,Chateau Boumediene,36.800374,2.929302,bus,False,Ain Benian
+1066,Chateau Boumediene,36.80058,2.92933,bus,False,Ain Benian
+1067,Cimetiere Ain Benian,36.806677,2.937471,bus,False,Ain Benian
+1068,Cimetiere Ain Benian,36.806615,2.937115,bus,False,Ain Benian
+1069,Cité 138 Logts,36.801637,2.924418,bus,False,Ain Benian
+1070,Cité 138 Logts,36.802554,2.924134,bus,False,Ain Benian
+1071,Cité 138 Logts,36.804258,2.923468,bus,False,Ain Benian
+1072,Cité Belle Vue,36.791632,2.911083,bus,False,Ain Benian
+1073,Cité Belle Vue,36.791713,2.911149,bus,False,Ain Benian
+1074,Cité Coopemad Ain Benian,36.790497,2.903367,bus,False,Ain Benian
+1075,Cité Coopemad Ain Benian,36.791198,2.903473,bus,False,Ain Benian
+1076,Derouicha,36.796571,2.930534,bus,False,Ain Benian
+1077,Derouicha,36.796618,2.930355,bus,False,Ain Benian
+1078,Ecole de Police,36.795473,2.905002,bus,False,Ain Benian
+1079,Ecole de Police,36.796193,2.905026,bus,False,Ain Benian
+1080,Ecole Superieure d Hotellerie,36.787047,2.902116,bus,False,Ain Benian
+1081,Ecole Superieure d Hotellerie,36.787213,2.902033,bus,False,Ain Benian
+1082,Feux Rouges,36.799904,2.918559,bus,False,Ain Benian
+1083,Feux Rouges,36.800048,2.918293,bus,False,Ain Benian
+1084,Lidimco,36.794228,2.934727,bus,False,Ain Benian
+1085,Lidimco,36.794802,2.933622,bus,False,Ain Benian
+1086,Loufla,36.798443,2.921627,bus,False,Ain Benian
+1087,Marché Ain Benian,36.80028,2.914517,bus,False,Ain Benian
+1088,Marché Ain Benian,36.801735,2.914907,bus,False,Ain Benian
+1089,Marché Ain Benian,36.803258,2.914578,bus,False,Ain Benian
+1090,Oued Beni Messous,36.784861,2.949157,bus,True,Ain Benian
+1091,Oued Beni Messous,36.785095,2.949154,bus,True,Ain Benian
+1092,Plateau,36.791449,2.940066,bus,True,Ain Benian
+1093,Plateau,36.791498,2.939324,bus,True,Ain Benian
+1094,Plateau,36.791813,2.939433,bus,True,Ain Benian
+1095,Ain Chorb,36.788394,3.305537,bus,False,Ain Taya
+1096,Ain Chorb,36.788608,3.305481,bus,False,Ain Taya
+1097,Boussekloul,36.800336,3.26655,bus,False,Ain Taya
+1098,Boussekloul,36.800395,3.266556,bus,False,Ain Taya
+1099,CFPA Ain Taya,36.79846,3.270522,bus,False,Ain Taya
+1100,CFPA Ain Taya,36.798492,3.270222,bus,False,Ain Taya
+1101,Diar El Gharb 1,36.800488,3.257815,bus,False,Ain Taya
+1102,Diar El Gharb 1,36.800704,3.257889,bus,False,Ain Taya
+1103,Diar El Gharb 2,36.79528,3.257283,bus,False,Ain Taya
+1104,Diar El Gharb 2,36.795356,3.257235,bus,False,Ain Taya
+1105,Ecole Houari Boumediene,36.781563,3.288674,bus,False,Ain Taya
+1106,Ecole Ibn Badis,36.793068,3.287216,bus,False,Ain Taya
+1107,Ecole Ibn Badis,36.793175,3.287308,bus,False,Ain Taya
+1108,Les Castors,36.803487,3.258404,bus,False,Ain Taya
+1109,Les Castors,36.803497,3.258916,bus,False,Ain Taya
+1110,Lycée Tarik Ibn Ziyad,36.796499,3.282032,bus,False,Ain Taya
+1111,Lycée Tarik Ibn Ziyad,36.796543,3.281861,bus,False,Ain Taya
+1112,Pepiniere,36.785161,3.305399,bus,False,Ain Taya
+1113,Polyclinique Ain Chorb,36.792042,3.300454,bus,False,Ain Taya
+1114,Polyclinique Ain Chorb,36.792097,3.300414,bus,False,Ain Taya
+1115,Souk El Fellah,36.78876,3.289164,bus,True,Ain Taya
+1116,Souk El Fellah,36.788824,3.289103,bus,True,Ain Taya
+1117,Station Ain Taya,36.788766,3.289079,bus,True,Ain Taya
+1118,Station Ain Taya,36.788878,3.289085,bus,True,Ain Taya
+1119,Station Ain Taya,36.792813,3.292952,bus,False,Ain Taya
+1120,Zerzouria,36.802135,3.263713,bus,False,Ain Taya
+1121,Zerzouria,36.80215,3.263583,bus,False,Ain Taya
+1122,Ardis,36.738993,3.145401,bus,False,Mohammadia
+1123,Ardis,36.741205,3.145176,bus,False,Mohammadia
+1124,Cinq Maisons,36.726742,3.147001,bus,True,Mohammadia
+1125,Cinq Maisons,36.72686,3.146495,bus,True,Mohammadia
+1126,Cité Mokhtar Zerhouni,36.732485,3.173449,bus,False,Mohammadia
+1127,Cité Mokhtar Zerhouni,36.732492,3.173063,bus,False,Mohammadia
+1128,El Mohammadia,36.729684,3.136658,bus,True,Mohammadia
+1129,La Radieuse,36.723852,3.154426,bus,True,Mohammadia
+1130,La Radieuse,36.723932,3.153963,bus,True,Mohammadia
+1131,Safex,36.736567,3.149903,bus,False,Mohammadia
+1132,Cité 32 Logts,36.657559,2.877195,bus,False,Mahelma
+1133,Cité 32 Logts,36.657618,2.877249,bus,False,Mahelma
+1134,Boulevard Larbi Ben Mhidi,36.691291,2.860372,bus,True,Mahelma
+1135,Boulevard Larbi Ben Mhidi,36.691698,2.860142,bus,True,Mahelma
+1136,Boulevard Mustapha Ben Boulaid,36.692691,2.867844,bus,True,Mahelma
+1137,Boulevard Mustapha Ben Boulaid,36.693024,2.867755,bus,True,Mahelma
+1138,CEM Mohamed Tounsi,36.678806,2.879035,bus,False,Mahelma
+1139,Centre Cancerologie,36.661497,2.87917,bus,False,Mahelma
+1140,Centre Cancerologie,36.661462,2.87905,bus,False,Mahelma
+1141,CEM Mohamed Tounsi,36.678932,2.87894,bus,False,Mahelma
+1142,Cimetiere,36.641543,2.875837,bus,False,Mahelma
+1143,Cimetiere,36.641669,2.87605,bus,False,Mahelma
+1144,Cité 1500 Logts Sidi Abdellah,36.650499,2.867727,bus,False,Mahelma
+1145,Cité 1500 Logts Sidi Abdellah,36.65053,2.867568,bus,False,Mahelma
+1146,Cité 412 Logts,36.653432,2.875916,bus,False,Mahelma
+1147,Cité 412 Logts,36.653472,2.875985,bus,False,Mahelma
+1148,Cité Atlas 28,36.669492,2.845038,bus,False,Mahelma
+1149,Cité Atlas 28,36.669635,2.845172,bus,False,Mahelma
+1150,Cosider,36.66716,2.87706,bus,False,Mahelma
+1151,Cosider,36.667222,2.877045,bus,False,Mahelma
+1152,El Karia,36.690118,2.870732,bus,False,Mahelma
+1153,Gare de Train l Université 2,36.694057,2.868029,bus,True,Mahelma
+1154,Gare de Train l Université 2,36.694115,2.868168,bus,True,Mahelma
+1155,Gare de Train l Université 2,36.691494,2.871152,bus,True,Mahelma
+1156,Gare de Train l Université,36.691674,2.871256,bus,True,Mahelma
+1157,Groupe Scolaire Martyr ABAD Nadji,36.687589,2.85722,bus,False,Mahelma
+1158,Mahelma (LPP),36.687102,2.874892,bus,False,Mahelma
+1159,Mahelma (LPP),36.68725,2.875099,bus,False,Mahelma
+1160,Mahelma Université,36.687108,2.874586,bus,False,Mahelma
+1161,Place 11 Decembre 1960,36.683775,2.878639,bus,False,Mahelma
+1162,Place Ennasr,36.679905,2.87711,bus,False,Mahelma
+1163,Place 11 Decembre 1960,36.683916,2.878511,bus,False,Mahelma
+1164,Place Ennasr,36.680321,2.87691,bus,False,Mahelma
+1165,Cimetiere El Alia,36.723795,3.162343,bus,True,Oued Smar
+1166,Cimetiere El Alia,36.723941,3.163192,bus,True,Oued Smar
+1167,APC Oued Koriche,36.785472,3.04391,bus,False,Oued Koriche
+1168,APC Oued Koriche,36.785539,3.043961,bus,False,Oued Koriche
+1169,Barreaux Rouges,36.78444,3.044808,bus,False,Oued Koriche
+1170,Barreaux Rouges,36.78455,3.044851,bus,False,Oued Koriche
+1171,Climat de France,36.785873,3.048017,bus,False,Oued Koriche
+1172,Fontaine Fraiche,36.781582,3.046723,bus,False,Oued Koriche
+1173,Fontaine Fraiche,36.781822,3.046693,bus,False,Oued Koriche
+1174,Frais Vallon,36.778349,3.038171,bus,False,Oued Koriche
+1175,Oued Koriche (Climat de France),36.785617,3.04661,bus,False,Oued Koriche
+1176,Oued Koriche (Climat de France),36.785678,3.046777,bus,False,Oued Koriche
+1177,Scala,36.774437,3.042324,bus,True,Oued Koriche
+1178,Scala,36.774527,3.042286,bus,True,Oued Koriche
+1179,Scoto Nadal,36.785387,3.042828,bus,False,Oued Koriche
+1180,Scoto Nadal,36.78555,3.042706,bus,False,Oued Koriche
+1181,Tarek Ben Ziad,36.779272,3.046705,bus,False,Oued Koriche
+1182,Tarek Ben Ziad,36.779516,3.04691,bus,False,Oued Koriche
+1183,CFPA,36.8024,3.239428,bus,False,Bordj El Bahri
+1184,Carrefour Tamenfoust,36.805004,3.239679,bus,False,Bordj El Bahri
+1185,Carrefour Tamenfoust,36.80452,3.239594,bus,False,Bordj El Bahri
+1186,Hai El Mahdjer,36.811872,3.237758,bus,False,Bordj El Bahri
+1187,Hai El Mahdjer,36.811929,3.237751,bus,False,Bordj El Bahri
+1188,Cité Mohamed Maouch,36.719245,2.955912,bus,True,Ouled Fayet
+1189,Cité Mohamed Maouch,36.719239,2.955831,bus,True,Ouled Fayet
+1190,Gare de Train Ain Naadja,36.689178,3.077752,bus,True,Gue de Constantine
+1191,Cité 1000 lgts,36.700682,2.830116,bus,False,Zeralda
+1192,Baba Ali,36.672814,3.048846,bus,True,Saoula
+1193,Baba Ali,36.672592,3.048483,bus,True,Saoula
+1194,Mahelma (LPP),36.686543,2.875216,bus,False,Mahelma
+1195,Cité 1er Novembre,36.663031,2.895774,bus,False,Rahmania
+1196,Quartier 20,36.658628,2.895867,bus,False,Rahmania
+1197,Cité 831 Lgts Ouled Larbi,36.646498,2.892268,bus,False,Rahmania
+1198,Cité 831 Lgts Ouled Larbi,36.646214,2.892282,bus,False,Rahmania
+1199,Quartier 20,36.658628,2.895945,bus,False,Rahmania
+1200,Cité 1er Novembre,36.662777,2.895525,bus,False,Rahmania
+1201,Quartier 23,36.641819,2.885254,bus,False,Douera
+1202,Quartier 22,36.641623,2.887784,bus,False,Douera
+1203,Cité 600 Logts,36.686406,2.976633,bus,False,Baba Hassen
+1204,Cité 600 Logts,36.686292,2.976637,bus,False,Baba Hassen
+1205,Cité 600 Logts (2),36.686362,2.973858,bus,False,Baba Hassen
+1206,Cité 600 Logts (2),36.686256,2.97379,bus,False,Baba Hassen
+1207,Cité AADL 1,36.686793,2.967115,bus,False,Baba Hassen
+1208,Cité AADL 1,36.686722,2.967287,bus,False,Baba Hassen
+1209,Sortie Autoroute,36.695883,2.963986,bus,True,Baba Hassen
+1210,Sortie Autoroute,36.697928,2.966273,bus,True,Baba Hassen
+1211,Cité AADL 2021 (1),36.694399,2.960719,bus,True,Baba Hassen
+1212,Cité AADL 2021 (1),36.6944,2.96072,bus,True,Baba Hassen
+1213,Cité AADL 2021 (2),36.695783,2.959861,bus,False,Baba Hassen
+1214,Cité AADL 2021 (2),36.695784,2.959862,bus,False,Baba Hassen
+1215,Cité AADL 2021 (3),36.69598,2.959709,bus,False,Baba Hassen
+1216,Cité AADL 2021 (3),36.695981,2.95971,bus,False,Baba Hassen
+1217,Ecole Nouveau Monde,36.681023,2.940736,bus,False,Douera
+1218,Mosquee El Firdaous,36.679389,2.941181,bus,False,Douera
+1219,Cité 250 Logts,36.675118,2.943118,bus,False,Douera
