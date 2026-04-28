@@ -42,6 +42,7 @@ class Edge:
     to_id: str
     distance_km: float
     time_min: float
+    co2_g: float
     transport_type: str
     route_id: str
 
@@ -68,6 +69,7 @@ class RouteResult:
     segments: list                 # grouped Segment objects
     total_time: float              # minutes
     total_dist: float              # km
+    total_co2: float               # grams
     total_fare: int                # DA
     nodes_explored: int            # UCS stats
 
@@ -143,6 +145,7 @@ class TransitRouter:
         for from_id, edges in raw.items():
             self.graph[from_id] = [
                 Edge(to_id=e['t'], distance_km=e['d'], time_min=e['m'],
+                     co2_g=e.get('c', e.get('co2', 0.0)),
                      transport_type=e['y'], route_id=e['r'])
                 for e in edges
             ]
@@ -168,6 +171,7 @@ class TransitRouter:
                     to_id=str(row['to_stop_id']),
                     distance_km=float(row['distance_km']),
                     time_min=float(row['time_min']),
+                    co2_g=float(row.get('co2_g', 0.0)),
                     transport_type=row['transport_type'],
                     route_id=row['route_id']
                 ))
@@ -210,7 +214,7 @@ class TransitRouter:
         Args:
             start_id: origin stop ID
             goal_id: destination stop ID
-            metric: 'time' (minutes) or 'distance' (km)
+            metric: 'time' (minutes), 'distance' (km), or 'co2' (grams)
             
         Returns:
             RouteResult with path, segments, totals, and fare
@@ -222,7 +226,8 @@ class TransitRouter:
         if start_id == goal_id:
             return RouteResult(
                 found=True, path=[start_id], edges=[], segments=[],
-                total_time=0, total_dist=0, total_fare=0, nodes_explored=0
+                total_time=0, total_dist=0, total_co2=0, total_fare=0,
+                nodes_explored=0
             )
 
         # Priority queue: (cost, counter, node_id)
@@ -249,12 +254,14 @@ class TransitRouter:
                 segments = self._build_segments(path, edges)
                 total_time = sum(e.time_min for e in edges)
                 total_dist = sum(e.distance_km for e in edges)
+                total_co2 = sum(e.co2_g for e in edges)
                 total_fare = self._compute_fare(edges)
 
                 return RouteResult(
                     found=True, path=path, edges=edges,
                     segments=segments, total_time=round(total_time, 2),
                     total_dist=round(total_dist, 4),
+                    total_co2=round(total_co2, 2),
                     total_fare=total_fare,
                     nodes_explored=nodes_explored
                 )
@@ -264,7 +271,12 @@ class TransitRouter:
                 if edge.to_id in visited:
                     continue
 
-                edge_cost = edge.time_min if metric == 'time' else edge.distance_km
+                if metric == 'time':
+                    edge_cost = edge.time_min
+                elif metric == 'distance':
+                    edge_cost = edge.distance_km
+                else:  # co2
+                    edge_cost = edge.co2_g
                 new_cost = cost + edge_cost
 
                 if edge.to_id not in best or new_cost < best[edge.to_id][0]:
@@ -275,7 +287,7 @@ class TransitRouter:
         # No path found
         return RouteResult(
             found=False, path=[], edges=[], segments=[],
-            total_time=0, total_dist=0, total_fare=0,
+            total_time=0, total_dist=0, total_co2=0, total_fare=0,
             nodes_explored=nodes_explored
         )
 
