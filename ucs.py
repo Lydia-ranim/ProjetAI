@@ -87,6 +87,13 @@ FARES = {
     'walk': 0,
 }
 
+# Penalty added when switching between non-walk lines to prevent zigzagging
+TRANSFER_PENALTY = {
+    'time': 5.0,
+    'distance': 0.5,
+    'co2': 0.0,
+}
+
 
 # ═══════════════════════════════════════════
 # TRANSIT ROUTER
@@ -230,27 +237,29 @@ class TransitRouter:
                 nodes_explored=0
             )
 
-        # Priority queue: (cost, counter, node_id)
+        # Priority queue: (cost, counter, node_id, last_route)
         # counter breaks ties to maintain FIFO order
         counter = 0
-        pq = [(0.0, counter, start_id)]
+        pq = [(0.0, counter, start_id, None)]
         
         # Best known cost + predecessor for path reconstruction
-        best = {start_id: (0.0, None, None)}   # node → (cost, prev_node, edge)
+        init_state = (start_id, None)
+        best = {init_state: (0.0, None, None)}   # (node, last_route) → (cost, prev_state, edge)
         visited = set()
         nodes_explored = 0
 
         while pq:
-            cost, _, node = heapq.heappop(pq)
+            cost, _, node, last_route = heapq.heappop(pq)
+            state_key = (node, last_route)
 
-            if node in visited:
+            if state_key in visited:
                 continue
-            visited.add(node)
+            visited.add(state_key)
             nodes_explored += 1
 
             # Goal reached
             if node == goal_id:
-                path, edges = self._reconstruct(best, goal_id)
+                path, edges = self._reconstruct(best, state_key, start_id)
                 segments = self._build_segments(path, edges)
                 total_time = sum(e.time_min for e in edges)
                 total_dist = sum(e.distance_km for e in edges)
@@ -268,7 +277,10 @@ class TransitRouter:
 
             # Expand neighbors
             for edge in self.graph.get(node, []):
-                if edge.to_id in visited:
+                new_last_route = last_route if edge.transport_type == 'walk' else edge.route_id
+                next_state_key = (edge.to_id, new_last_route)
+                
+                if next_state_key in visited:
                     continue
 
                 if metric == 'time':
@@ -277,12 +289,19 @@ class TransitRouter:
                     edge_cost = edge.distance_km
                 else:  # co2
                     edge_cost = edge.co2_g
+                    
+                is_transfer = (last_route is not None and 
+                               edge.transport_type != 'walk' and 
+                               last_route != edge.route_id)
+                if is_transfer:
+                    edge_cost += TRANSFER_PENALTY.get(metric, 0.0)
+                    
                 new_cost = cost + edge_cost
 
-                if edge.to_id not in best or new_cost < best[edge.to_id][0]:
-                    best[edge.to_id] = (new_cost, node, edge)
+                if next_state_key not in best or new_cost < best[next_state_key][0]:
+                    best[next_state_key] = (new_cost, state_key, edge)
                     counter += 1
-                    heapq.heappush(pq, (new_cost, counter, edge.to_id))
+                    heapq.heappush(pq, (new_cost, counter, edge.to_id, new_last_route))
 
         # No path found
         return RouteResult(
@@ -295,19 +314,20 @@ class TransitRouter:
     # PATH RECONSTRUCTION
     # ───────────────────────────────────────
 
-    def _reconstruct(self, best: dict, goal_id: str):
+    def _reconstruct(self, best: dict, goal_state: tuple, start_id: str):
         """Reconstruct path from predecessor map."""
         path = []
         edges = []
-        cur = goal_id
+        cur = goal_state
 
         while cur is not None:
-            path.append(cur)
-            cost, prev, edge = best[cur]
-            if edge is not None:
+            cost, prev_state, edge = best[cur]
+            if prev_state is not None:
+                path.append(edge.to_id)
                 edges.append(edge)
-            cur = prev
-
+            cur = prev_state
+            
+        path.append(start_id)
         path.reverse()
         edges.reverse()
         return path, edges
