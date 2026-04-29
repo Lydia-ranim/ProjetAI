@@ -1,0 +1,467 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ALGIERS SMART GRID — Premium Component Styles v2
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Global Scrollbar ────────────────────────────────────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--accent-teal) 22%, transparent) transparent; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,255,209,0.18); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,255,209,0.35); }
+
+/* Valid webkit scrollbar selectors (theme-aware) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--accent-teal) 20%, transparent);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background: color-mix(in oklab, var(--accent-teal) 34%, transparent); }
+
+/* ─── Layout ──────────────────────────────────────────────────────────────── */
+html, body, #root { height: 100%; overflow: hidden; }
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
+}
+
+.app-main {
+  display: grid;
+  grid-template-columns: 328px minmax(0, 1fr) 420px;
+  flex: 1;
+  overflow: hidden;
+  gap: 16px;
+  padding: 16px;
+}
+
+.control-panel {
+  width: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-color);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg, 0 18px 60px rgba(0,0,0,0.38));
+  overflow: hidden;
+  position: relative;
+}
+
+.map-container {
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg, 0 18px 60px rgba(0,0,0,0.38));
+}
+
+.right-panel {
+  width: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-color);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg, 0 18px 60px rgba(0,0,0,0.38));
+  overflow: hidden;
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 56px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.app-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--accent-teal) 32%, transparent), transparent);
+}
+
+/* ─── Route Card ──────────────────────────────────────────────────────────── */
+.route-card {
+  position: relative;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--bg-elevated) 0%, rgba(20,34,68,0.7) 100%);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  overflow: hidden;
+}
+
+.route-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, color-mix(in oklab, var(--accent-teal) 6%, transparent) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.route-card:hover { transform: translateY(-2px); }
+.route-card:hover::before { opacity: 1; }
+.route-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.35); }
+
+.route-card:active { transform: translateY(0) scale(0.99); }
+
+.route-card.selected { border-width: 1.5px; }
+.route-card.selected.route-fastest { border-color: var(--accent-amber); box-shadow: 0 0 24px color-mix(in oklab, var(--accent-amber) 20%, transparent), 0 4px 20px rgba(0,0,0,0.3); }
+.route-card.selected.route-cheapest { border-color: var(--accent-coral); box-shadow: 0 0 24px color-mix(in oklab, var(--accent-coral) 20%, transparent), 0 4px 20px rgba(0,0,0,0.3); }
+.route-card.selected.route-greenest { border-color: var(--accent-teal); box-shadow: 0 0 24px color-mix(in oklab, var(--accent-teal) 20%, transparent), 0 4px 20px rgba(0,0,0,0.3); }
+
+/* ─── Transport Toggle ───────────────────────────────────────────────────── */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--bg-elevated) 92%, transparent) 0%,
+    color-mix(in oklab, var(--bg-panel) 82%, transparent) 100%
+  );
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-size: 0.78rem;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.mode-toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.18s;
+  border-radius: inherit;
+}
+
+.mode-toggle.active {
+  border-color: color-mix(in oklab, var(--mode-color, var(--accent-teal)) 48%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mode-color, var(--accent-teal)) 12%, transparent) 0%,
+    color-mix(in oklab, var(--bg-elevated) 88%, transparent) 100%
+  );
+  color: var(--mode-color, var(--accent-teal));
+  box-shadow:
+    0 10px 24px rgba(0,0,0,0.24),
+    0 0 18px color-mix(in oklab, var(--mode-color, var(--accent-teal)) 18%, transparent);
+  transform: translateY(-1px);
+}
+
+.mode-toggle.inactive { opacity: 0.35; }
+.mode-toggle:hover:not(.inactive) {
+  border-color: color-mix(in oklab, var(--mode-color, var(--accent-teal)) 36%, transparent);
+  transform: translateY(-1px);
+}
+.mode-toggle:active:not(.inactive) { transform: translateY(0) scale(0.99); }
+
+/* ─── Weight Slider ───────────────────────────────────────────────────────── */
+.weight-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.weight-slider:hover { opacity: 0.9; }
+
+.weight-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2.5px solid var(--bg-void);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.weight-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.weight-slider::-webkit-slider-thumb:active { transform: scale(1.1); }
+
+/* ─── Input Styling ───────────────────────────────────────────────────────── */
+.search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: rgba(20,34,68,0.6);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.search-input:focus {
+  border-color: color-mix(in oklab, var(--accent-teal) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-teal) 12%, transparent);
+  outline: none;
+  background: rgba(20,34,68,0.9);
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+
+/* ─── Dropdown ────────────────────────────────────────────────────────────── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--bg-panel);
+  border: 1px solid color-mix(in oklab, var(--accent-teal) 22%, transparent);
+  border-radius: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 200;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px color-mix(in oklab, var(--accent-teal) 10%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.dropdown-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  transition: background 0.12s;
+  font-size: 0.84rem;
+  border-radius: 0;
+}
+
+.dropdown-item:first-child { border-radius: 12px 12px 0 0; }
+.dropdown-item:last-child  { border-radius: 0 0 12px 12px; }
+.dropdown-item:hover, .dropdown-item.active { background: color-mix(in oklab, var(--accent-teal) 8%, transparent); }
+
+/* ─── Glass Panel ─────────────────────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(13,27,53,0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+
+.light .glass-panel { background: rgba(255,255,255,0.92); }
+
+/* ─── Stat Card ───────────────────────────────────────────────────────────── */
+.stat-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--bg-elevated) 0%, rgba(13,27,53,0.8) 100%);
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--card-accent, var(--accent-teal));
+  opacity: 0.7;
+}
+
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+/* ─── Section Label ───────────────────────────────────────────────────────── */
+.section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+/* ─── Tab Bar ─────────────────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  background: var(--bg-panel);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--accent-teal);
+  border-radius: 2px 2px 0 0;
+  opacity: 0;
+  transform: scaleX(0);
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover { color: var(--text-secondary); background: color-mix(in oklab, var(--accent-teal) 6%, transparent); }
+
+.tab-btn.active {
+  color: var(--accent-teal);
+  background: color-mix(in oklab, var(--accent-teal) 7%, transparent);
+}
+
+.tab-btn.active::after { opacity: 1; transform: scaleX(1); }
+
+/* ─── Badge ───────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+.badge-teal   { background: color-mix(in oklab, var(--accent-teal) 14%, transparent);  color: var(--accent-teal);  border: 1px solid color-mix(in oklab, var(--accent-teal) 24%, transparent); }
+.badge-amber  { background: color-mix(in oklab, var(--accent-amber) 14%, transparent); color: var(--accent-amber); border: 1px solid color-mix(in oklab, var(--accent-amber) 24%, transparent); }
+.badge-coral  { background: color-mix(in oklab, var(--accent-coral) 14%, transparent); color: var(--accent-coral); border: 1px solid color-mix(in oklab, var(--accent-coral) 24%, transparent); }
+.badge-blue   { background: color-mix(in oklab, var(--accent-blue) 14%, transparent);  color: var(--accent-blue);  border: 1px solid color-mix(in oklab, var(--accent-blue) 24%, transparent); }
+.badge-green  { background: color-mix(in oklab, var(--accent-green) 14%, transparent); color: var(--accent-green); border: 1px solid color-mix(in oklab, var(--accent-green) 24%, transparent); }
+
+/* ─── Find Routes Button ──────────────────────────────────────────────────── */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.84rem;
+  letter-spacing: 0.03em;
+  background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-blue) 100%);
+  color: var(--bg-void);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 20px color-mix(in oklab, var(--accent-blue) 28%, transparent), 0 0 0 0 color-mix(in oklab, var(--accent-blue) 20%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px color-mix(in oklab, var(--accent-blue) 36%, transparent); }
+.btn-primary:active { transform: translateY(0) scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; background: var(--bg-elevated); color: var(--text-muted); }
+
+.btn-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.btn-icon:hover { border-color: color-mix(in oklab, var(--accent-teal) 36%, transparent); color: var(--accent-teal); background: color-mix(in oklab, var(--accent-teal) 7%, transparent); }
+.btn-icon:active { transform: scale(0.94); }
+
+/* ─── Stop Selection Display ──────────────────────────────────────────────── */
+.stop-display {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: rgba(20,34,68,0.5);
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.stop-display:hover { border-color: color-mix(in oklab, var(--accent-teal) 30%, transparent); }
+
+/* ─── Mode Stats Bar ──────────────────────────────────────────────────────── */
+.mode-stat-bar {
+  height: 8px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.mode-stat-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1280px) { .right-panel { width: 350px; } }
+
+@media (max-width: 1024px) {
+  .control-panel { display: none; }
+  .right-panel { display: none; }
+  .app-main { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+}
+
+/* ─── Focus / Accessibility ───────────────────────────────────────────────── */
+:focus-visible { outline: 2px solid var(--accent-teal); outline-offset: 2px; border-radius: 4px; }
+
+/* ─── Print ───────────────────────────────────────────────────────────────── */
+@media print { 
+  .app-header, .control-panel, .right-panel { display: none !important; }
+  .map-container { height: 100vh; }
+}

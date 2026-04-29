@@ -1,0 +1,193 @@
+:root {
+  --bg-void:        #0A1628;
+  --bg-panel:       rgba(10, 22, 40, 0.82);
+  --bg-elevated:    rgba(10, 22, 40, 0.92);
+  --bg-gradient:    radial-gradient(1200px 700px at 18% 12%, color-mix(in oklab, var(--accent-teal) 10%, transparent) 0%, transparent 60%),
+                    radial-gradient(900px 600px at 80% 88%, color-mix(in oklab, var(--accent-blue) 10%, transparent) 0%, transparent 62%),
+                    linear-gradient(180deg, #0A1628 0%, #0f1c34 100%);
+
+  --accent-teal:    #BEEEDB;
+  --accent-coral:   #670627;
+  --accent-amber:   #F2C4CE;
+  --accent-blue:    #C6B7E2;
+  --accent-green:   #BEEEDB;
+
+  --text-primary:   rgba(190, 238, 219, 0.96);
+  --text-secondary: rgba(242, 196, 206, 0.86);
+  --text-muted:     rgba(198, 183, 226, 0.62);
+
+  --border-color:   rgba(190, 238, 219, 0.14);
+  --glow-teal:      0 0 22px rgba(190, 238, 219, 0.24);
+  --glow-amber:     0 0 22px rgba(242, 196, 206, 0.22);
+  --glow-coral:     0 0 22px rgba(103, 6, 39, 0.22);
+
+  --shadow-lg:      0 18px 60px rgba(0,0,0,0.38);
+  --shadow-md:      0 10px 30px rgba(0,0,0,0.25);
+  --shadow-sm:      0 6px 18px rgba(0,0,0,0.18);
+
+  --background:         var(--bg-void);
+  --foreground:         var(--text-primary);
+  --card:               var(--bg-panel);
+  --card-foreground:    var(--text-primary);
+  --popover:            var(--bg-panel);
+  --popover-foreground: var(--text-primary);
+  --primary:            var(--accent-teal);
+  --primary-foreground: var(--bg-void);
+  --secondary:          var(--accent-amber);
+  --secondary-foreground: var(--bg-void);
+  --muted:              var(--bg-elevated);
+  --muted-foreground:   var(--text-secondary);
+  --accent:             var(--accent-teal);
+  --accent-foreground:  var(--bg-void);
+  --destructive:        var(--accent-coral);
+  --destructive-foreground: #fff;
+  --border:             var(--border-color);
+  --input:              rgba(190, 238, 219, 0.08);
+  --input-background:   var(--bg-elevated);
+  --switch-background:  var(--bg-elevated);
+  --ring:               var(--accent-teal);
+  --radius:             0.75rem;
+  --font-size:          16px;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+
+  --chart-1: var(--accent-teal);
+  --chart-2: var(--accent-amber);
+  --chart-3: var(--accent-coral);
+  --chart-4: var(--accent-blue);
+  --chart-5: var(--accent-green);
+
+  --sidebar:                 var(--bg-panel);
+  --sidebar-foreground:      var(--text-primary);
+  --sidebar-primary:         var(--accent-teal);
+  --sidebar-primary-foreground: var(--bg-void);
+  --sidebar-accent:          var(--bg-elevated);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border:          var(--border-color);
+  --sidebar-ring:            var(--accent-teal);
+}
+
+.light {
+  /* Soft premium light theme (not plain white) */
+  --bg-void:        #f8fafc;
+  --bg-panel:       color-mix(in oklab, #ffffff 88%, var(--accent-blue) 12%);
+  --bg-elevated:    color-mix(in oklab, #ffffff 92%, var(--accent-teal) 8%);
+  --bg-gradient:    radial-gradient(1000px 700px at 18% 12%, color-mix(in oklab, var(--accent-teal) 18%, transparent) 0%, transparent 58%),
+                    radial-gradient(900px 600px at 82% 88%, color-mix(in oklab, var(--accent-amber) 18%, transparent) 0%, transparent 60%),
+                    linear-gradient(180deg, #f8fafc 0%, color-mix(in oklab, #f8fafc 86%, var(--accent-blue) 14%) 100%);
+
+  --text-primary:   rgba(10, 22, 40, 0.96);
+  --text-secondary: rgba(10, 22, 40, 0.76);
+  --text-muted:     rgba(10, 22, 40, 0.56);
+
+  --border-color:   rgba(10, 22, 40, 0.10);
+  --shadow-lg:      0 18px 60px rgba(10,22,40,0.12);
+  --shadow-md:      0 10px 30px rgba(10,22,40,0.10);
+  --shadow-sm:      0 6px 18px rgba(10,22,40,0.08);
+
+  --background:     var(--bg-void);
+  --foreground:     var(--text-primary);
+  --card:           var(--bg-panel);
+  --card-foreground: var(--text-primary);
+  --primary:        var(--accent-teal);
+  --primary-foreground: #fff;
+  --secondary:      var(--accent-amber);
+  --muted:          var(--bg-elevated);
+  --muted-foreground: var(--text-secondary);
+  --border:         var(--border-color);
+  --input:          rgba(10, 22, 40, 0.06);
+  --input-background: var(--bg-elevated);
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* ─── Base Styles ─────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1, h2, h3 {
+    font-family: 'Space Mono', monospace;
+  }
+
+  h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.3; }
+  h2 { font-size: 1.25rem; font-weight: 700; line-height: 1.4; }
+  h3 { font-size: 1.1rem; font-weight: 700; line-height: 1.4; }
+  h4 { font-size: 1rem; font-weight: 500; line-height: 1.5; }
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  button {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  input, select, textarea {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+  }
+
+  /* Monospace for data values */
+  .font-mono, .data-value {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}

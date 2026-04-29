@@ -1,0 +1,10 @@
+{
+  "name": "website",
+  "private": true,
+  "scripts": {
+    "frontend:install": "npm --prefix frontend/client install",
+    "frontend:dev": "npm --prefix frontend/client run dev",
+    "frontend:build": "npm --prefix frontend/client run build"
+  }
+}
+

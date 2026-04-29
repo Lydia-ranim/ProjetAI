@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ALGIERS SMART GRID — Animations v2 (GPU-composited only)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Marker Pulse ────────────────────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+@keyframes pulse-gentle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ─── Route Flow ──────────────────────────────────────────────────────────── */
+@keyframes dash-flow {
+  to { stroke-dashoffset: -30; }
+}
+
+.route-flow-walk {
+  stroke-dasharray: 8 12;
+  animation: dash-flow 1.5s linear infinite;
+}
+
+/* ─── Shimmer Loading ─────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    color-mix(in oklab, var(--accent-teal) 16%, transparent) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ─── Card Stagger Entry ──────────────────────────────────────────────────── */
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up-fade 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-slide-up:nth-child(1) { animation-delay: 0ms; }
+.animate-slide-up:nth-child(2) { animation-delay: 90ms; }
+.animate-slide-up:nth-child(3) { animation-delay: 180ms; }
+
+/* ─── Fade In ─────────────────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in { animation: fade-in 0.3s ease-out; }
+
+/* ─── Scale In ────────────────────────────────────────────────────────────── */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-scale-in { animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ─── Glow Effects ────────────────────────────────────────────────────────── */
+.glow-teal  { box-shadow: 0 0 20px color-mix(in oklab, var(--accent-teal) 40%, transparent); }
+.glow-amber { box-shadow: 0 0 20px color-mix(in oklab, var(--accent-amber) 40%, transparent); }
+.glow-coral { box-shadow: 0 0 20px color-mix(in oklab, var(--accent-coral) 40%, transparent); }
+
+.glow-teal-border  { border-color: var(--accent-teal);  box-shadow: 0 0 16px color-mix(in oklab, var(--accent-teal) 30%, transparent), inset 0 0 16px color-mix(in oklab, var(--accent-teal) 8%, transparent); }
+.glow-amber-border { border-color: var(--accent-amber); box-shadow: 0 0 16px color-mix(in oklab, var(--accent-amber) 30%, transparent), inset 0 0 16px color-mix(in oklab, var(--accent-amber) 8%, transparent); }
+.glow-coral-border { border-color: var(--accent-coral); box-shadow: 0 0 16px color-mix(in oklab, var(--accent-coral) 30%, transparent), inset 0 0 16px color-mix(in oklab, var(--accent-coral) 8%, transparent); }
+
+/* ─── Grid Background (animated) ──────────────────────────────────────────── */
+@keyframes grid-scroll {
+  from { background-position: 0 0; }
+  to   { background-position: 40px 40px; }
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--accent-teal) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--accent-teal) 4%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.grid-bg-animated {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--accent-teal) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--accent-teal) 5%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: grid-scroll 8s linear infinite;
+}
+
+/* ─── Scanline Overlay ────────────────────────────────────────────────────── */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    transparent, transparent 2px,
+    color-mix(in oklab, var(--accent-teal) 2%, transparent) 2px,
+    color-mix(in oklab, var(--accent-teal) 2%, transparent) 4px
+  );
+  z-index: 1;
+}
+
+/* ─── Spin Slow ───────────────────────────────────────────────────────────── */
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 4s linear infinite; }
+
+/* ─── Route Type Colors ───────────────────────────────────────────────────── */
+.route-fastest { --route-color: var(--accent-amber); }
+.route-cheapest { --route-color: var(--accent-coral); }
+.route-greenest { --route-color: var(--accent-teal); }
+
+/* ─── Mode Colors ─────────────────────────────────────────────────────────── */
+.mode-walk  { color: var(--accent-teal); }
+.mode-bus   { color: var(--accent-coral); }
+.mode-tram  { color: var(--accent-amber); }
+.mode-metro { color: var(--accent-blue); }
+.mode-telepherique { color: var(--accent-amber); }
+.mode-escalator { color: var(--accent-teal); }
+
+/* ─── Float animation for empty state ────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+/* ─── Progress bar fill animation ────────────────────────────────────────── */
+@keyframes fill-bar {
+  from { width: 0; }
+}
+
+.animate-fill { animation: fill-bar 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* ─── Responsive Helpers ──────────────────────────────────────────────────── */
+@media (max-width: 1024px) { .desktop-only { display: none !important; } }
+@media (min-width: 1025px) { .mobile-only  { display: none !important; } }
