@@ -1,31 +1,28 @@
-
-
 from __future__ import annotations
 
-import heapq
+import json
 import math
 import os
+import sys
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, FrozenSet, List, Optional, Set, Tuple
 
-import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
-from matplotlib.gridspec import GridSpec
+import pandas as pd
 
-import json
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Data')
+DATA_DIR          = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Data')
+STOPS_CSV         = os.path.join(DATA_DIR, 'stops.csv')
+EDGES_CSV         = os.path.join(DATA_DIR, 'edges.csv')
+TRANSFERS_CSV     = os.path.join(DATA_DIR, 'transfers.csv')
+BUS_GEOM_JSON     = os.path.join(DATA_DIR, 'bus_geometries.json')
 
-STOPS_CSV          = os.path.join(DATA_DIR, 'stops.csv')
-EDGES_CSV          = os.path.join(DATA_DIR, 'edges.csv')
-TRANSFERS_CSV      = os.path.join(DATA_DIR, 'transfers.csv')
-BUS_GEOMETRIES_JSON = os.path.join(DATA_DIR, 'bus_geometries.json')
 
 class TransportMode(Enum):
     WALK         = 'walk'
@@ -37,18 +34,24 @@ class TransportMode(Enum):
 
     @classmethod
     def from_string(cls, s: str) -> 'TransportMode':
-        s = s.strip().lower()
-        mapping = {
+        if not isinstance(s, str):
+            raise TypeError(f"Expected str for mode, got {type(s).__name__}: {s!r}")
+        normalized = s.strip().lower()
+        aliases = {
             'cable_car':    cls.TELEPHERIQUE,
             'telepherique': cls.TELEPHERIQUE,
             'escalator':    cls.WALK,
+            'transfer':     cls.WALK,
         }
-        if s in mapping:
-            return mapping[s]
+        if normalized in aliases:
+            return aliases[normalized]
         for member in cls:
-            if member.value == s:
+            if member.value == normalized:
                 return member
-        raise ValueError(f"Unknown transport mode '{s}'. Valid: {[m.value for m in cls]}")
+        raise ValueError(
+            f"Unknown transport mode {s!r}. "
+            f"Valid values: {[m.value for m in cls]}"
+        )
 
 
 PRICE_DA: Dict[str, float] = {
@@ -58,15 +61,6 @@ PRICE_DA: Dict[str, float] = {
     'metro':        50.0,
     'train':        75.0,
     'telepherique': 30.0,
-}
-
-CO2_FACTORS: Dict[str, float] = {
-    'walk':          0.0,
-    'bus':          68.0,
-    'tram':          6.0,
-    'metro':         4.0,
-    'train':        41.0,
-    'telepherique':  6.0,
 }
 
 MODE_COLORS: Dict[str, str] = {
@@ -87,57 +81,14 @@ MODE_ICONS: Dict[str, str] = {
     'telepherique': '🚡',
 }
 
-FREE_MODES = {TransportMode.WALK}
-
-BG_DARK   = '#0A0E1A'
-BG_PANEL  = '#111827'
-BG_CARD   = '#1C2333'
-ACCENT    = '#4F8EF7'
-ACCENT2   = '#A78BFA'
-TEXT_MAIN = '#E2E8F0'
-TEXT_DIM  = '#64748B'
-GRID_COL  = '#1E293B'
-
-
-class ModeConfig:
-    ALL_MODES: Set[TransportMode] = set(TransportMode)
-
-    def __init__(self, enabled: Optional[Set[TransportMode]] = None):
-        self._enabled: Set[TransportMode] = (
-            set(enabled) if enabled is not None else set(self.ALL_MODES)
-        )
-
-    def enable(self, *modes: TransportMode) -> 'ModeConfig':
-        for m in modes:
-            self._enabled.add(m)
-        return self
-
-    def disable(self, *modes: TransportMode) -> 'ModeConfig':
-        for m in modes:
-            self._enabled.discard(m)
-        return self
-
-    def is_allowed(self, mode: TransportMode) -> bool:
-        return mode in self._enabled
-
-    @property
-    def active_modes(self) -> Set[TransportMode]:
-        return set(self._enabled)
-
-    @classmethod
-    def all(cls) -> 'ModeConfig':
-        return cls()
-
-    @classmethod
-    def only(cls, *modes: TransportMode) -> 'ModeConfig':
-        return cls(set(modes))
-
-    @classmethod
-    def without(cls, *modes: TransportMode) -> 'ModeConfig':
-        return cls(cls.ALL_MODES - set(modes))
-
-    def __repr__(self):
-        return f"ModeConfig(enabled={sorted(m.value for m in self._enabled)})"
+BG_DARK  = '#0A0E1A'
+BG_PANEL = '#111827'
+BG_CARD  = '#1C2333'
+ACCENT   = '#4F8EF7'
+ACCENT2  = '#A78BFA'
+TEXT     = '#E2E8F0'
+TEXT_DIM = '#64748B'
+GRID_COL = '#1E293B'
 
 
 @dataclass
@@ -149,19 +100,35 @@ class Node:
     lon       : float
     is_hub    : bool = False
 
+    VALID_TYPES = {'metro', 'bus', 'tram', 'train', 'telepherique'}
+
+    def __post_init__(self):
+        self.node_id = str(self.node_id).strip()
+        self.name    = str(self.name).strip()
+        ntype = str(self.node_type).strip().lower()
+        if ntype not in self.VALID_TYPES:
+            raise ValueError(
+                f"Node '{self.node_id}': invalid type {self.node_type!r}. "
+                f"Must be one of {self.VALID_TYPES}"
+            )
+        self.node_type = ntype
+        if not (-90.0 <= self.lat <= 90.0):
+            raise ValueError(f"Node '{self.node_id}': latitude {self.lat} outside [-90, 90]")
+        if not (-180.0 <= self.lon <= 180.0):
+            raise ValueError(f"Node '{self.node_id}': longitude {self.lon} outside [-180, 180]")
+
     def haversine_km(self, other: 'Node') -> float:
-        R = 6371.0
+        R    = 6371.0
         phi1 = math.radians(self.lat)
         phi2 = math.radians(other.lat)
         dlat = math.radians(other.lat - self.lat)
-        dlon = math.radians(other.lon - self.lon)
-        a = (math.sin(dlat / 2) ** 2
-             + math.cos(phi1) * math.cos(phi2) * math.sin(dlon / 2) ** 2)
-        return R * 2 * math.asin(math.sqrt(a))
+        dlon = math.radians(other.lon  - self.lon)
+        a    = math.sin(dlat / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlon / 2) ** 2
+        return R * 2 * math.asin(math.sqrt(max(0.0, min(1.0, a))))
 
     def __hash__(self):  return hash(self.node_id)
     def __eq__(self, o): return isinstance(o, Node) and self.node_id == o.node_id
-    def __repr__(self):  return f"Node({self.node_id!r}, {self.name!r})"
+    def __repr__(self):  return f"Node({self.node_id!r}, {self.name!r}, {self.node_type})"
 
 
 @dataclass
@@ -174,241 +141,336 @@ class Edge:
     price_da    : float
     co2_g       : float
     route_id    : str = ''
+    geometry    : List[List[float]] = field(default_factory=list)
 
-    def weighted_cost(
-        self,
-        w_time : float = 1.0,
-        w_price: float = 0.0,
-        w_co2  : float = 0.0,
-    ) -> float:
+    def __post_init__(self):
+        if self.distance_km < 0:
+            raise ValueError(f"Edge distance negative: {self.distance_km}")
+        if self.time_min < 0:
+            raise ValueError(f"Edge time negative: {self.time_min}")
+        if self.price_da < 0:
+            raise ValueError(f"Edge price negative: {self.price_da}")
+        if self.co2_g < 0:
+            raise ValueError(f"Edge CO2 negative: {self.co2_g}")
+
+    def weighted_cost(self, w_time: float = 1.0,
+                            w_price: float = 0.0,
+                            w_co2: float   = 0.0) -> float:
         total = w_time + w_price + w_co2
         if total == 0:
             raise ValueError("At least one weight must be non-zero.")
         wt, wp, wc = w_time / total, w_price / total, w_co2 / total
         return wt * self.time_min + wp * self.price_da + wc * self.co2_g
 
+    def road_lons(self) -> List[float]:
+        if self.geometry:
+            return [pt[1] for pt in self.geometry]
+        return [self.from_node.lon, self.to_node.lon]
+
+    def road_lats(self) -> List[float]:
+        if self.geometry:
+            return [pt[0] for pt in self.geometry]
+        return [self.from_node.lat, self.to_node.lat]
+
     def __repr__(self):
         return (f"Edge({self.from_node.name!r} → {self.to_node.name!r}, "
-                f"{self.mode.value}, {self.time_min:.1f}m)")
+                f"{self.mode.value}, {self.time_min:.1f}min)")
 
 
 class TransitGraph:
     def __init__(self):
-        self._nodes     : Dict[str, Node]       = {}
-        self._adj       : Dict[str, List[Edge]] = {}
-        self._bus_geom  : Dict[str, List]       = {}   # key → [[lat,lon],...]
+        self._nodes    : Dict[str, Node]            = {}
+        self._adj      : Dict[str, List[Edge]]      = {}
+        self._geom     : Dict[str, List[List[float]]] = {}
 
     def add_node(self, node: Node) -> None:
+        if not isinstance(node, Node):
+            raise TypeError(f"Expected Node, got {type(node).__name__}")
         if node.node_id in self._nodes:
             return
         self._nodes[node.node_id] = node
         self._adj[node.node_id]   = []
 
     def add_edge(self, edge: Edge) -> None:
-        if edge.from_node.node_id not in self._nodes:
-            raise KeyError(f"Source node '{edge.from_node.node_id}' not in graph.")
-        if edge.to_node.node_id not in self._nodes:
-            raise KeyError(f"Dest node '{edge.to_node.node_id}' not in graph.")
-        self._adj[edge.from_node.node_id].append(edge)
+        if not isinstance(edge, Edge):
+            raise TypeError(f"Expected Edge, got {type(edge).__name__}")
+        fid = edge.from_node.node_id
+        tid = edge.to_node.node_id
+        if fid not in self._nodes:
+            raise KeyError(f"Source node '{fid}' not in graph — add the node first.")
+        if tid not in self._nodes:
+            raise KeyError(f"Destination node '{tid}' not in graph — add the node first.")
+        self._adj[fid].append(edge)
 
     def get_node(self, node_id: str) -> Node:
-        if node_id not in self._nodes:
-            raise KeyError(f"Node '{node_id}' not found.")
-        return self._nodes[node_id]
+        nid = str(node_id).strip()
+        if nid not in self._nodes:
+            raise KeyError(
+                f"Node '{nid}' not found in graph. "
+                f"Total nodes: {len(self._nodes)}. "
+                f"Use graph.find_node_by_name() to search by name."
+            )
+        return self._nodes[nid]
 
     def find_node_by_name(self, name: str) -> Optional[Node]:
-        name_lower = name.strip().lower()
-        for node in self._nodes.values():
-            if node.name.strip().lower() == name_lower:
-                return node
-        for node in self._nodes.values():
-            if name_lower in node.name.strip().lower():
-                return node
-        return None
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("Search name must be a non-empty string.")
+        target = name.strip().lower()
+        exact  = [n for n in self._nodes.values() if n.name.strip().lower() == target]
+        if exact:
+            return exact[0]
+        partial = [n for n in self._nodes.values() if target in n.name.strip().lower()]
+        return partial[0] if partial else None
 
     def get_neighbors(self, node_id: str) -> List[Edge]:
-        return self._adj.get(node_id, [])
+        nid = str(node_id).strip()
+        if nid not in self._adj:
+            raise KeyError(f"Node '{nid}' not in graph.")
+        return self._adj[nid]
 
-    def node_count(self) -> int:
-        return len(self._nodes)
+    def node_count(self) -> int: return len(self._nodes)
+    def edge_count(self) -> int: return sum(len(v) for v in self._adj.values())
 
-    def edge_count(self) -> int:
-        return sum(len(e) for e in self._adj.values())
-
-    def get_bus_geometry(self, edge: Edge) -> Optional[List]:
-        if edge.mode != TransportMode.BUS:
-            return None
-        key = f"{edge.from_node.node_id}|{edge.to_node.node_id}|{edge.route_id}"
-        return self._bus_geom.get(key)
+    def summary(self) -> None:
+        from collections import Counter
+        type_counts = Counter(n.node_type for n in self._nodes.values())
+        print(f"{'═'*55}")
+        print(f"  Transit Graph Summary")
+        print(f"{'═'*55}")
+        print(f"  Total nodes : {self.node_count():>6,}")
+        print(f"  Total edges : {self.edge_count():>6,}")
+        print(f"  Geometry    : {len(self._geom):>6,} road polylines loaded")
+        print(f"  Node types  :")
+        for t, c in sorted(type_counts.items()):
+            print(f"    {t:<14} : {c:>4,}")
+        print(f"{'═'*55}")
 
     @classmethod
-    def from_csvs(
-        cls,
-        stops_csv     : str,
-        edges_csv     : str,
-        transfers_csv : str,
-        bus_geom_json : str = '',
-    ) -> 'TransitGraph':
-        for path in [stops_csv, edges_csv, transfers_csv]:
+    def from_csvs(cls,
+                  stops_csv    : str,
+                  edges_csv    : str,
+                  transfers_csv: str,
+                  bus_geom_json: str) -> 'TransitGraph':
+
+        for label, path in [
+            ('stops CSV',         stops_csv),
+            ('edges CSV',         edges_csv),
+            ('transfers CSV',     transfers_csv),
+            ('bus geometry JSON', bus_geom_json),
+        ]:
             if not os.path.isfile(path):
-                raise FileNotFoundError(f"File not found: '{path}'")
+                raise FileNotFoundError(
+                    f"{label} not found: '{path}'\n"
+                    "Place all data files in a 'Data/' folder next to this script."
+                )
 
         graph = cls()
 
-        stops_df = pd.read_csv(stops_csv, encoding='utf-8-sig')
-        stops_df.columns = stops_df.columns.str.strip()
+        bus_geom: Dict[str, List[List[float]]] = {}
+        try:
+            with open(bus_geom_json, 'r', encoding='utf-8') as f:
+                raw_geom = json.load(f)
+            if not isinstance(raw_geom, dict):
+                raise ValueError("bus_geometries.json must be a JSON object (dict).")
+            for key, pts in raw_geom.items():
+                if not isinstance(pts, list):
+                    continue
+                valid_pts = []
+                for pt in pts:
+                    if (isinstance(pt, (list, tuple)) and len(pt) >= 2
+                            and all(isinstance(c, (int, float)) for c in pt[:2])):
+                        valid_pts.append([float(pt[0]), float(pt[1])])
+                if valid_pts:
+                    bus_geom[key] = valid_pts
+            graph._geom = bus_geom
+            print(f"  Geometry : {len(bus_geom):,} polylines loaded.")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"bus_geometries.json is not valid JSON: {e}")
 
-        for _, row in stops_df.iterrows():
+        stops_df = pd.read_csv(stops_csv, dtype=str)
+        stops_df.columns = stops_df.columns.str.strip().str.lstrip('\ufeff')
+
+        required_stop_cols = {'stop_id', 'stop_name', 'latitude', 'longitude', 'transport_type'}
+        missing = required_stop_cols - set(stops_df.columns)
+        if missing:
+            raise ValueError(
+                f"stops CSV is missing required columns: {missing}. "
+                f"Found columns: {list(stops_df.columns)}"
+            )
+
+        node_errors = []
+        for idx, row in stops_df.iterrows():
             try:
-                is_hub_val = row.get('is_hub', False)
-                if isinstance(is_hub_val, str):
-                    is_hub = is_hub_val.strip().lower() in ('true', '1', 'yes')
-                else:
-                    is_hub = bool(is_hub_val)
+                raw_lat  = str(row.get('latitude', '')).strip()
+                raw_lon  = str(row.get('longitude', '')).strip()
+                raw_type = str(row.get('transport_type', '')).strip().lower()
+                raw_hub  = str(row.get('is_hub', 'False')).strip().lower()
 
-                graph.add_node(Node(
+                if not raw_lat or not raw_lon:
+                    raise ValueError("latitude or longitude is empty.")
+                if not raw_type:
+                    raise ValueError("transport_type is empty.")
+
+                node = Node(
                     node_id   = str(row['stop_id']).strip(),
                     name      = str(row['stop_name']).strip(),
-                    node_type = str(row['transport_type']).strip(),
-                    lat       = float(row['latitude']),
-                    lon       = float(row['longitude']),
-                    is_hub    = is_hub,
-                ))
+                    node_type = raw_type,
+                    lat       = float(raw_lat),
+                    lon       = float(raw_lon),
+                    is_hub    = raw_hub in ('true', '1', 'yes'),
+                )
+                graph.add_node(node)
             except Exception as e:
-                print(f"  [WARN] Skipping stop row: {e}")
+                node_errors.append(f"  Row {idx} ({row.get('stop_id','?')}): {e}")
 
-        edges_df = pd.read_csv(edges_csv, encoding='utf-8-sig')
-        edges_df.columns = edges_df.columns.str.strip()
-        skipped = 0
+        if node_errors:
+            print(f"  Nodes : {len(node_errors)} row(s) skipped:")
+            for err in node_errors[:10]:
+                print(err)
+            if len(node_errors) > 10:
+                print(f"  ... and {len(node_errors)-10} more.")
+        print(f"  Nodes : {graph.node_count():,} loaded.")
 
-        for _, row in edges_df.iterrows():
+        edges_df = pd.read_csv(edges_csv, dtype=str)
+        edges_df.columns = edges_df.columns.str.strip().str.lstrip('\ufeff')
+
+        required_edge_cols = {'from_stop_id', 'to_stop_id', 'distance_km',
+                              'time_min', 'transport_type'}
+        missing = required_edge_cols - set(edges_df.columns)
+        if missing:
+            raise ValueError(
+                f"edges CSV is missing required columns: {missing}. "
+                f"Found columns: {list(edges_df.columns)}"
+            )
+
+        edge_errors = []
+        edge_count_ok = 0
+        for idx, row in edges_df.iterrows():
             try:
-                from_id = str(row['from_stop_id']).strip()
-                to_id   = str(row['to_stop_id']).strip()
-                mode    = TransportMode.from_string(str(row['transport_type']))
-                price   = PRICE_DA.get(mode.value, 0.0)
+                fid      = str(row['from_stop_id']).strip()
+                tid      = str(row['to_stop_id']).strip()
+                mode_str = str(row['transport_type']).strip()
+                dist_str = str(row.get('distance_km', '0')).strip()
+                time_str = str(row.get('time_min', '0')).strip()
+                co2_str  = str(row.get('co2_g', '0')).strip()
+                route_id = str(row.get('route_id', '')).strip()
 
-                if 'co2_g' in row and not pd.isna(row['co2_g']):
-                    co2 = float(row['co2_g'])
-                else:
-                    co2 = CO2_FACTORS.get(mode.value, 0.0)
+                if fid not in graph._nodes:
+                    raise KeyError(f"from_stop_id '{fid}' not in nodes.")
+                if tid not in graph._nodes:
+                    raise KeyError(f"to_stop_id '{tid}' not in nodes.")
+                if fid == tid:
+                    raise ValueError("Self-loop edge skipped.")
 
-                if from_id not in graph._nodes or to_id not in graph._nodes:
-                    skipped += 1
-                    continue
+                mode     = TransportMode.from_string(mode_str)
+                dist     = float(dist_str) if dist_str not in ('', 'nan') else 0.0
+                time_min = float(time_str) if time_str not in ('', 'nan') else 0.0
+                co2      = float(co2_str)  if co2_str  not in ('', 'nan') else 0.0
+                price    = PRICE_DA.get(mode.value, 0.0)
 
-                graph.add_edge(Edge(
-                    from_node   = graph.get_node(from_id),
-                    to_node     = graph.get_node(to_id),
+                geom_key = f"{fid}|{tid}|{route_id}"
+                geometry = bus_geom.get(geom_key, [])
+
+                edge = Edge(
+                    from_node   = graph._nodes[fid],
+                    to_node     = graph._nodes[tid],
                     mode        = mode,
-                    distance_km = float(row['distance_km']),
-                    time_min    = float(row['time_min']),
+                    distance_km = max(0.0, dist),
+                    time_min    = max(0.0, time_min),
                     price_da    = price,
-                    co2_g       = co2,
-                    route_id    = str(row.get('route_id', '')).strip(),
-                ))
+                    co2_g       = max(0.0, co2),
+                    route_id    = route_id,
+                    geometry    = geometry,
+                )
+                graph.add_edge(edge)
+                edge_count_ok += 1
             except Exception as e:
-                skipped += 1
+                edge_errors.append(f"  Row {idx}: {e}")
 
-        transfers_df = pd.read_csv(transfers_csv, encoding='utf-8-sig')
-        transfers_df.columns = transfers_df.columns.str.strip()
-        t_skipped = 0
+        if edge_errors:
+            print(f"  Edges : {len(edge_errors)} row(s) skipped:")
+            for err in edge_errors[:10]:
+                print(err)
+            if len(edge_errors) > 10:
+                print(f"  ... and {len(edge_errors)-10} more.")
+        print(f"  Edges : {edge_count_ok:,} loaded.")
 
-        for _, row in transfers_df.iterrows():
+        transfers_df = pd.read_csv(transfers_csv, dtype=str)
+        transfers_df.columns = transfers_df.columns.str.strip().str.lstrip('\ufeff')
+
+        required_tr_cols = {'from_stop_id', 'to_stop_id', 'total_time_min', 'distance_km'}
+        missing = required_tr_cols - set(transfers_df.columns)
+        if missing:
+            raise ValueError(
+                f"transfers CSV is missing required columns: {missing}. "
+                f"Found columns: {list(transfers_df.columns)}"
+            )
+
+        tr_errors  = 0
+        tr_count   = 0
+        for idx, row in transfers_df.iterrows():
             try:
-                from_id = str(row['from_stop_id']).strip()
-                to_id   = str(row['to_stop_id']).strip()
+                fid      = str(row['from_stop_id']).strip()
+                tid      = str(row['to_stop_id']).strip()
+                time_str = str(row.get('total_time_min', '0')).strip()
+                dist_str = str(row.get('distance_km', '0')).strip()
+
+                if fid == tid:
                     continue
-                if from_id not in graph._nodes or to_id not in graph._nodes:
-                    t_skipped += 1
+                if fid not in graph._nodes or tid not in graph._nodes:
                     continue
-                graph.add_edge(Edge(
-                    from_node   = graph.get_node(from_id),
-                    to_node     = graph.get_node(to_id),
+
+                time_min = float(time_str) if time_str not in ('', 'nan') else 0.0
+                dist     = float(dist_str) if dist_str not in ('', 'nan') else 0.0
+
+                edge = Edge(
+                    from_node   = graph._nodes[fid],
+                    to_node     = graph._nodes[tid],
                     mode        = TransportMode.WALK,
-                    distance_km = float(row['distance_km']),
-                    time_min    = float(row['total_time_min']),
+                    distance_km = max(0.0, dist),
+                    time_min    = max(0.0, time_min),
                     price_da    = 0.0,
                     co2_g       = 0.0,
                     route_id    = 'TRANSFER',
-                ))
+                    geometry    = [],
+                )
+                graph.add_edge(edge)
+                tr_count += 1
             except Exception as e:
-                t_skipped += 1
+                tr_errors += 1
 
+        if tr_errors:
+            print(f"  Transfers : {tr_errors} row(s) skipped.")
+        print(f"  Transfers : {tr_count:,} walk links loaded.")
 
-        if geom_path and os.path.isfile(geom_path):
-            with open(geom_path, encoding='utf-8') as fh:
-                graph._bus_geom = json.load(fh)
-            print(f"[Graph] Loaded {len(graph._bus_geom):,} bus geometry polylines")
-        else:
-            print("[Graph] bus_geometries.json not found – bus edges will be straight lines")
-
-        print(f"[Graph] Loaded {graph.node_count()} stops, {graph.edge_count()} edges")
-        print(f"[Graph] Skipped {skipped} transit edges, {t_skipped} transfer edges")
         return graph
-
-    def summary(self) -> None:
-        mode_counts: Dict[str, int]   = {}
-        mode_time  : Dict[str, float] = {}
-        for edges in self._adj.values():
-            for e in edges:
-                k = e.mode.value
-                mode_counts[k] = mode_counts.get(k, 0) + 1
-                mode_time[k]   = mode_time.get(k, 0.0) + e.time_min
-
-        print(f"\n{'═'*55}")
-        print(f"  Algiers Transit Graph Summary")
-        print(f"{'═'*55}")
-        print(f"  Stops   : {self.node_count():>6,}")
-        print(f"  Edges   : {self.edge_count():>6,}")
-        print(f"  Bus polylines : {len(self._bus_geom):>5,}")
-        print(f"  {'Mode':<14} {'Edges':>7}  {'Avg time (min)':>15}")
-        print(f"  {'─'*40}")
-        for mode, count in sorted(mode_counts.items()):
-            avg  = mode_time[mode] / count
-            icon = MODE_ICONS.get(mode, '?')
-            print(f"  {icon} {mode:<12} {count:>7,}  {avg:>14.2f}")
-        print(f"{'═'*55}\n")
-
-    def __repr__(self):
-        return f"TransitGraph(stops={self.node_count()}, edges={self.edge_count()})"
 
 
 @dataclass
-class _ChainState:
-    node          : Node
-    edge          : Optional[Edge]          # edge that led here (None for start)
-    parent        : Optional['_ChainState'] # back-pointer
+class BFSState:
+    current_node  : Node
+    path_edges    : List[Edge] = field(default_factory=list)
     total_time    : float = 0.0
     total_price   : float = 0.0
     total_co2     : float = 0.0
     num_transfers : int   = 0
-    hops          : int   = 0
 
-    def __lt__(self, other: '_ChainState') -> bool:
-        return self.total_time < other.total_time
+    @property
+    def hops(self) -> int:
+        return len(self.path_edges)
 
     @property
     def current_mode(self) -> Optional[TransportMode]:
-        return self.edge.mode if self.edge else None
+        return self.path_edges[-1].mode if self.path_edges else None
 
-    def extract_edges(self) -> List[Edge]:
-        edges = []
-        state = self
-        while state.edge is not None:
-            edges.append(state.edge)
-            state = state.parent
-        edges.reverse()
-        return edges
-
-
-def _count_transfer(prev_mode: Optional[TransportMode], next_mode: TransportMode) -> int:
-    if (prev_mode is not None
-            and next_mode != prev_mode
-            and next_mode not in FREE_MODES
-            and prev_mode not in FREE_MODES):
-        return 1
-    return 0
+    @property
+    def path_nodes(self) -> List[Node]:
+        if not self.path_edges:
+            return [self.current_node]
+        nodes = [self.path_edges[0].from_node]
+        for e in self.path_edges:
+            nodes.append(e.to_node)
+        return nodes
 
 
 @dataclass
@@ -423,7 +485,6 @@ class BFSResult:
     num_transfers  : int   = 0
     nodes_expanded : int   = 0
     nodes_visited  : int   = 0
-    algorithm      : str   = 'bfs'
 
     @property
     def hops(self) -> int:
@@ -438,491 +499,424 @@ class BFSResult:
             nodes.append(e.to_node)
         return nodes
 
-    @property
-    def mode_breakdown(self) -> Dict[str, float]:
-        breakdown: Dict[str, float] = {}
-        for e in self.path_edges:
-            k = e.mode.value
-            breakdown[k] = breakdown.get(k, 0.0) + e.time_min
-        return breakdown
-
-    @property
-    def mode_usage_pct(self) -> Dict[str, float]:
-        bd    = self.mode_breakdown
-        total = sum(bd.values())
-        if total == 0:
-            return {}
-        return {k: v / total * 100 for k, v in bd.items()}
-
     def print_summary(self) -> None:
-        sep = '═' * 65
+        sep = '─' * 65
         print(sep)
-        print(f"  {self.algorithm.upper()} Result  │  {self.start.name}  →  {self.goal.name}")
+        print(f"  BFS  {self.start.name!r}  →  {self.goal.name!r}")
         print(sep)
         if not self.found:
-            print("  ✗  No path found.")
-            print(f"  Nodes expanded : {self.nodes_expanded}")
+            print("  ❌  No path found — nodes may be disconnected.")
+            print(f"  Nodes expanded : {self.nodes_expanded:,}")
+            print(f"  Nodes visited  : {self.nodes_visited:,}")
             print(sep)
             return
-        print(f"  ✓  Path found  │  {self.hops} hop(s)  │  {self.num_transfers} transfer(s)")
+        print(f"  ✅  {self.hops} hop(s)  |  {self.num_transfers} transfer(s)")
         print()
         for i, edge in enumerate(self.path_edges, 1):
             icon = MODE_ICONS.get(edge.mode.value, '?')
-            print(f"  {i:>2}. {icon} [{edge.mode.value.upper():<12}] "
-                  f"{edge.from_node.name:<28} → {edge.to_node.name}")
-            print(f"       {edge.time_min:>5.1f} min  │  {edge.price_da:>4.0f} DA  │  "
-                  f"{edge.co2_g:>5.1f} g CO₂  │  {edge.distance_km:.2f} km")
+            print(f"  {i:>3}.  {icon} [{edge.mode.value.upper():<12}]  "
+                  f"{edge.from_node.name:<28} →  {edge.to_node.name}")
+            print(f"         {edge.time_min:6.1f} min  |  "
+                  f"{edge.price_da:5.0f} DA  |  "
+                  f"{edge.co2_g:6.1f} g CO₂  |  "
+                  f"{edge.distance_km:.2f} km  |  "
+                  f"route: {edge.route_id or 'WALK'}")
         print()
-        print(f"  {'TOTAL':<35} {self.total_time:>6.1f} min  │  "
-              f"{self.total_price:>4.0f} DA  │  {self.total_co2:>5.1f} g CO₂")
-        print()
-        print("  Mode usage (% of travel time):")
-        for mode, pct in sorted(self.mode_usage_pct.items(), key=lambda x: -x[1]):
-            icon = MODE_ICONS.get(mode, '?')
-            bar  = '█' * int(pct / 5)
-            print(f"    {icon} {mode:<14} {pct:>5.1f}%  {bar}")
-        print()
-        print(f"  Nodes expanded : {self.nodes_expanded}")
-        print(f"  Nodes visited  : {self.nodes_visited}")
+        print(f"  TOTAL   {self.total_time:7.1f} min  |  "
+              f"{self.total_price:5.0f} DA  |  "
+              f"{self.total_co2:6.1f} g CO₂")
+        print(f"  Nodes expanded : {self.nodes_expanded:,}")
+        print(f"  Nodes visited  : {self.nodes_visited:,}")
         print(sep)
-
-
-def _make_result(
-    state     : _ChainState,
-    start     : Node,
-    goal      : Node,
-    n_exp     : int,
-    n_vis     : int,
-    algorithm : str,
-) -> BFSResult:
-    edges = state.extract_edges()
-    return BFSResult(
-        found=True, start=start, goal=goal,
-        path_edges    = edges,
-        total_time    = state.total_time,
-        total_price   = state.total_price,
-        total_co2     = state.total_co2,
-        num_transfers = state.num_transfers,
-        nodes_expanded= n_exp,
-        nodes_visited = n_vis,
-        algorithm     = algorithm,
-    )
 
 
 class BFSRouter:
     def __init__(self, graph: TransitGraph):
+        if not isinstance(graph, TransitGraph):
+            raise TypeError(f"Expected TransitGraph, got {type(graph).__name__}")
         self.graph = graph
 
-    def _validate(self, start_id: str, goal_id: str) -> Tuple[Node, Node]:
-        start = self.graph.get_node(start_id)
-        goal  = self.graph.get_node(goal_id)
-        if start_id == goal_id:
-            raise ValueError(f"Start and goal are the same: '{start.name}'")
-        return start, goal
+    def _resolve(self, node_ref) -> Node:
+        if isinstance(node_ref, Node):
+            return node_ref
+        nid = str(node_ref).strip()
+        try:
+            return self.graph.get_node(nid)
+        except KeyError:
+            result = self.graph.find_node_by_name(nid)
+            if result is None:
+                raise KeyError(
+                    f"'{nid}' not found as a node_id or stop name. "
+                    "Check spelling or use the node_id from stops.csv."
+                )
+            return result
+
+    @staticmethod
+    def _is_transfer(prev_mode: Optional[TransportMode],
+                     next_mode: TransportMode) -> bool:
+        if prev_mode is None:
+            return False
+        if prev_mode == TransportMode.WALK or next_mode == TransportMode.WALK:
+            return False
+        return prev_mode != next_mode
 
     def bfs_min_hops(
         self,
-        start_id    : str,
-        goal_id     : str,
-        mode_config : Optional[ModeConfig] = None,
+        start_ref,
+        goal_ref,
+        allowed_modes: Optional[Set[TransportMode]] = None,
     ) -> BFSResult:
-        start, goal = self._validate(start_id, goal_id)
-        cfg         = mode_config or ModeConfig.all()
+        start_node = self._resolve(start_ref)
+        goal_node  = self._resolve(goal_ref)
 
-        init  = _ChainState(node=start, edge=None, parent=None)
-        queue : deque[_ChainState] = deque([init])
-        visited: Set[str]          = {start_id}
-        n_exp = 0
+        if start_node.node_id == goal_node.node_id:
+            raise ValueError(
+                f"Start and goal are the same node: '{start_node.name}'. "
+                "Provide two different stops."
+            )
+
+        if allowed_modes is not None:
+            if not isinstance(allowed_modes, set):
+                raise TypeError("allowed_modes must be a set of TransportMode values.")
+            if not allowed_modes:
+                raise ValueError("allowed_modes is empty — no mode allowed means no path possible.")
+
+        queue   : deque[BFSState] = deque()
+        visited : Set[str]        = {start_node.node_id}
+        queue.append(BFSState(current_node=start_node))
+        nodes_expanded = 0
 
         while queue:
             state = queue.popleft()
-            n_exp += 1
+            nodes_expanded += 1
 
-            for edge in self.graph.get_neighbors(state.node.node_id):
-                if not cfg.is_allowed(edge.mode):
+            for edge in self.graph.get_neighbors(state.current_node.node_id):
+                if allowed_modes and edge.mode not in allowed_modes:
                     continue
+
                 nid = edge.to_node.node_id
                 if nid in visited:
                     continue
 
-                xfer = _count_transfer(state.current_mode, edge.mode)
-                nxt  = _ChainState(
-                    node          = edge.to_node,
-                    edge          = edge,
-                    parent        = state,
+                is_tr = self._is_transfer(state.current_mode, edge.mode)
+
+                new_state = BFSState(
+                    current_node  = edge.to_node,
+                    path_edges    = state.path_edges + [edge],
                     total_time    = state.total_time  + edge.time_min,
                     total_price   = state.total_price + edge.price_da,
                     total_co2     = state.total_co2   + edge.co2_g,
-                    num_transfers = state.num_transfers + xfer,
-                    hops          = state.hops + 1,
+                    num_transfers = state.num_transfers + (1 if is_tr else 0),
                 )
-                if nid == goal_id:
-                    return _make_result(nxt, start, goal, n_exp, len(visited), 'bfs_min_hops')
+
+                if nid == goal_node.node_id:
+                    return BFSResult(
+                        found          = True,
+                        start          = start_node,
+                        goal           = goal_node,
+                        path_edges     = new_state.path_edges,
+                        total_time     = new_state.total_time,
+                        total_price    = new_state.total_price,
+                        total_co2      = new_state.total_co2,
+                        num_transfers  = new_state.num_transfers,
+                        nodes_expanded = nodes_expanded,
+                        nodes_visited  = len(visited),
+                    )
+
                 visited.add(nid)
-                queue.append(nxt)
+                queue.append(new_state)
 
-        return BFSResult(found=False, start=start, goal=goal,
-                         nodes_expanded=n_exp, nodes_visited=len(visited),
-                         algorithm='bfs_min_hops')
+        return BFSResult(
+            found=False, start=start_node, goal=goal_node,
+            nodes_expanded=nodes_expanded, nodes_visited=len(visited),
+        )
 
-    def bfs_min_transfers(
-        self,
-        start_id    : str,
-        goal_id     : str,
-        mode_config : Optional[ModeConfig] = None,
-    ) -> BFSResult:
-        start, goal = self._validate(start_id, goal_id)
-        cfg         = mode_config or ModeConfig.all()
+    def bfs_min_transfers(self, start_ref, goal_ref) -> BFSResult:
+        start_node = self._resolve(start_ref)
+        goal_node  = self._resolve(goal_ref)
 
-        init  = _ChainState(node=start, edge=None, parent=None)
-        queue : deque[_ChainState] = deque([init])
-        # key = (node_id, mode) so we re-visit a node via a different mode
-        visited: Set[Tuple[str, Optional[str]]] = {(start_id, None)}
-        best  : Optional[BFSResult] = None
-        n_exp = 0
+        if start_node.node_id == goal_node.node_id:
+            raise ValueError("Start and goal must be different nodes.")
+
+        visited : Set[Tuple[str, Optional[str]]] = set()
+        queue   : deque[BFSState]                = deque()
+        queue.append(BFSState(current_node=start_node))
+        visited.add((start_node.node_id, None))
+
+        nodes_expanded = 0
+        best: Optional[BFSResult] = None
 
         while queue:
             state = queue.popleft()
-            n_exp += 1
+            nodes_expanded += 1
 
-            if best is not None and state.num_transfers >= best.num_transfers:
+            if best and state.num_transfers >= best.num_transfers:
                 continue
 
-            for edge in self.graph.get_neighbors(state.node.node_id):
-                if not cfg.is_allowed(edge.mode):
-                    continue
-                nid  = edge.to_node.node_id
-                xfer = state.num_transfers + _count_transfer(state.current_mode, edge.mode)
-                key  = (nid, edge.mode.value)
-                if key in visited:
+            for edge in self.graph.get_neighbors(state.current_node.node_id):
+                nid      = edge.to_node.node_id
+                mode_key = edge.mode.value
+                vkey     = (nid, mode_key)
+
+                if vkey in visited:
                     continue
 
-                nxt = _ChainState(
-                    node          = edge.to_node,
-                    edge          = edge,
-                    parent        = state,
+                is_tr = self._is_transfer(state.current_mode, edge.mode)
+
+                new_state = BFSState(
+                    current_node  = edge.to_node,
+                    path_edges    = state.path_edges + [edge],
                     total_time    = state.total_time  + edge.time_min,
                     total_price   = state.total_price + edge.price_da,
                     total_co2     = state.total_co2   + edge.co2_g,
-                    num_transfers = xfer,
-                    hops          = state.hops + 1,
+                    num_transfers = state.num_transfers + (1 if is_tr else 0),
                 )
-                if nid == goal_id:
-                    if best is None or xfer < best.num_transfers:
-                        best = _make_result(nxt, start, goal, n_exp, len(visited),
-                                            'bfs_min_transfers')
+
+                if nid == goal_node.node_id:
+                    candidate = BFSResult(
+                        found=True, start=start_node, goal=goal_node,
+                        path_edges=new_state.path_edges,
+                        total_time=new_state.total_time,
+                        total_price=new_state.total_price,
+                        total_co2=new_state.total_co2,
+                        num_transfers=new_state.num_transfers,
+                        nodes_expanded=nodes_expanded,
+                        nodes_visited=len(visited),
+                    )
+                    if best is None or candidate.num_transfers < best.num_transfers:
+                        best = candidate
                     continue
-                visited.add(key)
-                queue.append(nxt)
+
+                visited.add(vkey)
+                queue.append(new_state)
 
         if best:
-            best.nodes_expanded = n_exp
+            best.nodes_expanded = nodes_expanded
             best.nodes_visited  = len(visited)
             return best
 
-        return BFSResult(found=False, start=start, goal=goal,
-                         nodes_expanded=n_exp, nodes_visited=len(visited),
-                         algorithm='bfs_min_transfers')
+        return BFSResult(
+            found=False, start=start_node, goal=goal_node,
+            nodes_expanded=nodes_expanded, nodes_visited=len(visited),
+        )
 
     def bfs_all_paths(
         self,
-        start_id    : str,
-        goal_id     : str,
-        max_hops    : int = 20,
-        max_paths   : int = 5,
-        mode_config : Optional[ModeConfig] = None,
+        start_ref,
+        goal_ref,
+        max_hops : int = 10,
+        max_paths: int = 20,
     ) -> List[BFSResult]:
-        start, goal = self._validate(start_id, goal_id)
-        cfg         = mode_config or ModeConfig.all()
+        if not isinstance(max_hops, int) or max_hops < 1:
+            raise ValueError("max_hops must be a positive integer.")
+        if max_hops > 20:
+            raise ValueError(
+                "max_hops > 20 risks exponential explosion. "
+                "Lower max_hops or use max_paths to cap results."
+            )
+        if not isinstance(max_paths, int) or max_paths < 1:
+            raise ValueError("max_paths must be a positive integer.")
 
-        init    = _ChainState(node=start, edge=None, parent=None)
-        queue   : deque[_ChainState] = deque([init])
-        results : List[BFSResult]    = []
-        # Track (node, mode) pairs so each combo is explored only once
-        visited : Set[Tuple[str, Optional[str]]] = {(start_id, None)}
-        n_exp   = 0
+        start_node = self._resolve(start_ref)
+        goal_node  = self._resolve(goal_ref)
+
+        if start_node.node_id == goal_node.node_id:
+            raise ValueError("Start and goal must differ.")
+
+        queue   : deque[Tuple[BFSState, FrozenSet[str]]] = deque()
+        results : List[BFSResult]                         = []
+        queue.append((BFSState(current_node=start_node), frozenset({start_node.node_id})))
+        nodes_expanded = 0
 
         while queue and len(results) < max_paths:
-            state = queue.popleft()
-            n_exp += 1
+            state, path_visited = queue.popleft()
+            nodes_expanded += 1
+
             if state.hops >= max_hops:
                 continue
 
-            for edge in self.graph.get_neighbors(state.node.node_id):
-                if not cfg.is_allowed(edge.mode):
-                    continue
+            for edge in self.graph.get_neighbors(state.current_node.node_id):
                 nid = edge.to_node.node_id
-                key = (nid, edge.mode.value)
-                if key in visited:
+                if nid in path_visited:
                     continue
-                xfer = _count_transfer(state.current_mode, edge.mode)
-                nxt  = _ChainState(
-                    node          = edge.to_node,
-                    edge          = edge,
-                    parent        = state,
+
+                is_tr = self._is_transfer(state.current_mode, edge.mode)
+
+                new_state = BFSState(
+                    current_node  = edge.to_node,
+                    path_edges    = state.path_edges + [edge],
                     total_time    = state.total_time  + edge.time_min,
                     total_price   = state.total_price + edge.price_da,
                     total_co2     = state.total_co2   + edge.co2_g,
-                    num_transfers = state.num_transfers + xfer,
-                    hops          = state.hops + 1,
+                    num_transfers = state.num_transfers + (1 if is_tr else 0),
                 )
-                if nid == goal_id:
-                    results.append(_make_result(nxt, start, goal, n_exp, n_exp,
-                                                'bfs_all_paths'))
+                new_visited = path_visited | {nid}
+
+                if nid == goal_node.node_id:
+                    results.append(BFSResult(
+                        found=True, start=start_node, goal=goal_node,
+                        path_edges=new_state.path_edges,
+                        total_time=new_state.total_time,
+                        total_price=new_state.total_price,
+                        total_co2=new_state.total_co2,
+                        num_transfers=new_state.num_transfers,
+                        nodes_expanded=nodes_expanded,
+                        nodes_visited=0,
+                    ))
                     if len(results) >= max_paths:
                         break
                 else:
-                    visited.add(key)
-                    queue.append(nxt)
+                    queue.append((new_state, new_visited))
 
+        results.sort(key=lambda r: (r.num_transfers, r.hops, r.total_time))
         return results
-
-    def dijkstra(
-        self,
-        start_id    : str,
-        goal_id     : str,
-        mode_config : Optional[ModeConfig] = None,
-        w_time      : float = 1.0,
-        w_price     : float = 0.0,
-        w_co2       : float = 0.0,
-    ) -> BFSResult:
-        start, goal = self._validate(start_id, goal_id)
-        cfg         = mode_config or ModeConfig.all()
-
-        # dist[node_id] = best cost found so far
-        dist: Dict[str, float] = {start_id: 0.0}
-
-        init = _ChainState(node=start, edge=None, parent=None)
-        # heap entries: (cost, tie_break_counter, state)
-        heap     = [(0.0, 0, init)]
-        counter  = 0
-        n_exp    = 0
-        visited  : Set[str] = set()
-
-        while heap:
-            cost, _, state = heapq.heappop(heap)
-            nid = state.node.node_id
-
-            if nid in visited:
-                continue
-            visited.add(nid)
-            n_exp += 1
-
-            if nid == goal_id:
-                return _make_result(state, start, goal, n_exp, len(visited), 'dijkstra')
-
-            for edge in self.graph.get_neighbors(nid):
-                if not cfg.is_allowed(edge.mode):
-                    continue
-                nbr = edge.to_node.node_id
-                if nbr in visited:
-                    continue
-
-                edge_cost = edge.weighted_cost(w_time, w_price, w_co2)
-                new_cost  = cost + edge_cost
-
-                if new_cost < dist.get(nbr, math.inf):
-                    dist[nbr] = new_cost
-                    xfer      = _count_transfer(state.current_mode, edge.mode)
-                    nxt       = _ChainState(
-                        node          = edge.to_node,
-                        edge          = edge,
-                        parent        = state,
-                        total_time    = state.total_time  + edge.time_min,
-                        total_price   = state.total_price + edge.price_da,
-                        total_co2     = state.total_co2   + edge.co2_g,
-                        num_transfers = state.num_transfers + xfer,
-                        hops          = state.hops + 1,
-                    )
-                    counter += 1
-                    heapq.heappush(heap, (new_cost, counter, nxt))
-
-        return BFSResult(found=False, start=start, goal=goal,
-                         nodes_expanded=n_exp, nodes_visited=len(visited),
-                         algorithm='dijkstra')
-
-    def astar(
-        self,
-        start_id    : str,
-        goal_id     : str,
-        mode_config : Optional[ModeConfig] = None,
-        speed_kmh   : float = 30.0,
-    ) -> BFSResult:
-        start, goal = self._validate(start_id, goal_id)
-        cfg         = mode_config or ModeConfig.all()
-
-        def h(node: Node) -> float:
-            km = node.haversine_km(goal)
-            return km / speed_kmh * 60.0  # minutes
-
-        g_score: Dict[str, float] = {start_id: 0.0}
-        init    = _ChainState(node=start, edge=None, parent=None)
-        counter = 0
-        heap    = [(h(start), 0, init)]
-        n_exp   = 0
-        visited : Set[str] = set()
-
-        while heap:
-            f, _, state = heapq.heappop(heap)
-            nid = state.node.node_id
-
-            if nid in visited:
-                continue
-            visited.add(nid)
-            n_exp += 1
-
-            if nid == goal_id:
-                return _make_result(state, start, goal, n_exp, len(visited), 'astar')
-
-            for edge in self.graph.get_neighbors(nid):
-                if not cfg.is_allowed(edge.mode):
-                    continue
-                nbr     = edge.to_node.node_id
-                if nbr in visited:
-                    continue
-                tentative_g = g_score.get(nid, math.inf) + edge.time_min
-                if tentative_g < g_score.get(nbr, math.inf):
-                    g_score[nbr] = tentative_g
-                    xfer         = _count_transfer(state.current_mode, edge.mode)
-                    nxt          = _ChainState(
-                        node          = edge.to_node,
-                        edge          = edge,
-                        parent        = state,
-                        total_time    = state.total_time  + edge.time_min,
-                        total_price   = state.total_price + edge.price_da,
-                        total_co2     = state.total_co2   + edge.co2_g,
-                        num_transfers = state.num_transfers + xfer,
-                        hops          = state.hops + 1,
-                    )
-                    counter += 1
-                    heapq.heappush(heap, (tentative_g + h(edge.to_node), counter, nxt))
-
-        return BFSResult(found=False, start=start, goal=goal,
-                         nodes_expanded=n_exp, nodes_visited=len(visited),
-                         algorithm='astar')
 
     def reachable_from(
         self,
-        start_id    : str,
-        mode_config : Optional[ModeConfig] = None,
+        start_ref,
+        allowed_modes: Optional[Set[TransportMode]] = None,
     ) -> Dict[str, int]:
-        cfg     = mode_config or ModeConfig.all()
-        visited : Dict[str, int] = {start_id: 0}
-        queue   : deque[Tuple[str, int]] = deque([(start_id, 0)])
+        start_node = self._resolve(start_ref)
+        visited    : Dict[str, int]       = {start_node.node_id: 0}
+        queue      : deque[Tuple[Node, int]] = deque([(start_node, 0)])
+
         while queue:
-            nid, depth = queue.popleft()
-            for edge in self.graph.get_neighbors(nid):
-                if not cfg.is_allowed(edge.mode):
+            node, depth = queue.popleft()
+            for edge in self.graph.get_neighbors(node.node_id):
+                if allowed_modes and edge.mode not in allowed_modes:
                     continue
-                nb = edge.to_node.node_id
-                if nb not in visited:
-                    visited[nb] = depth + 1
-                    queue.append((nb, depth + 1))
+                nid = edge.to_node.node_id
+                if nid not in visited:
+                    visited[nid] = depth + 1
+                    queue.append((edge.to_node, depth + 1))
+
         return visited
 
 
-def _style_ax(ax):
+def _style_ax(ax) -> None:
     ax.set_facecolor(BG_PANEL)
     ax.tick_params(colors=TEXT_DIM, labelsize=8)
     for spine in ax.spines.values():
         spine.set_edgecolor(GRID_COL)
-    ax.yaxis.grid(True, color=GRID_COL, linewidth=0.5, linestyle='--')
-    ax.set_axisbelow(True)
+    ax.yaxis.label.set_color(TEXT_DIM)
+    ax.xaxis.label.set_color(TEXT_DIM)
+    ax.title.set_color(TEXT)
+    ax.grid(True, color=GRID_COL, linewidth=0.5, alpha=0.5)
 
 
 def plot_route(
     graph   : TransitGraph,
     result  : BFSResult,
     title   : str = '',
-    save_to : str = '',
+    save_to : str = 'bfs_route.png',
 ) -> None:
-    """
-    Plot the transit network with the result path highlighted.
-    Bus edges use real-road polylines from bus_geometries.json when available.
-    All other edges (metro, tram, train, walk, telepherique) draw straight lines
-    between stop coordinates (that is correct – those are fixed infrastructure).
-    """
+    if not result.found:
+        print(f"[plot_route] No path found — skipping plot for '{save_to}'.")
+        return
+
     fig, ax = plt.subplots(figsize=(14, 9), facecolor=BG_DARK)
     ax.set_facecolor(BG_DARK)
 
-    drawn: Set[Tuple] = set()
+    path_node_ids = {n.node_id for n in result.path_nodes}
+    path_edge_set: Set[Tuple[str, str, str]] = set()
+    for e in result.path_edges:
+        path_edge_set.add((e.from_node.node_id, e.to_node.node_id, e.route_id))
+
+    drawn_bg: Set[Tuple] = set()
     for nid, edges in graph._adj.items():
         for edge in edges:
-            a, b = edge.from_node.node_id, edge.to_node.node_id
-            k    = (min(a, b), max(a, b), edge.mode.value)
-            if k in drawn:
+            fid = edge.from_node.node_id
+            tid = edge.to_node.node_id
+            key = (min(fid, tid), max(fid, tid), edge.mode.value)
+            if key in drawn_bg:
                 continue
-            drawn.add(k)
-            color = MODE_COLORS.get(edge.mode.value, '#555')
+            drawn_bg.add(key)
+            color = MODE_COLORS.get(edge.mode.value, '#444')
+            lw    = 1.8 if edge.mode in (TransportMode.METRO, TransportMode.TRAM, TransportMode.TRAIN) else 0.8
+            ax.plot(
+                edge.road_lons(), edge.road_lats(),
+                color=color, lw=lw, alpha=0.18, zorder=1,
+                solid_capstyle='round',
+            )
 
-            geom = graph.get_bus_geometry(edge)
-            if geom and len(geom) >= 2:
-                lats = [c[0] for c in geom]
-                lons = [c[1] for c in geom]
-                ax.plot(lons, lats, color=color, lw=0.4, alpha=0.10, zorder=1)
-            else:
-                ax.plot(
-                    [edge.from_node.lon, edge.to_node.lon],
-                    [edge.from_node.lat, edge.to_node.lat],
-                    color=color, lw=0.5, alpha=0.12, zorder=1,
-                )
+    for edge in result.path_edges:
+        color = MODE_COLORS.get(edge.mode.value, '#FFD700')
+        ax.plot(
+            edge.road_lons(), edge.road_lats(),
+            color='#FFD700', lw=5.5, alpha=0.95, zorder=4,
+            solid_capstyle='round', solid_joinstyle='round',
+        )
+        ax.plot(
+            edge.road_lons(), edge.road_lats(),
+            color=color, lw=3.0, alpha=0.9, zorder=5,
+            solid_capstyle='round', solid_joinstyle='round',
+        )
 
-    for node in graph._nodes.values():
-        size  = 30 if node.is_hub else 12
-        alpha = 0.7 if node.is_hub else 0.3
-        ax.scatter(node.lon, node.lat, c=TEXT_DIM, s=size, zorder=2,
-                   edgecolors='none', alpha=alpha)
+    last_edge = result.path_edges[-1]
+    lons = last_edge.road_lons()
+    lats = last_edge.road_lats()
+    if len(lons) >= 2:
+        ax.annotate(
+            '', xy=(lons[-1], lats[-1]),
+            xytext=(lons[-2], lats[-2]),
+            arrowprops=dict(arrowstyle='->', color='#FFD700', lw=2.5),
+            zorder=6,
+        )
 
-    if result.found:
-        for edge in result.path_edges:
-            color = MODE_COLORS.get(edge.mode.value, '#FFF')
+    for nid, node in graph._nodes.items():
+        if nid in path_node_ids:
+            continue
+        color  = MODE_COLORS.get(node.node_type, '#888')
+        marker = {'metro': 'D', 'tram': 's', 'train': 'P',
+                  'telepherique': 'h', 'bus': 'o'}.get(node.node_type, 'o')
+        size   = 30 if node.is_hub else 10
+        ax.scatter(node.lon, node.lat, c=color, s=size,
+                   marker=marker, zorder=2, alpha=0.3,
+                   edgecolors='none')
 
-            geom = graph.get_bus_geometry(edge)
-            if geom and len(geom) >= 2:
-                lats = [c[0] for c in geom]
-                lons = [c[1] for c in geom]
-                ax.plot(lons, lats, color=color, lw=4, zorder=4,
-                        solid_capstyle='round')
-            else:
-                ax.plot(
-                    [edge.from_node.lon, edge.to_node.lon],
-                    [edge.from_node.lat, edge.to_node.lat],
-                    color=color, lw=4, zorder=4, solid_capstyle='round',
-                )
-
-        for node in result.path_nodes:
-            ax.scatter(node.lon, node.lat, c=BG_CARD, s=80, zorder=5,
-                       edgecolors=ACCENT, linewidths=1.5)
+    for i, node in enumerate(result.path_nodes):
+        color  = MODE_COLORS.get(node.node_type, '#FFD700')
+        is_end = (i == 0 or i == len(result.path_nodes) - 1)
+        ax.scatter(node.lon, node.lat,
+                   c='#00FF9F' if i == 0 else ('#FF4545' if is_end else '#FFD700'),
+                   s=220 if is_end else 80,
+                   zorder=7,
+                   edgecolors='white', linewidths=1.2,
+                   marker='*' if is_end else 'o')
+        if is_end or node.is_hub:
             ax.annotate(
                 node.name,
                 (node.lon, node.lat),
-                fontsize=6.5, color=TEXT_MAIN,
-                ha='center', xytext=(0, 10),
-                textcoords='offset points', zorder=6,
-                fontweight='bold',
+                fontsize=7.5, color=TEXT, fontweight='bold' if is_end else 'normal',
+                xytext=(5, 7), textcoords='offset points', zorder=8,
+                bbox=dict(boxstyle='round,pad=0.25', fc=BG_CARD, alpha=0.85, ec='none'),
             )
 
-        start, goal = result.start, result.goal
-        ax.scatter(start.lon, start.lat, c='#22C55E', s=350, zorder=7,
-                   edgecolors='white', linewidths=1.5, marker='*')
-        ax.scatter(goal.lon, goal.lat, c='#EF4444', s=350, zorder=7,
-                   edgecolors='white', linewidths=1.5, marker='*')
+    legend_elements = [
+        Line2D([0],[0], color=MODE_COLORS['metro'],        lw=2.5, label='Metro'),
+        Line2D([0],[0], color=MODE_COLORS['tram'],         lw=2.5, label='Tram'),
+        Line2D([0],[0], color=MODE_COLORS['bus'],          lw=2,   label='Bus'),
+        Line2D([0],[0], color=MODE_COLORS['train'],        lw=2,   label='Train'),
+        Line2D([0],[0], color=MODE_COLORS['telepherique'], lw=2,   label='Télépherique'),
+        Line2D([0],[0], color=MODE_COLORS['walk'],         lw=1.5, label='Walk / Transfer'),
+        Line2D([0],[0], color='#FFD700',                   lw=5,   label='BFS Path'),
+    ]
+    ax.legend(handles=legend_elements, loc='upper left',
+              facecolor=BG_CARD, labelcolor=TEXT, fontsize=8,
+              edgecolor=GRID_COL, framealpha=0.92)
 
-        legend_handles = [
-            Line2D([0], [0], color=MODE_COLORS[e.mode.value], lw=3,
-                   label=f"{MODE_ICONS.get(e.mode.value, '')} {e.mode.value.title()}")
-            for e in {e.mode.value: e for e in result.path_edges}.values()
-        ]
-        legend_handles += [
-            mpatches.Patch(color='#22C55E', label=f"▶ {start.name}"),
-            mpatches.Patch(color='#EF4444', label=f"◼ {goal.name}"),
-        ]
-        ax.legend(handles=legend_handles, loc='lower right',
-                  facecolor=BG_CARD, edgecolor=GRID_COL,
-                  labelcolor=TEXT_MAIN, fontsize=8.5, framealpha=0.95)
+    stats = (
+        f"Hops: {result.hops}   Transfers: {result.num_transfers}\n"
+        f"Time: {result.total_time:.0f} min   "
+        f"Price: {result.total_price:.0f} DA   "
+        f"CO₂: {result.total_co2:.0f} g"
+    )
+    ax.text(0.99, 0.02, stats, transform=ax.transAxes,
+            fontsize=8, color=TEXT_DIM, ha='right', va='bottom',
+            bbox=dict(boxstyle='round,pad=0.4', fc=BG_CARD, alpha=0.88, ec='none'))
 
-    ax.set_title(f"{heading}\n{info}", color=TEXT_MAIN, fontsize=12, pad=14,
-                 fontweight='bold')
+    plot_title = title or f"BFS: {result.start.name} → {result.goal.name}"
+    ax.set_title(plot_title, color=TEXT, fontsize=12, fontweight='bold', pad=12)
     ax.set_xlabel('Longitude', color=TEXT_DIM, fontsize=9)
     ax.set_ylabel('Latitude',  color=TEXT_DIM, fontsize=9)
     ax.tick_params(colors=TEXT_DIM)
@@ -930,135 +924,20 @@ def plot_route(
         spine.set_edgecolor(GRID_COL)
 
     plt.tight_layout()
-    out = save_to or 'route_map.png'
-    plt.savefig(out, dpi=150, bbox_inches='tight', facecolor=BG_DARK)
-    print(f"[Plot] Saved → {out}")
-    plt.close()
-
-
-def plot_statistics_dashboard(results: List[BFSResult], save_to: str = '') -> None:
-    if not results:
-        print("No results to visualize.")
-        return
-
-    labels     = [f"{r.start.name[:12]}→\n{r.goal.name[:12]}" for r in results]
-    times      = [r.total_time    for r in results]
-    prices     = [r.total_price   for r in results]
-    co2_vals   = [r.total_co2     for r in results]
-    hops_vals  = [r.hops          for r in results]
-    xfers_vals = [r.num_transfers  for r in results]
-
-    all_modes: Set[str] = set()
-    for r in results:
-        all_modes.update(r.mode_usage_pct.keys())
-    all_modes = sorted(all_modes)
-
-    fig = plt.figure(figsize=(18, 14), facecolor=BG_DARK)
-    gs  = GridSpec(3, 3, figure=fig, hspace=0.55, wspace=0.38,
-                   top=0.92, bottom=0.07, left=0.07, right=0.97)
-
-    fig.suptitle('Algiers Transit Router — Statistics Dashboard',
-                 color=TEXT_MAIN, fontsize=15, fontweight='bold', y=0.97)
-
-    def bar_chart(ax, values, color, ylabel, title):
-        _style_ax(ax)
-        xs   = range(len(labels))
-        bars = ax.bar(xs, values, color=color, alpha=0.88, edgecolor=BG_DARK,
-                      linewidth=0.8, width=0.6)
-        ax.bar_label(bars, fmt='%.0f', color=TEXT_MAIN, fontsize=8,
-                     padding=4, fontweight='bold')
-        ax.set_xticks(list(xs))
-        ax.set_xticklabels(labels, fontsize=7, color=TEXT_DIM, ha='center')
-        ax.set_ylabel(ylabel, color=TEXT_DIM, fontsize=8)
-        ax.set_title(title, color=TEXT_MAIN, fontsize=10, fontweight='bold', pad=8)
-
-    bar_chart(fig.add_subplot(gs[0, 0]), times,      ACCENT,    'Minutes', '⏱  Travel Time (min)')
-    bar_chart(fig.add_subplot(gs[0, 1]), prices,     '#F97316', 'DA',      '💰  Ticket Price (DA)')
-    bar_chart(fig.add_subplot(gs[0, 2]), co2_vals,   '#22C55E', 'g CO₂',   '🌿  CO₂ Emissions (g)')
-    bar_chart(fig.add_subplot(gs[1, 0]), hops_vals,  ACCENT2,   'Hops',    '🔗  Hops (Segments)')
-    bar_chart(fig.add_subplot(gs[1, 1]), xfers_vals, '#FB7185', 'Transfers','🔄  Mode Transfers')
-
-    ax_pie = fig.add_subplot(gs[1, 2])
-    ax_pie.set_facecolor(BG_PANEL)
-    ax_pie.set_title('🚦  Overall Mode Usage (%)', color=TEXT_MAIN,
-                     fontsize=10, fontweight='bold', pad=8)
-    combined: Dict[str, float] = {}
-    for r in results:
-        for mode, t in r.mode_breakdown.items():
-            combined[mode] = combined.get(mode, 0.0) + t
-    total_c = sum(combined.values())
-    if total_c > 0:
-        pie_labels = [f"{MODE_ICONS.get(k,'?')} {k}" for k in combined]
-        pie_sizes  = list(combined.values())
-        pie_colors = [MODE_COLORS.get(k, '#888') for k in combined]
-        wedges, _, autotexts = ax_pie.pie(
-            pie_sizes, labels=None, colors=pie_colors,
-            autopct='%1.1f%%', startangle=90,
-            wedgeprops={'edgecolor': BG_DARK, 'linewidth': 1.5},
-            textprops={'color': TEXT_MAIN, 'fontsize': 8},
-        )
-        for at in autotexts:
-            at.set_color(BG_DARK)
-            at.set_fontsize(7.5)
-            at.set_fontweight('bold')
-        ax_pie.legend(wedges, pie_labels, loc='lower center',
-                      bbox_to_anchor=(0.5, -0.22), ncol=2,
-                      facecolor=BG_CARD, edgecolor=GRID_COL,
-                      labelcolor=TEXT_MAIN, fontsize=7.5)
-
-    ax_sc = fig.add_subplot(gs[2, 0:2])
-    _style_ax(ax_sc)
-    ax_sc.set_title('⚖️  Time vs Price Trade-off (bubble = CO₂)', color=TEXT_MAIN,
-                    fontsize=10, fontweight='bold', pad=8)
-    scatter_colors = [ACCENT, '#F97316', '#22C55E', ACCENT2, '#FB7185',
-                      '#E9C46A', '#A8DADC', '#2A9D8F']
-    for i, r in enumerate(results):
-        c = scatter_colors[i % len(scatter_colors)]
-        ax_sc.scatter(r.total_time, r.total_price,
-                      s=max(r.total_co2, 10), c=c, alpha=0.85,
-                      edgecolors='white', linewidths=0.8, zorder=4)
-        ax_sc.annotate(
-            f"{r.start.name[:10]}→{r.goal.name[:10]}",
-            (r.total_time, r.total_price),
-            fontsize=6.5, color=TEXT_DIM, ha='center',
-            xytext=(0, 8), textcoords='offset points',
-        )
-    ax_sc.set_xlabel('Travel Time (min)', color=TEXT_DIM, fontsize=8)
-    ax_sc.set_ylabel('Price (DA)',        color=TEXT_DIM, fontsize=8)
-
-    ax_mb = fig.add_subplot(gs[2, 2])
-    _style_ax(ax_mb)
-    ax_mb.set_title('📊  Mode Usage per Route (%)', color=TEXT_MAIN,
-                    fontsize=10, fontweight='bold', pad=8)
-    x_pos   = range(len(results))
-    bottoms = [0.0] * len(results)
-    for mode in all_modes:
-        pcts = [r.mode_usage_pct.get(mode, 0.0) for r in results]
-        ax_mb.bar(x_pos, pcts, bottom=bottoms,
-                  color=MODE_COLORS.get(mode, '#888'),
-                  label=f"{MODE_ICONS.get(mode,'')} {mode}",
-                  edgecolor=BG_DARK, linewidth=0.5)
-        bottoms = [b + p for b, p in zip(bottoms, pcts)]
-    ax_mb.set_xticks(list(x_pos))
-    ax_mb.set_xticklabels([f"R{i+1}" for i in x_pos], color=TEXT_DIM, fontsize=8)
-    ax_mb.set_ylabel('%', color=TEXT_DIM, fontsize=8)
-    ax_mb.legend(loc='upper right', facecolor=BG_CARD, edgecolor=GRID_COL,
-                 labelcolor=TEXT_MAIN, fontsize=6.5)
-
-    out = save_to or 'statistics_dashboard.png'
-    plt.savefig(out, dpi=150, bbox_inches='tight', facecolor=BG_DARK)
-    print(f"[Dashboard] Saved → {out}")
+    plt.savefig(save_to, dpi=150, bbox_inches='tight', facecolor=BG_DARK)
+    print(f"[Route Map] Saved → {save_to}")
     plt.close()
 
 
 def plot_bfs_frontier(
     graph    : TransitGraph,
-    start_id : str,
-    save_to  : str = '',
+    start_ref,
+    save_to  : str = 'bfs_frontier.png',
 ) -> None:
     router    = BFSRouter(graph)
-    reachable = router.reachable_from(start_id)
-    max_depth = max(reachable.values()) if reachable else 1
+    start_node = router._resolve(start_ref)
+    reachable  = router.reachable_from(start_node)
+    max_depth  = max(reachable.values()) if reachable else 1
 
     cmap = plt.cm.plasma
     fig, ax = plt.subplots(figsize=(14, 9), facecolor=BG_DARK)
@@ -1072,23 +951,26 @@ def plot_bfs_frontier(
             if k in drawn:
                 continue
             drawn.add(k)
-            ax.plot([edge.from_node.lon, edge.to_node.lon],
-                    [edge.from_node.lat, edge.to_node.lat],
-                    color=GRID_COL, lw=0.5, alpha=0.4, zorder=1)
+            ax.plot(
+                edge.road_lons(), edge.road_lats(),
+                color=GRID_COL, lw=0.5, alpha=0.35, zorder=1,
+            )
 
     for nid, depth in reachable.items():
         node   = graph.get_node(nid)
         colour = cmap(depth / max_depth)
-        size   = 200 if nid == start_id else 60
+        size   = 220 if nid == start_node.node_id else (50 if node.is_hub else 18)
         ax.scatter(node.lon, node.lat, c=[colour], s=size,
-                   zorder=5, edgecolors='none', alpha=0.85)
+                   zorder=5, edgecolors='none', alpha=0.88)
 
-    start_node = graph.get_node(start_id)
-    ax.scatter(start_node.lon, start_node.lat, c='#00FFFF', s=400,
+    ax.scatter(start_node.lon, start_node.lat, c='#00FFFF', s=420,
                zorder=7, edgecolors='white', linewidths=1.5, marker='*')
-    ax.annotate(start_node.name, (start_node.lon, start_node.lat),
-                fontsize=8, color='#00FFFF', ha='center', fontweight='bold',
-                xytext=(0, 12), textcoords='offset points', zorder=8)
+    ax.annotate(
+        start_node.name, (start_node.lon, start_node.lat),
+        fontsize=9, color='#00FFFF', ha='center', fontweight='bold',
+        xytext=(0, 13), textcoords='offset points', zorder=8,
+        bbox=dict(boxstyle='round,pad=0.3', fc=BG_CARD, alpha=0.85, ec='none'),
+    )
 
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0, vmax=max_depth))
     sm.set_array([])
@@ -1099,9 +981,9 @@ def plot_bfs_frontier(
     cbar.outline.set_edgecolor(GRID_COL)
 
     ax.set_title(
-        f"BFS Frontier from '{start_node.name}'\n"
-        f"{len(reachable)} nodes reachable in up to {max_depth} hops",
-        color=TEXT_MAIN, fontsize=12, fontweight='bold', pad=14,
+        f"BFS Frontier — '{start_node.name}'\n"
+        f"{len(reachable):,} nodes reachable  |  max depth: {max_depth} hops",
+        color=TEXT, fontsize=12, fontweight='bold', pad=14,
     )
     ax.set_xlabel('Longitude', color=TEXT_DIM, fontsize=9)
     ax.set_ylabel('Latitude',  color=TEXT_DIM, fontsize=9)
@@ -1110,54 +992,62 @@ def plot_bfs_frontier(
         spine.set_edgecolor(GRID_COL)
 
     plt.tight_layout()
-    out = save_to or 'bfs_frontier.png'
-    plt.savefig(out, dpi=150, bbox_inches='tight', facecolor=BG_DARK)
-    print(f"[Frontier] Saved → {out}")
+    plt.savefig(save_to, dpi=150, bbox_inches='tight', facecolor=BG_DARK)
+    print(f"[Frontier] Saved → {save_to}")
     plt.close()
 
 
-def plot_paths_comparison(paths: List[BFSResult], save_to: str = '') -> None:
+def plot_paths_comparison(
+    paths   : List[BFSResult],
+    save_to : str = 'bfs_paths_comparison.png',
+) -> None:
     if not paths:
-        print("No paths to compare.")
+        print("[plot_paths_comparison] No paths provided — skipping.")
         return
+    if not all(p.found for p in paths):
+        paths = [p for p in paths if p.found]
+        if not paths:
+            print("[plot_paths_comparison] All paths are 'not found' — skipping.")
+            return
 
-    labels   = [f"Path {i+1}\n({r.hops}h, {r.num_transfers}x)" for i, r in enumerate(paths)]
+    labels   = [f"Path {i+1}\n({r.hops} hops, {r.num_transfers} xfer)" for i, r in enumerate(paths)]
     times    = [r.total_time  for r in paths]
     prices   = [r.total_price for r in paths]
     co2_vals = [r.total_co2   for r in paths]
 
     fig, axes = plt.subplots(1, 3, figsize=(16, 5), facecolor=BG_DARK)
-    fig.suptitle("Alternative Paths Comparison", color=TEXT_MAIN,
-                 fontsize=13, fontweight='bold', y=1.01)
+    fig.suptitle(
+        f"BFS Alternative Paths — {paths[0].start.name} → {paths[0].goal.name}",
+        color=TEXT, fontsize=13, fontweight='bold', y=1.01,
+    )
 
-    bar_colors = [ACCENT, '#F97316', '#22C55E', ACCENT2, '#FB7185']
-    datasets   = [
-        (axes[0], times,    'Time (min)',  '⏱  Time'),
-        (axes[1], prices,   'Price (DA)',  '💰  Price'),
-        (axes[2], co2_vals, 'CO₂ (g)',     '🌿  CO₂'),
+    bar_colors = [ACCENT, '#F97316', '#22C55E', ACCENT2, '#FB7185', '#FACC15']
+    datasets = [
+        (axes[0], times,    'Time (min)', '⏱  Travel Time'),
+        (axes[1], prices,   'Price (DA)', '💰  Ticket Cost'),
+        (axes[2], co2_vals, 'CO₂ (g)',    '🌿  Emissions'),
     ]
 
-    for ax, data, ylabel, title in datasets:
+    for ax, data, ylabel, ttl in datasets:
         _style_ax(ax)
         xs     = range(len(labels))
         colors = [bar_colors[i % len(bar_colors)] for i in xs]
-        bars   = ax.bar(xs, data, color=colors, alpha=0.88, edgecolor=BG_DARK,
-                        linewidth=0.8, width=0.6)
-        ax.bar_label(bars, fmt='%.0f', color=TEXT_MAIN, fontsize=9,
+        bars   = ax.bar(xs, data, color=colors, alpha=0.88,
+                        edgecolor=BG_DARK, linewidth=0.8, width=0.6)
+        ax.bar_label(bars, fmt='%.0f', color=TEXT, fontsize=9,
                      padding=4, fontweight='bold')
         ax.set_xticks(list(xs))
         ax.set_xticklabels(labels, fontsize=8, color=TEXT_DIM)
         ax.set_ylabel(ylabel, color=TEXT_DIM, fontsize=9)
-        ax.set_title(title, color=TEXT_MAIN, fontsize=11, fontweight='bold', pad=10)
+        ax.set_title(ttl, color=TEXT, fontsize=11, fontweight='bold', pad=10)
 
     plt.tight_layout()
-    out = save_to or 'paths_comparison.png'
-    plt.savefig(out, dpi=150, bbox_inches='tight', facecolor=BG_DARK)
-    print(f"[Comparison] Saved → {out}")
+    plt.savefig(save_to, dpi=150, bbox_inches='tight', facecolor=BG_DARK)
+    print(f"[Comparison] Saved → {save_to}")
     plt.close()
 
 
-def run_benchmark(graph: TransitGraph) -> None:
+def run_bfs_benchmark(graph: TransitGraph) -> None:
     router = BFSRouter(graph)
 
     queries = [
@@ -1166,117 +1056,112 @@ def run_benchmark(graph: TransitGraph) -> None:
         ("1er Mai → Aïssat Idir",                 'M1_1MAI',     'M1_AISSAT'),
         ("El Hamma → Haï El Badr",                'M1_HAMMA',    'M1_HAI_BADR'),
         ("Les Fusillés → Gué de Constantine",     'M1_FUSILLES', 'M1_GUE_CON'),
+        ("Ruisseau (Tram) → USTHB",               'TR01',        'TR18'),
     ]
 
-    print(f"\n{'═'*95}")
-    print(f"  BENCHMARK — Algiers Transit (BFS / Dijkstra / A*)")
-    print(f"{'═'*95}")
-    print(f"  {'Query':<42} {'Algo':<10} {'Hops':>5} {'Time':>8} "
-          f"{'Price':>7} {'CO₂':>7} {'Xfer':>5} {'Exp.':>8}")
-    print(f"  {'─'*88}")
+    print(f"\n{'═'*90}")
+    print(f"  BFS BENCHMARK — Algiers Transit")
+    print(f"{'═'*90}")
+    hdr = f"  {'Query':<42} {'Variant':<16} {'Hops':>5} {'Time':>8} {'DA':>7} {'CO₂':>7} {'Xfer':>5} {'Exp.':>9}"
+    print(hdr)
+    print(f"  {'─'*85}")
 
     for label, s, g in queries:
-        for algo, fn in [
-            ('BFS',      lambda a, b: router.bfs_min_hops(a, b)),
-            ('Dijkstra', lambda a, b: router.dijkstra(a, b)),
-            ('A*',       lambda a, b: router.astar(a, b)),
+        for variant_name, fn in [
+            ('min-hops',      lambda a, b: router.bfs_min_hops(a, b)),
+            ('min-transfers', lambda a, b: router.bfs_min_transfers(a, b)),
         ]:
-            r = fn(s, g)
-            if r.found:
-                print(f"  {label:<42} {algo:<10} {r.hops:>5d} "
-                      f"{r.total_time:>6.0f}m {r.total_price:>5.0f}DA "
-                      f"{r.total_co2:>5.0f}g {r.num_transfers:>5d} "
-                      f"{r.nodes_expanded:>8,}")
-            else:
-                print(f"  {label:<42} {algo:<10} {'NO PATH':>5}")
-        print(f"  {'─'*88}")
+            try:
+                r = fn(s, g)
+                if r.found:
+                    print(f"  {label:<42} {variant_name:<16} {r.hops:>5d} "
+                          f"{r.total_time:>6.0f}m {r.total_price:>5.0f}DA "
+                          f"{r.total_co2:>5.0f}g {r.num_transfers:>5d} "
+                          f"{r.nodes_expanded:>9,}")
+                else:
+                    print(f"  {label:<42} {variant_name:<16} {'NO PATH':>5}")
+            except Exception as e:
+                print(f"  {label:<42} {variant_name:<16} ERROR: {e}")
+        print(f"  {'─'*85}")
 
-    print(f"{'═'*95}\n")
-
-    print("Mode restriction tests (Martyrs → El Harrach):")
-    metro_only = ModeConfig.only(TransportMode.METRO)
-    no_walk    = ModeConfig.without(TransportMode.WALK)
-    r_m = router.dijkstra('M1_MARTYRS', 'M1_H_GARE', metro_only)
-    r_w = router.dijkstra('M1_MARTYRS', 'M1_H_GARE', no_walk)
-    print(f"  [metro only]  : {'Found, ' + str(r_m.hops) + ' hops, ' + f'{r_m.total_time:.0f} min' if r_m.found else 'NO PATH'}")
-    print(f"  [no walking]  : {'Found, ' + str(r_w.hops) + ' hops, ' + f'{r_w.total_time:.0f} min' if r_w.found else 'NO PATH'}")
-
-    mt = router.bfs_min_transfers('M1_MARTYRS', 'M1_BACHJA')
-    mh = router.bfs_min_hops('M1_MARTYRS', 'M1_BACHJA')
-    print(f"\n  Martyrs → Bachdjarah")
-    print(f"    BFS min hops     : {mh.hops} hops, {mh.num_transfers} transfers, {mh.total_time:.0f} min")
-    print(f"    BFS min transfers: {mt.hops} hops, {mt.num_transfers} transfers, {mt.total_time:.0f} min")
-    print()
+    print(f"{'═'*90}\n")
 
 
 def main():
     stops_csv     = STOPS_CSV
     edges_csv     = EDGES_CSV
     transfers_csv = TRANSFERS_CSV
-    bus_geom_json = BUS_GEOMETRIES_JSON
+    bus_geom_json = BUS_GEOM_JSON
 
     if not os.path.isfile(stops_csv):
-        base = '/mnt/user-data/uploads'
+        base          = '/mnt/user-data/uploads'
         stops_csv     = os.path.join(base, 'stops.csv')
         edges_csv     = os.path.join(base, 'edges.csv')
         transfers_csv = os.path.join(base, 'transfers.csv')
         bus_geom_json = os.path.join(base, 'bus_geometries.json')
         if not os.path.isfile(stops_csv):
-            raise FileNotFoundError(
-                f"Data files not found.\n"
-                f"Expected them in '{DATA_DIR}' or '/mnt/user-data/uploads/'.\n"
+            print(
+                "ERROR: Data files not found.\n"
+                f"Expected in '{DATA_DIR}' or '/mnt/user-data/uploads/'.\n"
                 "Place stops.csv, edges.csv, transfers.csv, bus_geometries.json "
-                "in a 'Data/' folder next to this script."
+                "in a 'Data/' folder next to this script.",
+                file=sys.stderr,
             )
+            sys.exit(1)
 
-    graph = TransitGraph.from_csvs(
-        stops_csv, edges_csv, transfers_csv, bus_geom_json
-    )
+    print("Loading transit graph...")
+    graph = TransitGraph.from_csvs(stops_csv, edges_csv, transfers_csv, bus_geom_json)
     graph.summary()
 
     router = BFSRouter(graph)
 
-    print("── BFS queries ──────────────────────────────────────")
+    print("\n── BFS min-hops: Place des Martyrs → El Harrach Gare ──")
     r1 = router.bfs_min_hops('M1_MARTYRS', 'M1_H_GARE')
     r1.print_summary()
 
-    r2 = router.bfs_min_hops('M1_TAFOURAH', 'M1_BACHJA')
+    print("\n── BFS min-hops: Tafourah → USTHB (tram) ──")
+    r2 = router.bfs_min_hops('M1_TAFOURAH', 'TR18')
     r2.print_summary()
 
-    r3 = router.bfs_min_transfers('M1_1MAI', 'M1_HAMMA')
+    print("\n── BFS min-hops: metro only filter ──")
+    r3 = router.bfs_min_hops(
+        'M1_MARTYRS', 'M1_H_GARE',
+        allowed_modes={TransportMode.METRO},
+    )
     r3.print_summary()
 
-    r4 = router.bfs_min_hops('M1_MARTYRS', 'M1_H_GARE',
-                              mode_config=ModeConfig.only(TransportMode.METRO))
+    print("\n── BFS min-transfers: Place des Martyrs → Bachdjarah ──")
+    r4 = router.bfs_min_transfers('M1_MARTYRS', 'M1_BACHJA')
     r4.print_summary()
 
-    print("── Dijkstra (min time) ──────────────────────────────")
-    r5 = router.dijkstra('M1_MARTYRS', 'M1_H_GARE')
-    r5.print_summary()
+    print("\n── Reachability from Tafourah ──")
+    reachable = router.reachable_from('M1_TAFOURAH')
+    print(f"  Nodes reachable: {len(reachable):,} / {graph.node_count():,}")
+    depth_dist: Dict[int, int] = {}
+    for d in reachable.values():
+        depth_dist[d] = depth_dist.get(d, 0) + 1
+    for depth in sorted(depth_dist)[:8]:
+        print(f"  depth {depth:>2} : {depth_dist[depth]:>4,} nodes")
 
-    print("── A* (min time, heuristic) ─────────────────────────")
-    r6 = router.astar('M1_MARTYRS', 'M1_H_GARE')
-    r6.print_summary()
-
-    all_paths = router.bfs_all_paths('M1_MARTYRS', 'M1_H_GARE', max_hops=15, max_paths=4)
-    print(f"\nFound {len(all_paths)} alternative path(s) from Place des Martyrs → El Harrach Gare:")
+    print("\n── All paths: 1er Mai → El Hamma (max 6 hops, top 4) ──")
+    all_paths = router.bfs_all_paths('M1_1MAI', 'M1_HAMMA', max_hops=6, max_paths=4)
+    print(f"  Found {len(all_paths)} path(s):")
     for i, p in enumerate(all_paths, 1):
-        print(f"  Path {i}: {p.hops} hops, {p.total_time:.0f} min, "
-              f"{p.total_price:.0f} DA, {p.num_transfers} transfers")
+        modes = ' → '.join(e.mode.value for e in p.path_edges)
+        print(f"  Path {i}: {p.hops} hops | {p.total_time:.0f} min | "
+              f"{p.total_price:.0f} DA | {p.num_transfers} xfer | {modes}")
+
+    run_bfs_benchmark(graph)
 
     print("\nGenerating visualizations...")
-    plot_route(graph, r1, title="BFS Min-Hops: Place des Martyrs → El Harrach",
-               save_to='route_map_bfs.png')
-    plot_route(graph, r5, title="Dijkstra Min-Time: Place des Martyrs → El Harrach",
-               save_to='route_map_dijkstra.png')
+    plot_route(graph, r1, title="BFS Min-Hops: Place des Martyrs → El Harrach Gare",
+               save_to='bfs_route_martyrs_harrach.png')
+    plot_route(graph, r2, title="BFS Min-Hops: Tafourah → USTHB",
+               save_to='bfs_route_tafourah_usthb.png')
+    plot_bfs_frontier(graph, 'M1_TAFOURAH', save_to='bfs_frontier.png')
+    if all_paths:
+        plot_paths_comparison(all_paths, save_to='bfs_paths_comparison.png')
 
-    plot_statistics_dashboard(all_results, save_to='statistics_dashboard.png')
-
-        plot_paths_comparison(all_paths, save_to='paths_comparison.png')
-
-
-
-
-
+    print("\nAll done.")
 if __name__ == '__main__':
     main()
