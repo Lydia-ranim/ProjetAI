@@ -9,8 +9,8 @@ const ALGIERS_CENTER: [number, number] = [36.7538, 3.0588];
 const ALGIERS_BOUNDS: L.LatLngBoundsExpression = [[36.60, 2.80], [36.90, 3.35]];
 
 // Premium dark map tile that complements the teal/navy palette
-const DARK_TILES  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const LIGHT_TILES = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const DARK_TILES  = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>';
 
 function cssVar(name: string, fallback: string) {
@@ -111,6 +111,13 @@ export default function MapView() {
       maxZoom: 19,
     }).addTo(map);
     tileLayerRef.current = tiles;
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .leaflet-tile-pane {
+        filter: brightness(0.72) saturate(0.85) contrast(1.08);
+      }
+    `;
+    document.head.appendChild(style);
 
     const markersLayer = L.layerGroup().addTo(map);
     markersLayerRef.current = markersLayer;

@@ -15,6 +15,7 @@ export default function ControlPanel() {
     startStop, endStop, routes, isLoading,
     findRoutes, reset, error,
   } = useTransitStore();
+  const [showEdit, setShowEdit] = useState(false);
 
   const canSearch = !!(startStop && endStop);
 
@@ -27,40 +28,40 @@ export default function ControlPanel() {
         className="flex-1 overflow-y-auto p-4 space-y-4"
         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(190, 238, 219, 0.18) transparent' }}
       >
-        <div className="space-y-1">
-          <div className="section-label">
-            <MapPin className="w-3 h-3" style={{ color: 'var(--accent-teal)', flexShrink: 0 }} />
-            Route Selection
+        {(routes.length === 0 || showEdit) && (
+          <div className="space-y-1">
+            <div className="section-label">
+              <MapPin className="w-3 h-3" style={{ color: 'var(--accent-teal)', flexShrink: 0 }} />
+              Route Selection
+            </div>
+            <AutocompleteSearch />
           </div>
-          <AutocompleteSearch />
-        </div>
+        )}
 
-        <div className="flex gap-2">
-          <button
-            onClick={findRoutes}
-            disabled={!canSearch || isLoading}
-            className="btn-primary flex-1"
-          >
-            {isLoading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
-                Searching…
-              </>
-            ) : (
-              <>
-                <Search className="w-4 h-4" />
-                Show Routes
-              </>
-            )}
-          </button>
-          <button
-            onClick={reset}
-            className="btn-icon"
-            aria-label="Reset"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        </div>
+        {(routes.length === 0 || showEdit) && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => { findRoutes(); setShowEdit(false); }}
+              disabled={!canSearch || isLoading}
+              className="btn-primary flex-1"
+            >
+              {isLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                  Searching…
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  {showEdit ? 'Update Route' : 'Show Routes'}
+                </>
+              )}
+            </button>
+            <button onClick={() => { reset(); setShowEdit(false); }} className="btn-icon" aria-label="Reset">
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {error && (
           <div
@@ -107,6 +108,61 @@ export default function ControlPanel() {
           <div className="section-label">Weight Distribution</div>
           <WeightSliders />
         </div>
+
+        {routes.length > 0 && (
+          <div
+            className="flex items-center gap-2 p-3 rounded-xl"
+            style={{
+              background: 'color-mix(in oklab, var(--accent-teal) 6%, transparent)',
+              border: '1px solid color-mix(in oklab, var(--accent-teal) 20%, transparent)',
+            }}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold mb-0.5" style={{ color: 'var(--accent-teal)' }}>
+                Route calculated
+              </div>
+              <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                {startStop?.name} → {endStop?.name}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                // Keep stops but allow re-search with new weights/modes
+                setShowEdit(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+              style={{
+                background: 'color-mix(in oklab, var(--accent-blue) 15%, transparent)',
+                border: '1px solid color-mix(in oklab, var(--accent-blue) 35%, transparent)',
+                color: 'var(--accent-blue)',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                reset();
+                setShowEdit(false);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+              style={{
+                background: 'color-mix(in oklab, var(--accent-coral) 15%, transparent)',
+                border: '1px solid color-mix(in oklab, var(--accent-coral) 35%, transparent)',
+                color: '#ff6b8a',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+              Cancel
+            </button>
+          </div>
+        )}
 
         {routes.length > 0 && (
           <div className="space-y-3">

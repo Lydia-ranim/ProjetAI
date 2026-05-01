@@ -9,19 +9,17 @@ export default function MobileBottomSheet() {
         <Drawer.Trigger asChild>
           <button
             type="button"
-            className="fixed left-1/2 bottom-5 z-[1200] -translate-x-1/2 rounded-full px-4 py-2.5 flex items-center gap-2"
+            className="fixed left-1/2 bottom-12 z-[1200] -translate-x-1/2 rounded-full px-7 py-3.5 flex items-center gap-2.5"
             style={{
-              background: 'color-mix(in oklab, var(--bg-panel) 84%, transparent)',
-              border: '1px solid var(--border-color)',
-              backdropFilter: 'blur(18px)',
-              WebkitBackdropFilter: 'blur(18px)',
-              boxShadow: '0 16px 48px rgba(0,0,0,0.45)',
-              color: 'var(--text-primary)',
+              background: 'linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-blue) 100%)',
+              border: 'none',
+              boxShadow: '0 4px 20px color-mix(in oklab, var(--accent-blue) 28%, transparent), 0 0 0 0 color-mix(in oklab, var(--accent-blue) 20%, transparent)',
+              color: '#0A1628',
             }}
             aria-label="Open route panel"
           >
-            <PanelBottom className="w-4 h-4" style={{ color: 'var(--accent-teal)' }} />
-            <span className="text-xs font-semibold tracking-wide">Route Panel</span>
+            <PanelBottom className="w-5 h-5" style={{ color: '#0A1628' }} />
+            <span className="text-sm font-bold tracking-wide">Route Panel</span>
           </button>
         </Drawer.Trigger>
         <Drawer.Portal>

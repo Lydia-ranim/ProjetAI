@@ -59,6 +59,60 @@ class AStarRouter(TransitRouter):
         self._vmax = self._compute_vmax()       # km/min
         self._vmax_kmh = self._vmax * 60        # km/h
 
+    @classmethod
+    def from_router(cls, router) -> 'AStarRouter':
+        """
+        Create an AStarRouter that shares the same loaded graph as
+        an existing TransitRouter — avoids reloading data from disk.
+
+        Used by BidirectionalSearch.compare_all() for efficient
+        side-by-side algorithm comparison.
+        """
+        instance = cls.__new__(cls)
+        instance.stops   = router.stops
+        instance.graph   = router.graph
+        instance._vmax   = instance._compute_vmax_from_graph(router.graph)
+        instance._vmax_kmh = instance._vmax * 60
+        return instance
+
+    def _compute_vmax_from_graph(self, graph) -> float:
+        """Compute vmax from an externally provided graph dict."""
+        vmax = 0.0
+        for edges in graph.values():
+            for e in edges:
+                if e.time_min > 0 and e.distance_km > 0:
+                    speed = e.distance_km / e.time_min
+                    if speed > vmax:
+                        vmax = speed
+        return vmax if vmax > 0 else 1.0
+
+    @classmethod
+    def from_router(cls, router) -> 'AStarRouter':
+        """
+        Create an AStarRouter that shares the same loaded graph as
+        an existing TransitRouter — avoids reloading data from disk.
+
+        Used by BidirectionalSearch.compare_all() for efficient
+        side-by-side algorithm comparison.
+        """
+        instance = cls.__new__(cls)
+        instance.stops   = router.stops
+        instance.graph   = router.graph
+        instance._vmax   = instance._compute_vmax_from_graph(router.graph)
+        instance._vmax_kmh = instance._vmax * 60
+        return instance
+
+    def _compute_vmax_from_graph(self, graph) -> float:
+        """Compute vmax from an externally provided graph dict."""
+        vmax = 0.0
+        for edges in graph.values():
+            for e in edges:
+                if e.time_min > 0 and e.distance_km > 0:
+                    speed = e.distance_km / e.time_min
+                    if speed > vmax:
+                        vmax = speed
+        return vmax if vmax > 0 else 1.0
+
     # ═══════════════════════════════════════════
     # VMAX COMPUTATION
     # ═══════════════════════════════════════════
