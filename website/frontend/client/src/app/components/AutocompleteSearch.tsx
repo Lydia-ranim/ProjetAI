@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { ArrowLeftRight, Navigation } from 'lucide-react';
-import { ALL_STOPS, type Stop } from '../utils/algiers-graph';
+import { type Stop } from '../utils/algiers-graph';
 import { useTransitStore } from '../store/transit-store';
 import { haversineDistance } from '../utils/geo';
 
@@ -13,9 +13,10 @@ interface AutocompleteProps {
   accentColor: string;
   icon: string;
   recentStops: Stop[];
+  allStops: Stop[];
 }
 
-function Autocomplete({ label, value, onChange, placeholder, id, accentColor, icon, recentStops }: AutocompleteProps) {
+function Autocomplete({ label, value, onChange, placeholder, id, accentColor, icon, recentStops, allStops }: AutocompleteProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
@@ -25,11 +26,11 @@ function Autocomplete({ label, value, onChange, placeholder, id, accentColor, ic
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const base = q.length > 0
-      ? ALL_STOPS.filter(s =>
+      ? allStops.filter(s =>
           s.name.toLowerCase().includes(q) ||
           s.district?.toLowerCase().includes(q)
         )
-      : [...recentStops, ...ALL_STOPS];
+      : [...recentStops, ...allStops];
     const seen = new Set<string>();
     return base.filter(s => {
       if (seen.has(s.id)) return false;
@@ -204,22 +205,22 @@ function saveRecentId(id: string) {
 }
 
 export default function AutocompleteSearch() {
-  const { startStop, endStop, setStartStop, setEndStop, swapStops } = useTransitStore();
+  const { startStop, endStop, setStartStop, setEndStop, swapStops, stops } = useTransitStore();
 
   const recentStops = useMemo(() => {
     const ids = loadRecentIds();
-    const byId = new Map(ALL_STOPS.map(s => [s.id, s]));
+    const byId = new Map(stops.map(s => [s.id, s]));
     return ids.map(id => byId.get(id)).filter(Boolean) as Stop[];
-  }, [startStop, endStop]);
+  }, [startStop, endStop, stops]);
 
   const handleLocate = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        let nearest = ALL_STOPS[0];
+        let nearest = stops[0];
         let minDist = Infinity;
-        for (const stop of ALL_STOPS) {
+        for (const stop of stops) {
           const d = haversineDistance(userLoc, stop);
           if (d < minDist) { minDist = d; nearest = stop; }
         }
@@ -243,6 +244,7 @@ export default function AutocompleteSearch() {
             accentColor="var(--accent-teal)"
             icon="📍"
             recentStops={recentStops}
+            allStops={stops}
           />
           <Autocomplete
             label="Destination"
@@ -253,6 +255,7 @@ export default function AutocompleteSearch() {
             accentColor="var(--accent-blue)"
             icon="🎯"
             recentStops={recentStops}
+            allStops={stops}
           />
         </div>
         <div className="flex flex-col gap-1 pt-5">

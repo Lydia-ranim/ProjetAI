@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import {
-  type Route, type AlgoComparison, type SearchResult,
-  findRoutes, type Weights, type CSPConstraints,
+  type Route, type AlgoComparison, type Weights, type CSPConstraints,
 } from '../utils/algorithms';
-import { type Stop, type TransportMode, getAlgiersGraph } from '../utils/algiers-graph';
+import { type Stop, type TransportMode } from '../utils/algiers-graph';
+import { fetchRoutes, fetchStops } from '../utils/api';
 
 export interface EnabledModes {
   walk: boolean;
@@ -34,6 +34,8 @@ export interface TransitStore {
   error: string | null;
 
   graphStats: { nodes: number; edges: number; loaded: boolean };
+  stops: Stop[];
+  loadStops: () => void;
 
   setStartStop: (stop: Stop | null) => void;
   setEndStop: (stop: Stop | null) => void;
@@ -51,14 +53,77 @@ export interface TransitStore {
   setShowShortcuts: (show: boolean) => void;
 }
 
+export interface Coordinates {
+  lat: number;
+  lon: number;
+  stopId?: string;
+}
+
+export type TransportModes = EnabledModes;
+
+// Map API response segment → frontend Segment shape
+function mapApiSegment(s: any) {
+  return {
+    mode: s.mode as TransportMode,
+    lineId: s.lineId || null,
+    fromName: s.fromName,
+    toName: s.toName,
+    fromCoords: s.polyline?.[0] ?? [0, 0] as [number, number],
+    toCoords: s.polyline?.[s.polyline.length - 1] ?? [0, 0] as [number, number],
+    polyline: (s.polyline ?? []) as [number, number][],
+    distanceM: Math.round((s.distanceKm ?? 0) * 1000),
+    durationMin: s.durationMin ?? 0,
+    waitMin: 0,
+    costDzd: s.costDzd ?? 0,
+    co2G: 0,
+    departureTime: '',
+    arrivalTime: '',
+  };
+}
+
+// Map API response route → frontend Route shape
+function mapApiRoute(r: any): Route {
+  const segments = (r.segments ?? []).map(mapApiSegment);
+  const walkSegs = segments.filter((s: any) => s.mode === 'walk');
+  const walkingM = walkSegs.reduce((acc: number, s: any) => acc + s.distanceM, 0);
+  const transfers = Math.max(0, segments.filter((s: any) => s.mode !== 'walk').length - 1);
+  const totalDistM = segments.reduce((acc: number, s: any) => acc + s.distanceM, 0);
+  const CAR_CO2_PER_KM = 120; // g/km
+  const co2SavedVsCarG = Math.round(CAR_CO2_PER_KM * totalDistM / 1000 - (r.summary?.totalCo2G ?? 0));
+
+  return {
+    id: r.id,
+    label: r.label,
+    algorithmUsed: r.algorithmUsed,
+    segments,
+    summary: {
+      totalTimeMin: r.summary?.totalTimeMin ?? 0,
+      totalCostDzd: r.summary?.totalCostDzd ?? 0,
+      totalCo2G: r.summary?.totalCo2G ?? 0,
+      totalDistanceM: totalDistM,
+      numTransfers: transfers,
+      numStops: r.summary?.numStops ?? 0,
+      walkingDistanceM: walkingM,
+      waitingTimeMin: 0,
+    },
+    timeline: [],
+    stressScore: 0,
+    stressLabel: 'low',
+    explanation: '',
+    polyline: segments.flatMap((s: any) => s.polyline),
+    co2SavedVsCarG: Math.max(0, co2SavedVsCarG),
+    score: 0,
+    nodesExpanded: r.summary?.nodesExplored ?? 0,
+    computationMs: 0,
+  };
+}
+
 const PRESETS: Record<string, Weights> = {
   fastest:  { time: 0.8, cost: 0.1, co2: 0.1 },
   cheapest: { time: 0.1, cost: 0.8, co2: 0.1 },
   greenest: { time: 0.1, cost: 0.1, co2: 0.8 },
   balanced: { time: 0.34, cost: 0.33, co2: 0.33 },
 };
-
-const graph = getAlgiersGraph();
 
 export const useTransitStore = create<TransitStore>((set, get) => ({
   startStop: null,
@@ -79,7 +144,12 @@ export const useTransitStore = create<TransitStore>((set, get) => ({
   showShortcuts: false,
   error: null,
 
-  graphStats: { nodes: graph.stops.length, edges: graph.edges.length, loaded: true },
+  graphStats: { nodes: 1314, edges: 19139, loaded: true },
+  stops: [],
+
+  loadStops: () => {
+    fetchStops().then(stops => set({ stops })).catch(() => {});
+  },
 
   setStartStop: (stop) => set({ startStop: stop, error: null }),
   setEndStop: (stop) => set({ endStop: stop, error: null }),
@@ -135,31 +205,19 @@ export const useTransitStore = create<TransitStore>((set, get) => ({
 
     set({ isLoading: true, error: null });
 
-    setTimeout(() => {
-      try {
-        const result = findRoutes(graph, {
-          startId: state.startStop!.id,
-          endId: state.endStop!.id,
-          weights: state.weights,
-          enabledModes: state.enabledModes as Record<TransportMode, boolean>,
-          constraints: state.constraints,
-        });
-
-        set({
-          routes: result.routes,
-          selectedRoute: result.routes[0] || null,
-          algoComparison: result.comparison,
-          isLoading: false,
-        });
-      } catch (e) {
-        set({
-          error: 'No route found with current settings. Try relaxing constraints.',
-          isLoading: false,
-          routes: [],
-          selectedRoute: null,
-        });
-      }
-    }, 100);
+    fetchRoutes(
+      { lat: state.startStop.lat, lon: state.startStop.lng, stopId: state.startStop.id },
+      { lat: state.endStop.lat,   lon: state.endStop.lng,   stopId: state.endStop.id },
+      state.weights,
+      state.enabledModes,
+    )
+      .then((rawRoutes) => {
+        const routes: Route[] = rawRoutes.map((r: any) => mapApiRoute(r));
+        set({ routes, selectedRoute: routes[0] || null, algoComparison: null, isLoading: false });
+      })
+      .catch(() => {
+        set({ error: 'No route found. Check that the backend is running.', isLoading: false, routes: [], selectedRoute: null });
+      });
   },
 
   selectRoute: (route) => set({ selectedRoute: route }),

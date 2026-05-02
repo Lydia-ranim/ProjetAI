@@ -295,6 +295,20 @@ class AStarRouter(TransitRouter):
             nodes_explored=nodes_explored
         )
 
+    def _reconstruct(self, best: dict, goal_id: str):
+        """Reconstruct path from A* predecessor map: node -> (g, prev_node, edge)."""
+        path, edges = [], []
+        node = goal_id
+        while best[node][1] is not None:
+            _, prev, edge = best[node]
+            path.append(node)
+            edges.append(edge)
+            node = prev
+        path.append(node)
+        path.reverse()
+        edges.reverse()
+        return path, edges
+
     # ═══════════════════════════════════════════
     # COMPARISON: A* vs UCS
     # ═══════════════════════════════════════════

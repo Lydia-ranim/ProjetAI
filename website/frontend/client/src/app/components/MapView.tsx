@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTransitStore } from '../store/transit-store';
-import { ALL_STOPS, type Stop } from '../utils/algiers-graph';
+import { type Stop } from '../utils/algiers-graph';
 import { haversineDistance } from '../utils/geo';
 
 const ALGIERS_CENTER: [number, number] = [36.7538, 3.0588];
@@ -86,7 +86,7 @@ export default function MapView() {
   const routeLayerRef   = useRef<L.LayerGroup | null>(null);
   const endpointLayerRef= useRef<L.LayerGroup | null>(null);
 
-  const { startStop, endStop, routes, selectedRoute, isDarkMode } = useTransitStore();
+  const { startStop, endStop, routes, selectedRoute, isDarkMode, stops, loadStops } = useTransitStore();
 
   // ── Init map ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -127,31 +127,7 @@ export default function MapView() {
     const muted = cssVar('--text-muted', 'rgba(198, 183, 226, 0.62)');
     const textPrimary = cssVar('--text-primary', 'rgba(190, 238, 219, 0.96)');
 
-    ALL_STOPS.forEach(stop => {
-      const icon   = createStopIcon(stop.type, stop.isTransfer);
-      const marker = L.marker([stop.lat, stop.lng], { icon }).addTo(markersLayer);
-      const typeColor =
-        stop.type === 'metro' ? cssVar('--accent-blue', '#C6B7E2')
-        : stop.type === 'tram' ? cssVar('--accent-amber', '#F2C4CE')
-        : stop.type === 'bus' ? cssVar('--accent-coral', '#670627')
-        : cssVar('--accent-teal', '#BEEEDB');
-      marker.bindTooltip(
-        `<div style="
-          font-family:'DM Sans',sans-serif; font-size:12px;
-          background:${panelBg}; border:1px solid ${border};
-          border-radius:8px; padding:8px 12px; color:${textPrimary};
-          box-shadow:0 8px 24px rgba(0,0,0,0.5);
-          backdrop-filter: blur(14px);
-        ">
-          <div style="font-weight:700;margin-bottom:2px;">${stop.name}</div>
-          <div style="font-size:10px;color:${typeColor};font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">
-            ${stop.type} ${stop.district ? '· ' + stop.district : ''}
-          </div>
-          <div style="font-size:10px;color:${muted};margin-top:2px;">${stop.lines.join(' · ')}</div>
-        </div>`,
-        { className: 'custom-tooltip', direction: 'top', offset: [0, -8] }
-      );
-    });
+    useTransitStore.getState().loadStops();
 
     routeLayerRef.current   = L.layerGroup().addTo(map);
     endpointLayerRef.current = L.layerGroup().addTo(map);
@@ -159,7 +135,7 @@ export default function MapView() {
     map.on('click', (e: L.LeafletMouseEvent) => {
       let nearest: Stop | null = null;
       let minDist = Infinity;
-      for (const stop of ALL_STOPS) {
+      for (const stop of useTransitStore.getState().stops) {
         const d = haversineDistance({ lat: e.latlng.lat, lng: e.latlng.lng }, stop);
         if (d < minDist && d < 2000) { minDist = d; nearest = stop; }
       }
@@ -178,6 +154,33 @@ export default function MapView() {
   useEffect(() => {
     tileLayerRef.current?.setUrl(isDarkMode ? DARK_TILES : LIGHT_TILES);
   }, [isDarkMode]);
+
+  // Re-render stop markers whenever stops load from API
+  useEffect(() => {
+    const layer = markersLayerRef.current;
+    if (!layer || stops.length === 0) return;
+    layer.clearLayers();
+    const panelBg = cssVar('--bg-panel', 'rgba(10, 22, 40, 0.88)');
+    const border = cssVar('--border-color', 'rgba(190, 238, 219, 0.16)');
+    const muted = cssVar('--text-muted', 'rgba(198, 183, 226, 0.62)');
+    const textPrimary = cssVar('--text-primary', 'rgba(190, 238, 219, 0.96)');
+    stops.forEach(stop => {
+      const icon = createStopIcon(stop.type, stop.isTransfer);
+      const marker = L.marker([stop.lat, stop.lng], { icon }).addTo(layer);
+      const typeColor =
+        stop.type === 'metro' ? cssVar('--accent-blue', '#C6B7E2')
+        : stop.type === 'tram' ? cssVar('--accent-amber', '#F2C4CE')
+        : stop.type === 'bus' ? cssVar('--accent-coral', '#670627')
+        : cssVar('--accent-teal', '#BEEEDB');
+      marker.bindTooltip(
+        `<div style="font-family:'DM Sans',sans-serif;font-size:12px;background:${panelBg};border:1px solid ${border};border-radius:8px;padding:8px 12px;color:${textPrimary};box-shadow:0 8px 24px rgba(0,0,0,0.5);backdrop-filter:blur(14px);">
+          <div style="font-weight:700;margin-bottom:2px;">${stop.name}</div>
+          <div style="font-size:10px;color:${typeColor};font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">${stop.type}</div>
+        </div>`,
+        { className: 'custom-tooltip', direction: 'top', offset: [0, -8] }
+      );
+    });
+  }, [stops]);
 
   useEffect(() => {
     const layer = endpointLayerRef.current;
