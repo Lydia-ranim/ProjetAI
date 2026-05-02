@@ -3,7 +3,7 @@ bidirectional.py — Bidirectional Search Framework for Algiers Transit Network
 
 Architecture:
     BidirectionalSearch is a generic wrapper that can pair with ANY
-    forward-search algorithm (UCS, A*, Greedy, etc.) by accepting
+    forward-search algorithm (UCS, A*, etc.) by accepting
     callable cost functions and heuristic functions as parameters.
 
     Algorithm (Problem Formulation, Section 11d):
@@ -22,11 +22,15 @@ Architecture:
         For bidirectional UCS (h=0), optimality is always guaranteed.
 
 Usage:
-    from bidirectional import BidirectionalSearch
+    from bidirectional_ranim_bomba import BidirectionalSearch
     from ucs import TransitRouter
+    from BFS_Yanis_ZA3IM import BFSRouter
 
     router = TransitRouter('data/')
-    bidir  = BidirectionalSearch(router)
+    bfs    = BFSRouter('data/')
+    bidir  = BidirectionalSearch(router, bfs_router=bfs)   # optional BFS graph
+
+    bd = bidir.search_bfs('M1_MARTYRS', 'TR01', depart=8.0)
 
     # Pair with UCS (Dijkstra)
     result = bidir.search(
@@ -52,10 +56,13 @@ Usage:
 import heapq
 import math
 import time as time_module
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Optional, Callable, Dict, List, Tuple, Any
 
-from ucs import TransitRouter, RouteResult, Segment, FARES, TRANSFER_PENALTY
+from ucs import TransitRouter, RouteResult, Segment, FARES, TRANSFER_PENALTY, Edge as UCSEdge
+
+from BFS_Yanis_ZA3IM import BFSRouter as _BFSRouter, Edge as BFSEdge
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -79,6 +86,7 @@ class BiDirResult:
     meeting_node:    Optional[str]   # node where the two frontiers met
     algorithm_used:  str             # e.g. 'bidir_ucs', 'bidir_astar'
     runtime_ms:      float
+    total_wait:      float = 0.0   # headway wait (min); bidir_bfs / optional
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -95,7 +103,6 @@ class BidirectionalSearch:
         This makes it trivially extensible to new algorithms:
             - bidir_ucs:    cost_fn = edge cost,  heuristic = 0
             - bidir_astar:  cost_fn = edge cost,  heuristic = admissible h(n)
-            - bidir_greedy: cost_fn = heuristic,  heuristic = h(n)
 
     The backward search uses a reversed graph (edges flipped).
     """
@@ -103,11 +110,46 @@ class BidirectionalSearch:
     VMAX_KMH = 70.0   # km/h — used in A* heuristic (metro top speed)
     VMAX     = VMAX_KMH / 60.0  # km/min
 
-    def __init__(self, router: TransitRouter):
+    def __init__(self, router: TransitRouter,
+                 bfs_router: Optional[_BFSRouter] = None):
         if not isinstance(router, TransitRouter):
             raise TypeError("router must be a TransitRouter instance")
-        self.router  = router
+        self.router = router
         self._rev_adj = self._build_reverse_graph()
+        self.bfs_router: Optional[_BFSRouter] = None
+        self._bfs_rev_adj: Dict[str, List[BFSEdge]] = {}
+        if bfs_router is not None:
+            if not isinstance(bfs_router, _BFSRouter):
+                raise TypeError("bfs_router must be a BFSRouter instance")
+            self.bfs_router = bfs_router
+            self._bfs_rev_adj = self._build_bfs_reverse_graph()
+
+    # ───────────────────────────────────────────────────────────
+    # BFS GRAPH (BFS_Yanis_ZA3IM) — reversed adjacency
+    # ───────────────────────────────────────────────────────────
+
+    def _build_bfs_reverse_graph(self) -> Dict[str, List[BFSEdge]]:
+        """Flip each BFS edge u→v to v→u (same Edge fields; ``to_id`` is the predecessor)."""
+        if not self.bfs_router:
+            return {}
+        rev: Dict[str, List[BFSEdge]] = defaultdict(list)
+        for u, edges in self.bfs_router.graph.items():
+            for e in edges:
+                rev[e.to_id].append(BFSEdge(
+                    to_id=u,
+                    time_min=e.time_min,
+                    distance_km=e.distance_km,
+                    transport_type=e.transport_type,
+                    route_id=e.route_id,
+                    co2_g=e.co2_g,
+                ))
+        return dict(rev)
+
+    def _bfs_forward_edge(self, fr: str, to: str) -> Optional[BFSEdge]:
+        for e in self.bfs_router.graph.get(fr, []):
+            if e.to_id == to:
+                return e
+        return None
 
     # ───────────────────────────────────────────────────────────
     # REVERSE GRAPH
@@ -119,12 +161,11 @@ class BidirectionalSearch:
         Every edge (u→v) becomes (v→u) in the reverse graph.
         Edge attributes (cost, time, co2) remain the same.
         """
-        from ucs import Edge
         rev = {sid: [] for sid in self.router.stops}
         for from_id, edges in self.router.graph.items():
             for e in edges:
                 if e.to_id in rev:
-                    rev[e.to_id].append(Edge(
+                    rev[e.to_id].append(UCSEdge(
                         to_id=from_id,
                         distance_km=e.distance_km,
                         time_min=e.time_min,
@@ -174,11 +215,6 @@ class BidirectionalSearch:
         elif metric == 'weighted':
             return w1 * (dist_km / self.VMAX)
         return 0.0
-
-    def _heuristic_greedy(self, node_id: str, goal_id: str,
-                           metric: str, w1: float = 1.0) -> float:
-        """Pure heuristic — greedy best-first (not optimal but fast)."""
-        return self._heuristic_astar(node_id, goal_id, metric, w1) * 10.0
 
     # ───────────────────────────────────────────────────────────
     # EDGE COST FUNCTION
@@ -258,31 +294,27 @@ class BidirectionalSearch:
         return path, edges
 
     def _reconstruct_backward(self, pred: Dict, meeting_state: Tuple,
-                               goal_id: str) -> Tuple[List[str], List]:
+                              goal_id: str) -> Tuple[List[str], List[UCSEdge]]:
         """
-        Reconstruct backward path from meeting node → goal.
-        The backward search expanded from goal, so we follow predecessors
-        from meeting → goal and then reverse to get meeting→goal order.
+        Reconstruct path from meeting node → goal.
+        The backward search expanded from goal on the reversed graph; walk
+        predecessors from the meeting state toward goal, then re-orient edges.
         """
         path, edges = [], []
         cur = meeting_state
         while cur is not None:
             prev_state, edge = pred.get(cur, (None, None))
             if edge is not None:
-                # In backward graph, edge.to_id is actually the "from" in original
                 path.append(edge.to_id)
                 edges.append(edge)
             cur = prev_state
         path.append(goal_id)
-        # Reverse edges so they point forward (meeting → goal)
         path.reverse()
         edges.reverse()
-        # Flip each edge's direction to restore original orientation
-        from ucs import Edge
-        fwd_edges = []
+        fwd_edges: List[UCSEdge] = []
         for e in edges:
-            fwd_edges.append(Edge(
-                to_id=e.to_id,      # already points correctly after reverse
+            fwd_edges.append(UCSEdge(
+                to_id=e.to_id,
                 distance_km=e.distance_km,
                 time_min=e.time_min,
                 co2_g=e.co2_g,
@@ -290,19 +322,6 @@ class BidirectionalSearch:
                 route_id=e.route_id,
             ))
         return path, fwd_edges
-
-    def _merge_paths(self, fwd_path: List[str], fwd_edges: List,
-                     bwd_path: List[str], bwd_edges: List,
-                     meeting_node: str) -> Tuple[List[str], List]:
-        """
-        Merge forward and backward paths at the meeting node.
-        fwd: start → ... → meeting
-        bwd: meeting → ... → goal  (already re-oriented)
-        """
-        # Remove duplicate meeting node
-        full_path  = fwd_path + bwd_path
-        full_edges = fwd_edges + bwd_edges
-        return full_path, full_edges
 
     # ───────────────────────────────────────────────────────────
     # CORE BIDIRECTIONAL SEARCH
@@ -351,6 +370,10 @@ class BidirectionalSearch:
         fwd_heap, fwd_g, fwd_pred, fwd_vis = self._init_frontier(start_id)
         bwd_heap, bwd_g, bwd_pred, bwd_vis = self._init_frontier(goal_id)
 
+        # O(1) meeting detection: best g-cost seen per bare node_id
+        fwd_node_g: Dict[str, float] = {start_id: 0.0}
+        bwd_node_g: Dict[str, float] = {goal_id: 0.0}
+
         # ── Tracking variables ─────────────────────────────────
         mu              = float('inf')  # best complete path cost found
         best_meeting    = None          # (fwd_state, bwd_state) at best meeting
@@ -384,18 +407,19 @@ class BidirectionalSearch:
                 fwd_vis.add(state)
                 fwd_nodes += 1
 
-                # Check if this node was reached by backward search
-                for bwd_state, bwd_g_val in list(bwd_g.items()):
-                    if bwd_state[0] == node:
+                # Check if this node was reached by backward search (skip if none yet)
+                if node in bwd_node_g:
+                    for bwd_state, bwd_g_val in list(bwd_g.items()):
+                        if bwd_state[0] != node:
+                            continue
                         total_cost = fwd_g.get(state, float('inf')) + bwd_g_val
-                        # Apply transfer penalty if meeting on different routes
                         fwd_route = state[1]
                         bwd_route = bwd_state[1]
-                        if (fwd_route is not None and bwd_route is not None and fwd_route != bwd_route):
+                        if (fwd_route is not None and bwd_route is not None
+                                and fwd_route != bwd_route):
                             total_cost += TRANSFER_PENALTY.get(metric, 0.0)
-
                         if total_cost < mu:
-                            mu           = total_cost
+                            mu = total_cost
                             best_meeting = (state, bwd_state)
 
                 # Expand forward neighbors
@@ -412,6 +436,8 @@ class BidirectionalSearch:
                         fwd_pred[next_state] = (state, edge)
                         h = heuristic_fn(edge.to_id, goal_id, metric, w1)
                         push(fwd_heap, new_g + h, edge.to_id, new_last)
+                        if new_g < fwd_node_g.get(edge.to_id, float('inf')):
+                            fwd_node_g[edge.to_id] = new_g
 
             # ── BACKWARD EXPANSION ────────────────────────────
             else:
@@ -422,18 +448,19 @@ class BidirectionalSearch:
                 bwd_vis.add(state)
                 bwd_nodes += 1
 
-                # Check if forward search reached this node
-                for fwd_state, fwd_g_val in list(fwd_g.items()):
-                    if fwd_state[0] == node:
+                # Check if forward search reached this node (skip if none yet)
+                if node in fwd_node_g:
+                    for fwd_state, fwd_g_val in list(fwd_g.items()):
+                        if fwd_state[0] != node:
+                            continue
                         total_cost = fwd_g_val + bwd_g.get(state, float('inf'))
-                        # Apply transfer penalty if meeting on different routes
                         fwd_route = fwd_state[1]
                         bwd_route = state[1]
-                        if (fwd_route is not None and bwd_route is not None and fwd_route != bwd_route):
+                        if (fwd_route is not None and bwd_route is not None
+                                and fwd_route != bwd_route):
                             total_cost += TRANSFER_PENALTY.get(metric, 0.0)
-
                         if total_cost < mu:
-                            mu           = total_cost
+                            mu = total_cost
                             best_meeting = (fwd_state, state)
 
                 # Expand backward neighbors (reversed graph)
@@ -451,6 +478,8 @@ class BidirectionalSearch:
                         # Backward heuristic: from neighbor toward start
                         h = heuristic_fn(edge.to_id, start_id, metric, w1)
                         push(bwd_heap, new_g + h, edge.to_id, new_last)
+                        if new_g < bwd_node_g.get(edge.to_id, float('inf')):
+                            bwd_node_g[edge.to_id] = new_g
 
         # ── No path found ──────────────────────────────────────
         runtime_ms = (time_module.time() - t0) * 1000
@@ -473,7 +502,7 @@ class BidirectionalSearch:
         bwd_path, bwd_edges = self._reconstruct_backward(
             bwd_pred, bwd_state, goal_id)
 
-        # Merge paths (meeting_node is at fwd_path[-1] and bwd_path[0])
+        # Merge paths (drop duplicate meeting stop)
         full_path  = fwd_path[:-1] + bwd_path
         full_edges = fwd_edges + bwd_edges
 
@@ -533,16 +562,15 @@ class BidirectionalSearch:
             start_id:  origin stop ID
             goal_id:   destination stop ID
             metric:    'time' | 'distance' | 'co2' | 'weighted'
-            algorithm: 'ucs' | 'astar' | 'greedy'
+            algorithm: 'ucs' | 'astar'
             w1, w2, w3: weights for weighted metric
 
         Returns:
             BiDirResult
         """
         algo_map = {
-            'ucs':    (self._heuristic_ucs,    'bidir_ucs'),
-            'astar':  (self._heuristic_astar,  'bidir_astar'),
-            'greedy': (self._heuristic_greedy, 'bidir_greedy'),
+            'ucs':   (self._heuristic_ucs,   'bidir_ucs'),
+            'astar': (self._heuristic_astar, 'bidir_astar'),
         }
         if algorithm not in algo_map:
             raise ValueError(
@@ -553,6 +581,182 @@ class BidirectionalSearch:
         return self._bidir_search(start_id, goal_id, metric,
                                   hfn, w1, w2, w3, label)
 
+    def search_bfs(self, start_id: str, goal_id: str,
+                    depart: float = 8.0) -> BiDirResult:
+        """
+        Bidirectional BFS on ``bfs_router.graph`` / ``_bfs_rev_adj``:
+        same hop-expansion model as ``BFSRouter.search`` (FIFO per side,
+        working-hours + average wait), alternating one forward node then one backward node.
+        """
+        if not self.bfs_router:
+            raise RuntimeError(
+                "BidirectionalSearch was constructed without bfs_router=… "
+                "Pass BFSRouter(data_dir) to enable search_bfs."
+            )
+
+        t0 = time_module.time()
+        start_id = start_id.strip()
+        goal_id = goal_id.strip()
+
+        if start_id not in self.bfs_router.stops or goal_id not in self.bfs_router.stops:
+            rt = (time_module.time() - t0) * 1000
+            return BiDirResult(
+                found=False, path=[], edges=[], segments=[],
+                total_time=0, total_dist=0, total_co2=0, total_fare=0,
+                nodes_explored=0, forward_nodes=0, backward_nodes=0,
+                meeting_node=None, algorithm_used='bidir_bfs',
+                runtime_ms=round(rt, 2), total_wait=0.0,
+            )
+
+        if start_id == goal_id:
+            return BiDirResult(
+                found=True, path=[start_id], edges=[], segments=[],
+                total_time=0, total_dist=0, total_co2=0, total_fare=0,
+                nodes_explored=0, forward_nodes=0, backward_nodes=0,
+                meeting_node=start_id, algorithm_used='bidir_bfs',
+                runtime_ms=0.0, total_wait=0.0,
+            )
+
+        if not (0.0 <= depart < 24.0):
+            raise ValueError(f"depart must be in [0.0, 24.0), got {depart}")
+
+        depart_f = float(depart)
+        visited_fwd: Dict[str, Tuple[Optional[str], Optional[BFSEdge], float]] = {}
+        visited_bwd: Dict[str, Tuple[Optional[str], Optional[BFSEdge], float]] = {}
+        visited_fwd[start_id] = (None, None, depart_f)
+        visited_bwd[goal_id] = (None, None, depart_f)
+
+        fwd_q: deque[Tuple[str, float, Optional[str], Optional[str]]] = deque(
+            [(start_id, depart_f, None, None)]
+        )
+        bwd_q: deque[Tuple[str, float, Optional[str], Optional[str]]] = deque(
+            [(goal_id, depart_f, None, None)]
+        )
+
+        meeting: Optional[str] = None
+        fwd_n = 0
+        bwd_n = 0
+
+        while fwd_q and bwd_q and meeting is None:
+            # ── one forward expansion ──────────────────────────
+            nid, clock, _pm, _pr = fwd_q.popleft()
+            fwd_n += 1
+
+            for edge in self.bfs_router.graph.get(nid, []):
+                nb = edge.to_id
+                if nb in visited_fwd:
+                    continue
+                if not self.bfs_router._in_service(edge.transport_type, clock):
+                    continue
+                w = self.bfs_router._avg_wait(edge.transport_type)
+                new_c = clock + (edge.time_min + w) / 60.0
+                visited_fwd[nb] = (nid, edge, new_c)
+                if nb in visited_bwd:
+                    meeting = nb
+                    break
+                fwd_q.append((nb, new_c, edge.transport_type, edge.route_id))
+
+            if meeting is not None:
+                break
+
+            if not fwd_q or not bwd_q:
+                break
+
+            # ── one backward expansion ─────────────────────────
+            nid, clock, _pm, _pr = bwd_q.popleft()
+            bwd_n += 1
+
+            for e in self._bfs_rev_adj.get(nid, []):
+                pred = e.to_id
+                fe = self._bfs_forward_edge(pred, nid)
+                if fe is None:
+                    continue
+                if pred in visited_bwd:
+                    continue
+                if not self.bfs_router._in_service(fe.transport_type, clock):
+                    continue
+                w = self.bfs_router._avg_wait(fe.transport_type)
+                new_c = clock + (fe.time_min + w) / 60.0
+                visited_bwd[pred] = (nid, fe, new_c)
+                if pred in visited_fwd:
+                    meeting = pred
+                    break
+                bwd_q.append((pred, new_c, fe.transport_type, fe.route_id))
+
+        rt_ms = round((time_module.time() - t0) * 1000, 2)
+
+        if meeting is None:
+            return BiDirResult(
+                found=False, path=[], edges=[], segments=[],
+                total_time=0, total_dist=0, total_co2=0, total_fare=0,
+                nodes_explored=fwd_n + bwd_n,
+                forward_nodes=fwd_n, backward_nodes=bwd_n,
+                meeting_node=None, algorithm_used='bidir_bfs',
+                runtime_ms=rt_ms, total_wait=0.0,
+            )
+
+        # Reconstruct start → meeting
+        edges_fwd: List[BFSEdge] = []
+        cur = meeting
+        while cur != start_id:
+            parent, edge, _ = visited_fwd[cur]
+            if edge is None or parent is None:
+                break
+            edges_fwd.append(edge)
+            cur = parent
+        edges_fwd.reverse()
+
+        # Reconstruct meeting → goal (forward edges along visited_bwd chain)
+        edges_bwd: List[BFSEdge] = []
+        cur = meeting
+        while cur != goal_id:
+            nxt, edge, _ = visited_bwd[cur]
+            if nxt is None or edge is None:
+                break
+            edges_bwd.append(edge)
+            cur = nxt
+
+        full_edges = edges_fwd + edges_bwd
+        path_ids = [start_id]
+        for e in edges_fwd:
+            path_ids.append(e.to_id)
+        for e in edges_bwd:
+            path_ids.append(e.to_id)
+
+        ride = wait = co2 = dist = 0.0
+        prev_mode: Optional[str] = None
+        prev_route: Optional[str] = None
+        fare_f = 0.0
+
+        for edge in full_edges:
+            mode = edge.transport_type
+            w = self.bfs_router._avg_wait(mode)
+            fare_f += self.bfs_router._fare(edge, prev_mode, prev_route)
+            ride += edge.time_min
+            wait += w
+            co2 += edge.co2_g
+            dist += edge.distance_km
+            prev_mode = mode
+            prev_route = edge.route_id
+
+        return BiDirResult(
+            found=True,
+            path=path_ids,
+            edges=full_edges,
+            segments=[],
+            total_time=round(ride, 2),
+            total_dist=round(dist, 4),
+            total_co2=round(co2, 2),
+            total_fare=int(round(fare_f)),
+            nodes_explored=fwd_n + bwd_n,
+            forward_nodes=fwd_n,
+            backward_nodes=bwd_n,
+            meeting_node=meeting,
+            algorithm_used='bidir_bfs',
+            runtime_ms=rt_ms,
+            total_wait=round(wait, 2),
+        )
+
     # ───────────────────────────────────────────────────────────
     # COMPARE ALL ALGORITHMS
     # ───────────────────────────────────────────────────────────
@@ -560,16 +764,17 @@ class BidirectionalSearch:
     def compare_all(self, start_id: str, goal_id: str,
                     metric: str = 'time',
                     w1: float = 1.0, w2: float = 0.0,
-                    w3: float = 0.0) -> Dict[str, Any]:
+                    w3: float = 0.0,
+                    depart: float = 8.0) -> Dict[str, Any]:
         """
-        Run all 5 algorithms on the same query and return a comparison report.
+        Run UCS / A* / bidirectional UCS and A* on ``TransitRouter``, and optionally
+        bidirectional BFS on ``BFSRouter`` when ``bfs_router`` was passed to the constructor.
 
         Algorithms compared:
-            1. UCS (unidirectional Dijkstra)       — from ucs.py
-            2. A*  (unidirectional)                 — from A_star.py
             3. Bidirectional UCS  (bidir + Dijkstra)
             4. Bidirectional A*   (bidir + A*)
-            5. Bidirectional Greedy (bidir + Greedy, not optimal)
+
+        ``depart`` is the departure clock hour [0, 24) for ``search_bfs`` (default 8.0).
 
         Returns dict with results + comparison metrics.
         """
@@ -620,8 +825,8 @@ class BidirectionalSearch:
                                  'algorithm': 'A*', 'nodes_explored': 0,
                                  'runtime_ms': 0}
 
-        # 3–5. Bidirectional variants
-        for algo in ('ucs', 'astar', 'greedy'):
+        # 3–4. Bidirectional variants
+        for algo in ('ucs', 'astar'):
             t0 = time_module.time()
             bd = self.search(start_id, goal_id, metric, algo, w1, w2, w3)
             label = f'bidir_{algo}'
@@ -640,9 +845,31 @@ class BidirectionalSearch:
                 'segments':       bd.segments,
             }
 
+        if self.bfs_router:
+            bd_bfs = self.search_bfs(start_id, goal_id, depart=depart)
+            journey = bd_bfs.total_time + bd_bfs.total_wait
+            results['bidir_bfs'] = {
+                'found':              bd_bfs.found,
+                'total_time':         bd_bfs.total_time,
+                'total_wait':         bd_bfs.total_wait,
+                'total_journey_time': journey,
+                'total_dist':         bd_bfs.total_dist,
+                'total_co2':          bd_bfs.total_co2,
+                'total_fare':         bd_bfs.total_fare,
+                'nodes_explored':     bd_bfs.nodes_explored,
+                'forward_nodes':      bd_bfs.forward_nodes,
+                'backward_nodes':     bd_bfs.backward_nodes,
+                'runtime_ms':         bd_bfs.runtime_ms,
+                'algorithm':          'Bidir BFS',
+                'meeting_node':       bd_bfs.meeting_node,
+                'segments':           [],
+            }
+
         # ── Compute efficiency metrics ─────────────────────────
         ucs_nodes = results['ucs']['nodes_explored'] or 1
         for key, r in results.items():
+            if key.startswith('_'):
+                continue
             if key != 'ucs' and r.get('found'):
                 r['node_reduction_pct'] = round(
                     (1 - r['nodes_explored'] / ucs_nodes) * 100, 1)
@@ -651,7 +878,7 @@ class BidirectionalSearch:
 
         # Find winner (fewest nodes, found path)
         found_results = {k: v for k, v in results.items()
-                         if v.get('found')}
+                         if not k.startswith('_') and v.get('found')}
         if found_results:
             winner = min(found_results,
                          key=lambda k: found_results[k]['nodes_explored'])
@@ -690,7 +917,7 @@ class BidirectionalSearch:
         print(dash)
 
         winner = report.get('_winner')
-        order  = ['ucs', 'astar', 'bidir_ucs', 'bidir_astar', 'bidir_greedy']
+        order  = ['ucs', 'astar', 'bidir_ucs', 'bidir_astar', 'bidir_bfs']
 
         for key in order:
             r = report.get(key)
@@ -702,10 +929,11 @@ class BidirectionalSearch:
             fwd   = str(r.get('forward_nodes', ''))
             bwd   = str(r.get('backward_nodes', ''))
             red   = f"{r.get('node_reduction_pct', 0):+.1f}%"
+            tshow = r.get('total_journey_time', r.get('total_time', 0))
 
             print(
                 f"{tag}{r.get('algorithm',''):<22} {found:>6} "
-                f"{r.get('total_time', 0):>9.1f} "
+                f"{tshow:>9.1f} "
                 f"{r.get('total_dist', 0):>9.3f} "
                 f"{r.get('total_co2', 0):>8.1f} "
                 f"{r.get('total_fare', 0):>9} "
@@ -736,7 +964,9 @@ class BidirectionalSearch:
             print(f"  Nodes explored: {result.nodes_explored:,}")
             print(sep)
             return
-        print(f"  ✅  Found  |  {result.total_time:.1f} min  |  "
+        journey = result.total_time + result.total_wait
+        print(f"  ✅  Found  |  ride {result.total_time:.1f} min  |  "
+              f"wait {result.total_wait:.1f} min  |  total {journey:.1f} min  |  "
               f"{result.total_dist:.2f} km  |  {result.total_co2:.1f}g CO₂  |  "
               f"{result.total_fare} DA")
         print(f"  Nodes: {result.nodes_explored:,}  "
@@ -746,13 +976,27 @@ class BidirectionalSearch:
         print()
         icons = {'metro':'🚇','tram':'🚊','bus':'🚌',
                  'train':'🚂','telepherique':'🚡','walk':'🚶'}
-        for seg in result.segments:
-            icon = icons.get(seg.transport_type, '•')
-            fare = f" | {seg.fare} DA" if seg.fare > 0 else ""
-            print(f"  {icon} {self.router.get_stop_name(seg.from_stop)}"
-                  f" → {self.router.get_stop_name(seg.to_stop)}")
-            print(f"     {seg.transport_type.upper()} {seg.route_id} | "
-                  f"{seg.distance_km:.2f} km | {seg.time_min:.1f} min{fare}")
+        name_fn = (
+            self.bfs_router.stop_name
+            if result.algorithm_used == 'bidir_bfs' and self.bfs_router
+            else self.router.get_stop_name
+        )
+        if result.segments:
+            for seg in result.segments:
+                icon = icons.get(seg.transport_type, '•')
+                fare = f" | {seg.fare} DA" if seg.fare > 0 else ""
+                print(f"  {icon} {name_fn(seg.from_stop)}"
+                      f" → {name_fn(seg.to_stop)}")
+                print(f"     {seg.transport_type.upper()} {seg.route_id} | "
+                      f"{seg.distance_km:.2f} km | {seg.time_min:.1f} min{fare}")
+        elif result.edges and result.path:
+            for i, edge in enumerate(result.edges):
+                a = result.path[i]
+                b = result.path[i + 1]
+                icon = icons.get(edge.transport_type, '•')
+                print(f"  {icon} {name_fn(a)} → {name_fn(b)}")
+                print(f"     {edge.transport_type.upper()} {edge.route_id} | "
+                      f"{edge.distance_km:.2f} km | {edge.time_min:.1f} min")
         print(sep)
 
 
@@ -763,6 +1007,7 @@ class BidirectionalSearch:
 if __name__ == '__main__':
     import sys
     from ucs import TransitRouter
+    from BFS_Yanis_ZA3IM import BFSRouter
 
     data_dir = sys.argv[1] if len(sys.argv) > 1 else 'data'
 
@@ -772,8 +1017,10 @@ if __name__ == '__main__':
     print(f"  Loaded in {time_module.time()-t0:.2f}s: "
           f"{router.num_stops} stops, {router.num_edges} edges")
 
-    bidir = BidirectionalSearch(router)
+    bfs_router = BFSRouter(data_dir)
+    bidir = BidirectionalSearch(router, bfs_router=bfs_router)
     print(f"  Reverse graph built: {sum(len(v) for v in bidir._rev_adj.values()):,} edges")
+    print(f"  BFS graph + rev: {sum(len(v) for v in bidir._bfs_rev_adj.values()):,} rev edges")
 
     # ── Demo queries ──────────────────────────────────────────
     queries = [
@@ -829,7 +1076,7 @@ if __name__ == '__main__':
             goal = input("  Enter stop ID: ").strip()
 
         metric = input("Metric (time/distance/co2/weighted) [time]: ").strip() or 'time'
-        algo   = input("Algorithm to pair with (ucs/astar/greedy) [astar]: ").strip() or 'astar'
+        algo   = input("Algorithm to pair with (ucs/astar) [astar]: ").strip() or 'astar'
 
         print(f"\nRunning bidirectional {algo.upper()}...")
         result = bidir.search(start, goal, metric, algo)
