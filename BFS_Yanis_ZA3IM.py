@@ -178,32 +178,35 @@ class BFSRouter:
         queue:   deque[Tuple[str, float, Optional[str], Optional[str]]] = deque(
             [(start, depart, None, None)]
         )
-        visited: Set[str]                    = {start}
-        parent:  Dict[str, Tuple[str, Edge]] = {}
+        start_state = (start, None, None)
+        visited: Set[Tuple[str, Optional[str], Optional[str]]] = {start_state}
+        parent:  Dict[Tuple[str, Optional[str], Optional[str]], Tuple[Tuple[str, Optional[str], Optional[str]], Edge]] = {}
         expanded = 0
 
         while queue:
             nid, clock, prev_mode, prev_route = queue.popleft()
+            curr_state = (nid, prev_mode, prev_route)
             expanded += 1
 
             for edge in self.graph.get(nid, []):
                 nb   = edge.to_id
                 mode = edge.transport_type
+                next_state = (nb, mode, edge.route_id)
 
-                if nb in visited:
+                if next_state in visited:
                     continue
                 if allowed and mode not in allowed:
                     continue
                 if not self._in_service(mode, clock):
                     continue
 
-                parent[nb] = (nid, edge)
+                parent[next_state] = (curr_state, edge)
 
                 if nb == goal:
-                    return self._build(start, goal, parent, expanded)
+                    return self._build(start, next_state, parent, expanded)
 
-                visited.add(nb)
-                w = self._avg_wait(mode)
+                visited.add(next_state)
+                w = self._avg_wait(mode) if (prev_mode != mode or prev_route != edge.route_id) else 0.0
                 queue.append((nb, clock + (edge.time_min + w) / 60.0, mode, edge.route_id))
 
         return BFSResult(found=False, nodes_expanded=expanded)
@@ -211,18 +214,18 @@ class BFSRouter:
     def _build(
         self,
         start:    str,
-        goal:     str,
-        parent:   Dict[str, Tuple[str, Edge]],
+        goal_state: Tuple[str, Optional[str], Optional[str]],
+        parent:   Dict[Tuple[str, Optional[str], Optional[str]], Tuple[Tuple[str, Optional[str], Optional[str]], Edge]],
         expanded: int,
     ) -> BFSResult:
-        path_ids:   List[str]  = [goal]
+        path_ids:   List[str]  = [goal_state[0]]
         path_edges: List[Edge] = []
-        node = goal
-        while node != start:
-            p, edge = parent[node]
-            path_ids.append(p)
+        state = goal_state
+        while state[0] != start:
+            p_state, edge = parent[state]
+            path_ids.append(p_state[0])
             path_edges.append(edge)
-            node = p
+            state = p_state
         path_ids.reverse()
         path_edges.reverse()
 

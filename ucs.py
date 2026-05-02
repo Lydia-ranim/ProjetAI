@@ -91,7 +91,8 @@ FARES = {
 TRANSFER_PENALTY = {
     'time': 5.0,
     'distance': 0.5,
-    'co2': 0.0,
+    'co2': 50.0,
+    'weighted': 5.0,
 }
 
 
@@ -120,6 +121,7 @@ class TransitRouter:
         """
         self.stops = {}      # stop_id → Stop
         self.graph = {}      # stop_id → [Edge, ...]
+        self.bus_geometries = {}  # "from|to|route" → [[lat,lon], ...]
         self._load(data_dir)
 
     def _load(self, data_dir: str):
@@ -136,6 +138,12 @@ class TransitRouter:
             self._load_csv(csv_stops, csv_edges)
         else:
             raise FileNotFoundError(f"No data files found in {data_dir}")
+
+        # Load bus road geometries if available
+        geom_path = os.path.join(data_dir, 'bus_geometries.json')
+        if os.path.exists(geom_path):
+            with open(geom_path, 'r', encoding='utf-8') as f:
+                self.bus_geometries = json.load(f)
 
     def _load_json(self, stops_path: str, graph_path: str):
         with open(stops_path, 'r', encoding='utf-8') as f:

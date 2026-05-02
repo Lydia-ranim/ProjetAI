@@ -88,12 +88,33 @@ def _segment_to_dict(seg, router: TransitRouter) -> dict:
 
     # Bus geometry: real road waypoints from bus_geometries.json
     polyline = stop_coords  # fallback: straight lines between stops
-    if seg.transport_type == 'bus' and hasattr(router, 'bus_geometries'):
+    if seg.transport_type == 'bus' and hasattr(router, 'bus_geometries') and router.bus_geometries:
+        merged = []
         for i in range(len(seg.stops) - 1):
             key = f"{seg.stops[i]}|{seg.stops[i+1]}|{seg.route_id}"
             if key in router.bus_geometries:
-                polyline = router.bus_geometries[key]
-                break
+                pts = router.bus_geometries[key]
+            else:
+                rev_key = f"{seg.stops[i+1]}|{seg.stops[i]}|{seg.route_id}"
+                if rev_key in router.bus_geometries:
+                    pts = list(reversed(router.bus_geometries[rev_key]))
+                else:
+                    pts = None
+
+            if pts:
+                # skip first point if it duplicates the last one we added
+                start_idx = 1 if merged and merged[-1] == pts[0] else 0
+                merged.extend(pts[start_idx:])
+            else:
+                # fallback: straight line for this edge
+                for sid in [seg.stops[i], seg.stops[i+1]]:
+                    s = router.stops.get(sid)
+                    if s:
+                        pt = [s.lat, s.lon]
+                        if not merged or merged[-1] != pt:
+                            merged.append(pt)
+        if merged:
+            polyline = merged
 
     from_stop = router.stops.get(seg.from_stop)
     to_stop   = router.stops.get(seg.to_stop)

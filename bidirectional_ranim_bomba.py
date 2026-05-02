@@ -273,6 +273,7 @@ class BidirectionalSearch:
                 path.append(edge.to_id)
                 edges.append(edge)
             cur = prev_state
+        path.append(goal_id)
         # Reverse edges so they point forward (meeting → goal)
         path.reverse()
         edges.reverse()
@@ -387,6 +388,12 @@ class BidirectionalSearch:
                 for bwd_state, bwd_g_val in list(bwd_g.items()):
                     if bwd_state[0] == node:
                         total_cost = fwd_g.get(state, float('inf')) + bwd_g_val
+                        # Apply transfer penalty if meeting on different routes
+                        fwd_route = state[1]
+                        bwd_route = bwd_state[1]
+                        if (fwd_route is not None and bwd_route is not None and fwd_route != bwd_route):
+                            total_cost += TRANSFER_PENALTY.get(metric, 0.0)
+
                         if total_cost < mu:
                             mu           = total_cost
                             best_meeting = (state, bwd_state)
@@ -419,6 +426,12 @@ class BidirectionalSearch:
                 for fwd_state, fwd_g_val in list(fwd_g.items()):
                     if fwd_state[0] == node:
                         total_cost = fwd_g_val + bwd_g.get(state, float('inf'))
+                        # Apply transfer penalty if meeting on different routes
+                        fwd_route = fwd_state[1]
+                        bwd_route = state[1]
+                        if (fwd_route is not None and bwd_route is not None and fwd_route != bwd_route):
+                            total_cost += TRANSFER_PENALTY.get(metric, 0.0)
+
                         if total_cost < mu:
                             mu           = total_cost
                             best_meeting = (fwd_state, state)
@@ -460,46 +473,26 @@ class BidirectionalSearch:
         bwd_path, bwd_edges = self._reconstruct_backward(
             bwd_pred, bwd_state, goal_id)
 
-        # The backward path from bwd_pred goes: meeting_node → ... → goal
-        # but stored in reverse. Re-orient:
-        bwd_path_fwd  = []
-        bwd_edges_fwd = []
-        cur = bwd_state
-        while cur is not None:
-            prev_s, edge = bwd_pred.get(cur, (None, None))
-            if edge is not None:
-                bwd_path_fwd.append(cur[0])
-                bwd_edges_fwd.append(edge)
-            cur = prev_s
+        # Merge paths (meeting_node is at fwd_path[-1] and bwd_path[0])
+        full_path  = fwd_path[:-1] + bwd_path
+        full_edges = fwd_edges + bwd_edges
 
-        # bwd_path_fwd currently goes meeting→...→goal backwards
-        # Flip to get meeting→...→goal forward
-        bwd_path_fwd.reverse()
-        bwd_edges_fwd.reverse()
-
-        # Re-orient backward edges (they were on reversed graph)
-        from ucs import Edge as UCSEdge
-        bwd_edges_oriented = []
-        for e in bwd_edges_fwd:
-            bwd_edges_oriented.append(UCSEdge(
-                to_id=e.to_id,
-                distance_km=e.distance_km,
-                time_min=e.time_min,
-                co2_g=e.co2_g,
-                transport_type=e.transport_type,
-                route_id=e.route_id,
-            ))
-
-        full_path  = fwd_path + bwd_path_fwd
-        full_edges = fwd_edges + bwd_edges_oriented
-
-        # Deduplicate consecutive duplicate stops
-        dedup_path  = [full_path[0]] if full_path else []
+        # Remove loops from the path (which can occur when bidirectional frontiers overlap)
+        dedup_path = []
         dedup_edges = []
-        for i, p in enumerate(full_path[1:], 1):
-            if p != dedup_path[-1]:
+        seen = {}
+        for i, p in enumerate(full_path):
+            if p in seen:
+                # Loop detected! Backtrack to the previous occurrence
+                loop_start = seen[p]
+                dedup_path = dedup_path[:loop_start + 1]
+                dedup_edges = dedup_edges[:loop_start]
+                # Rebuild seen dictionary
+                seen = {node: idx for idx, node in enumerate(dedup_path)}
+            else:
                 dedup_path.append(p)
-                if i - 1 < len(full_edges):
+                seen[p] = len(dedup_path) - 1
+                if i > 0 and i - 1 < len(full_edges):
                     dedup_edges.append(full_edges[i - 1])
 
         # Build segments and totals

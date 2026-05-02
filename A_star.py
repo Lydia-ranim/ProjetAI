@@ -172,6 +172,7 @@ class AStarRouter(TransitRouter):
     # ═══════════════════════════════════════════
 
     def _edge_cost(self, edge, metric: str,
+                   last_route: str | None,
                    w1: float, w2: float, w3: float) -> float:
         """
         Compute cost of traversing an edge.
@@ -185,19 +186,29 @@ class AStarRouter(TransitRouter):
         from segments), we use a per-edge estimate for search guidance.
         """
         if metric == 'time':
-            return edge.time_min
+            base = edge.time_min
         elif metric == 'distance':
-            return edge.distance_km
+            base = edge.distance_km
         elif metric == 'co2':
-            return edge.co2_g
+            base = edge.co2_g
         elif metric == 'weighted':
             price = 0.0
             if edge.transport_type != 'walk':
                 # Amortized per-edge fare estimate
                 # Full fare is computed post-hoc from segments
                 price = FARES.get(edge.transport_type, 0) * 0.1
-            return w1 * edge.time_min + w2 * price + w3 * edge.co2_g
-        return edge.time_min
+            base = w1 * edge.time_min + w2 * price + w3 * edge.co2_g
+        else:
+            base = edge.time_min
+
+        from ucs import TRANSFER_PENALTY
+        is_transfer = (last_route is not None and 
+                       edge.transport_type != 'walk' and 
+                       last_route != edge.route_id)
+        if is_transfer:
+            base += TRANSFER_PENALTY.get(metric, 0.0)
+            
+        return base
 
     # ═══════════════════════════════════════════
     # A* SEARCH
@@ -234,28 +245,30 @@ class AStarRouter(TransitRouter):
                 nodes_explored=0
             )
 
-        # ── Priority queue: (f_cost, counter, node_id) ──
+        # ── Priority queue: (f_cost, counter, node_id, last_route) ──
         counter = 0
         h0 = self._heuristic(start_id, goal_id, metric, w1)
-        pq = [(h0, counter, start_id)]
+        pq = [(h0, counter, start_id, None)]
 
         # ── g-costs and predecessor map ──
-        g_cost = {start_id: 0.0}
-        best = {start_id: (0.0, None, None)}   # node -> (g, prev_node, edge)
+        init_state = (start_id, None)
+        g_cost = {init_state: 0.0}
+        best = {init_state: (0.0, None, None)}   # state -> (g, prev_state, edge)
         visited = set()
         nodes_explored = 0
 
         while pq:
-            f, _, node = heapq.heappop(pq)
+            f, _, node, last_route = heapq.heappop(pq)
+            state_key = (node, last_route)
 
-            if node in visited:
+            if state_key in visited:
                 continue
-            visited.add(node)
+            visited.add(state_key)
             nodes_explored += 1
 
             # ── Goal reached ──
             if node == goal_id:
-                path, edges = self._reconstruct(best, goal_id)
+                path, edges = self._reconstruct(best, state_key)
                 segments = self._build_segments(path, edges)
                 total_time = sum(e.time_min for e in edges)
                 total_dist = sum(e.distance_km for e in edges)
@@ -274,19 +287,22 @@ class AStarRouter(TransitRouter):
 
             # ── Expand neighbors ──
             for edge in self.graph.get(node, []):
-                if edge.to_id in visited:
+                new_last_route = last_route if edge.transport_type == 'walk' else edge.route_id
+                next_state_key = (edge.to_id, new_last_route)
+                
+                if next_state_key in visited:
                     continue
 
-                ec = self._edge_cost(edge, metric, w1, w2, w3)
-                new_g = g_cost[node] + ec
+                ec = self._edge_cost(edge, metric, last_route, w1, w2, w3)
+                new_g = g_cost[state_key] + ec
 
-                if edge.to_id not in g_cost or new_g < g_cost[edge.to_id]:
-                    g_cost[edge.to_id] = new_g
-                    best[edge.to_id] = (new_g, node, edge)
+                if next_state_key not in g_cost or new_g < g_cost[next_state_key]:
+                    g_cost[next_state_key] = new_g
+                    best[next_state_key] = (new_g, state_key, edge)
                     h = self._heuristic(edge.to_id, goal_id, metric, w1)
                     f_new = new_g + h
                     counter += 1
-                    heapq.heappush(pq, (f_new, counter, edge.to_id))
+                    heapq.heappush(pq, (f_new, counter, edge.to_id, new_last_route))
 
         # ── No path found ──
         return RouteResult(
@@ -295,16 +311,16 @@ class AStarRouter(TransitRouter):
             nodes_explored=nodes_explored
         )
 
-    def _reconstruct(self, best: dict, goal_id: str):
-        """Reconstruct path from A* predecessor map: node -> (g, prev_node, edge)."""
+    def _reconstruct(self, best: dict, goal_state: tuple):
+        """Reconstruct path from A* predecessor map: state -> (g, prev_state, edge)."""
         path, edges = [], []
-        node = goal_id
-        while best[node][1] is not None:
-            _, prev, edge = best[node]
-            path.append(node)
+        state = goal_state
+        while best[state][1] is not None:
+            _, prev, edge = best[state]
+            path.append(state[0])
             edges.append(edge)
-            node = prev
-        path.append(node)
+            state = prev
+        path.append(state[0])
         path.reverse()
         edges.reverse()
         return path, edges
