@@ -1,0 +1,136 @@
+/* ═══════════════════════════════════════════════════════════
+   LYHLYH — Design Tokens
+   Single source of truth for all design variables.
+   Light mode is opt-in via `<html class="light-mode">` (set by
+   js/modules/theme.js + the pre-paint script in index.html).
+═══════════════════════════════════════════════════════════ */
+:root {
+  /* ── Background scale ── */
+  --bg:       #0A1628;
+  --bg-1:     #0D1E35;
+  --bg-2:     #112240;
+  --bg-3:     #162A4E;
+  --bg-4:     #1C3560;
+
+  /* ── Translucent surfaces (flipped in light mode) ── */
+  --nav-bg:      rgba(10,22,40,.92);
+  --glass-bg:    rgba(13,30,53,.72);
+  --card-glass:  rgba(10,20,40,.96);
+  --mode-btn-bg: rgba(13,30,53,.92);
+
+  /* ── Mint (primary accent) ── */
+  --mint:     #BEEEDB;
+  --mint-d:   #8DD9BE;
+  --mint-20:  rgba(190,238,219,.13);
+  --mint-08:  rgba(190,238,219,.07);
+
+  /* ── Crimson (CTA / danger) ── */
+  --crimson:    #670627;
+  --crimson-l:  #8A0A35;
+  --crimson-20: rgba(103,6,39,.22);
+
+  /* ── Pink (secondary warm) ── */
+  --pink:     #F2C4CE;
+  --pink-20:  rgba(242,196,206,.14);
+
+  /* ── Purple (interactive) ── */
+  --purple:   #C6B7E2;
+  --purple-d: #A99BC8;
+  --purple-20:rgba(198,183,226,.14);
+  --purple-08:rgba(198,183,226,.07);
+
+  /* ── Route line ── */
+  --route-col: #5C6BC0;
+  --route-glow:rgba(92,107,192,.35);
+
+  /* ── Text scale ── */
+  --text-p:   #EDF2F8;
+  --text-s:   #8AAAC8;
+  --text-t:   #4A6880;
+  --text-inv: #0A1628;
+
+  /* ── Borders ── */
+  --border:   rgba(190,238,219,.11);
+  --border2:  rgba(190,238,219,.22);
+  --border-p: rgba(198,183,226,.2);
+
+  /* ── Layout ── */
+  --nav-h:    62px;
+  --sw:       248px;
+
+  /* ── Radii ── */
+  --r:        10px;
+  --rl:       16px;
+  --rxl:      22px;
+
+  /* ── Shadows ── */
+  --shadow:    0 8px 32px rgba(0,0,0,.5);
+  --shadow-sm: 0 2px 14px rgba(0,0,0,.3);
+
+  /* ── Transitions ── */
+  --tr: .22s cubic-bezier(.4,0,.2,1);
+
+  /* ── CTA gradient button (kept identical in both modes by request) ── */
+  --cta-bg:    linear-gradient(135deg, #670627 0%, #8A0A35 50%, #A01040 100%);
+  --cta-glow:  0 4px 22px rgba(103,6,39,.55), 0 1px 6px rgba(103,6,39,.3);
+  --cta-glow-h:0 6px 28px rgba(103,6,39,.7), 0 2px 10px rgba(103,6,39,.45);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT MODE — same palette, color values swapped only.
+   No layout, spacing, sizing, typography, or radii are altered.
+═══════════════════════════════════════════════════════════ */
+:root.light-mode {
+  /* Background scale → warm off-whites that step darker like the dark scale */
+  --bg:       #F4F3F0;
+  --bg-1:     #EEECEA;
+  --bg-2:     #E8E6E2;
+  --bg-3:     #DEDAD5;
+  --bg-4:     #D2CCC4;
+
+  /* Translucent surfaces → light-mode equivalents */
+  --nav-bg:      rgba(244,243,240,.88);
+  --glass-bg:    rgba(238,236,234,.78);
+  --card-glass:  rgba(248,247,244,.96);
+  --mode-btn-bg: rgba(238,236,234,.92);
+
+  /* Mint, pink, purple → darker hues so they stay readable on light bg */
+  --mint:     #2E8B66;
+  --mint-d:   #246F51;
+  --mint-20:  rgba(46,139,102,.14);
+  --mint-08:  rgba(46,139,102,.08);
+
+  --pink:     #C75A78;
+  --pink-20:  rgba(199,90,120,.15);
+
+  --purple:   #6E5DA8;
+  --purple-d: #574786;
+  --purple-20:rgba(110,93,168,.14);
+  --purple-08:rgba(110,93,168,.07);
+
+  /* Crimson / CTA accent — left exactly as-is, per spec */
+  --crimson:    #670627;
+  --crimson-l:  #8A0A35;
+  --crimson-20: rgba(103,6,39,.18);
+
+  /* Text scale → deep gray → medium gray → muted gray */
+  --text-p:   #1A1A1A;
+  --text-s:   #555555;
+  --text-t:   #888888;
+  --text-inv: #F4F3F0;
+
+  /* Borders → light gray strokes */
+  --border:   rgba(0,0,0,.08);
+  --border2:  rgba(0,0,0,.14);
+  --border-p: rgba(110,93,168,.28);
+
+  /* Shadows → softer */
+  --shadow:    0 8px 32px rgba(0,0,0,.10);
+  --shadow-sm: 0 2px 14px rgba(0,0,0,.06);
+}
+
+/* Smooth color crossfade when toggling — only colors transition,
+   not layout-affecting properties. */
+html, body {
+  transition: background-color .3s ease, color .3s ease;
+}

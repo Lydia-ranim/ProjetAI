@@ -1,0 +1,71 @@
+/* ═══════════════════════════════════════════════════════════
+   LYHLYH — Layout: Page system, app shell, responsive
+═══════════════════════════════════════════════════════════ */
+
+/* ── Page system ── */
+.page { display:none; animation:fadeUp .3s ease both }
+.page.active { display:block }
+
+/* ── Glass surface ── */
+.glass {
+  background:var(--glass-bg);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--border);
+  border-radius:var(--rl);
+}
+.glass-c { border-radius:var(--r) }
+
+/* ── App shell ── */
+.app-layout {
+  display:flex;
+  min-height:100vh;
+  padding-top:var(--nav-h);
+}
+.app-main {
+  flex:1;
+  min-width:0;
+  padding:26px;
+}
+
+/* ── Landing sections ── */
+.container { max-width:1160px; margin:0 auto; padding:0 24px }
+.section    { padding:80px 0 }
+
+/* ── Skeleton loader ── */
+.sk {
+  background:linear-gradient(90deg,var(--bg-2) 25%,var(--bg-3) 50%,var(--bg-2) 75%);
+  background-size:200%;
+  animation:shimmer 1.6s infinite;
+  border-radius:8px;
+}
+
+/* ── Responsive ── */
+@media(max-width:1024px){
+  .map-panel { width:280px }
+}
+@media(max-width:880px){
+  .sidebar    { display:none }
+  .hamburger  { display:flex }
+  .nav-links  { display:none }
+  .hide-m     { display:none !important }
+  .map-panel  { width:calc(100% - 32px); max-width:360px }
+  .results-panel-inner { padding:16px }
+  .algo-grid  { grid-template-columns:1fr !important; gap:8px }
+}
+@media(max-width:680px){
+  :root { --sw:100% }
+  .app-layout  { flex-direction:column }
+  .map-panel   { width:calc(100% - 24px); left:12px; top:12px }
+  .map-legend  { left:12px; bottom:12px; font-size:.7rem; padding:8px 10px }
+  .click-hint  { right:12px; bottom:12px; font-size:.7rem }
+  .network-toggle { top:12px; right:12px }
+  .chart-donut-wrap { flex-direction:column !important; align-items:center !important }
+}
+@media(max-width:580px){
+  .btn-lg  { padding:12px 22px; font-size:.95rem }
+  .section { padding:56px 0 }
+  .container { padding:0 16px }
+  .hero-grid { grid-template-columns:1fr !important }
+  .hero-map-col { height:55vw !important; min-height:220px }
+}
