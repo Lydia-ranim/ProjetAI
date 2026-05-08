@@ -1,0 +1,46 @@
+/* ═══════════════════════════════════════════════════════════
+   LYHLYH — Cards
+═══════════════════════════════════════════════════════════ */
+
+/* Base card */
+.card {
+  background:var(--bg-2);
+  border:1px solid var(--border);
+  border-radius:var(--rl);
+  padding:22px;
+}
+
+/* Stat card (profile / landing) */
+.stat-card {
+  padding:20px 22px;
+  border-radius:var(--rl);
+  background:var(--bg-2);
+  border:1px solid var(--border);
+  transition:transform var(--tr), border-color var(--tr);
+}
+.stat-card:hover { transform:translateY(-2px); border-color:var(--border2) }
+.stat-val { font-family:'Syne',sans-serif; font-size:1.85rem; font-weight:700; line-height:1 }
+.stat-lbl { font-size:.78rem; color:var(--text-s); margin-top:5px }
+.stat-delta { font-size:.74rem; margin-top:7px }
+
+/* Result stat mini-cards (inside results panel) */
+.res-stat-card {
+  background:var(--bg-3);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px 14px;
+  text-align:center;
+  transition:border-color var(--tr), transform var(--tr);
+}
+.res-stat-card:hover { border-color:var(--border2); transform:translateY(-1px) }
+.res-stat-val { font-family:'DM Mono',monospace; font-size:1rem; font-weight:600 }
+.res-stat-lbl { font-size:.67rem; color:var(--text-t); margin-top:3px; text-transform:uppercase; letter-spacing:.06em }
+
+/* Algo comparison cards (results panel top row) */
+.algo-card {
+  border-radius:var(--r);
+  padding:12px;
+  text-align:center;
+  transition:transform var(--tr), box-shadow var(--tr);
+}
+.algo-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-sm) }

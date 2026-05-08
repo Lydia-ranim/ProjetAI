@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="LYHLYH — Planification multi-modale alimentée par l'IA pour la Wilaya d'Alger. Métro, tram, bus, train, téléphérique.">
+<title>LYHLYH — Transit Algiers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- ══ NOTIFICATION CONTAINER ══ -->
+<div id="nc"></div>
+
+<!-- ══════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════ -->
+<nav class="nav">
+  <div class="nav-logo" onclick="goTo('landing')">
+    <svg class="logo-svg" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="4" y1="10" x2="14" y2="6" stroke="#C6B7E2" stroke-width=".5" opacity=".5"/>
+      <line x1="4" y1="10" x2="10" y2="18" stroke="#C6B7E2" stroke-width=".5" opacity=".4"/>
+      <line x1="14" y1="6" x2="22" y2="9" stroke="#C6B7E2" stroke-width=".5" opacity=".4"/>
+      <line x1="14" y1="6" x2="10" y2="18" stroke="#C6B7E2" stroke-width=".5" opacity=".3"/>
+      <circle cx="4" cy="10" r="1" fill="#C6B7E2" opacity=".5"/>
+      <circle cx="14" cy="6" r="1" fill="#C6B7E2" opacity=".6"/>
+      <circle cx="10" cy="18" r="1" fill="#C6B7E2" opacity=".4"/>
+      <circle cx="22" cy="9" r="1" fill="#C6B7E2" opacity=".4"/>
+      <circle cx="22" cy="22" r="10" stroke="#C6B7E2" stroke-width="1" opacity=".6"/>
+      <path d="M22 13L23.2 19.8L22 21L20.8 19.8L22 13Z" fill="#C6B7E2" opacity=".8"/>
+      <path d="M22 31L20.8 24.2L22 23L23.2 24.2L22 31Z" fill="#C6B7E2" opacity=".5"/>
+      <path d="M13 22L19.8 20.8L21 22L19.8 23.2L13 22Z" fill="#C6B7E2" opacity=".5"/>
+      <path d="M31 22L24.2 23.2L23 22L24.2 20.8L31 22Z" fill="#C6B7E2" opacity=".5"/>
+      <path d="M15.5 15.5L19.4 20L22 19L22.5 15Z" fill="#C6B7E2" opacity=".35"/>
+      <path d="M19 10C17 10 15 11.8 15 14C15 17.5 19 22 19 22C19 22 23 17.5 23 14C23 11.8 21 10 19 10Z" fill="#670627"/>
+      <circle cx="19" cy="14" r="2.2" fill="#8A0A35"/>
+      <rect x="20.5" y="7.5" width="4" height="4" rx=".5" transform="rotate(45 22.5 9.5)" fill="#BEEEDB"/>
+    </svg>
+    <span class="logo-name">LYHLYH</span>
+  </div>
+  <div class="nav-links" id="nav-links">
+    <span class="nav-link" onclick="goTo('landing')">Accueil</span>
+    <span class="nav-link" onclick="goTo('dashboard')">Itinéraire</span>
+    <span class="nav-link" onclick="goTo('explorer')">Explorer</span>
+    <span class="nav-link" onclick="goTo('profile')">Profil</span>
+    <span class="nav-link" onclick="goTo('settings')">Paramètres</span>
+  </div>
+  <div class="nav-right">
+    <button class="btn btn-ghost btn-sm hide-m" onclick="goTo('auth')">Connexion</button>
+    <div class="avatar" onclick="goTo('profile')">AK</div>
+    <div class="hamburger" id="hbg" onclick="toggleMobile()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mob-menu">
+  <span class="nav-link" onclick="goTo('landing')">Accueil</span>
+  <span class="nav-link" onclick="goTo('dashboard')">Itinéraire</span>
+  <span class="nav-link" onclick="goTo('explorer')">Explorer</span>
+  <span class="nav-link" onclick="goTo('profile')">Profil</span>
+  <span class="nav-link" onclick="goTo('settings')">Paramètres</span>
+  <div class="divider"></div>
+  <span class="nav-link" onclick="goTo('auth')">Connexion</span>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE : LANDING
+══════════════════════════════════════════════ -->
+<div class="page active" id="page-landing">
+
+<!-- HERO -->
+<section style="min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:0;padding-top:var(--nav-h);overflow:hidden;position:relative" class="hero-grid">
+  <div style="position:absolute;inset:0;pointer-events:none;z-index:0">
+    <div style="position:absolute;top:10%;left:5%;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(103,6,39,.15),transparent 70%)"></div>
+    <div style="position:absolute;bottom:5%;right:10%;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(198,183,226,.08),transparent 70%)"></div>
+  </div>
+  <div class="container" style="padding-top:60px;padding-bottom:80px;position:relative;z-index:2;max-width:600px;padding-left:60px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px">
+      <span class="tag">🌍 Wilaya d'Alger</span>
+      <span class="tag-purple" style="display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:99px;font-size:.78rem;font-weight:600;background:var(--purple-20);color:var(--purple);border:1px solid rgba(198,183,226,.2)">6 modes de transport</span>
+    </div>
+    <h1 style="font-size:clamp(2.4rem,5vw,3.6rem);font-weight:800;margin-bottom:18px;line-height:1.05">
+      Voyagez à Alger<br>
+      <span class="grad-mint">Plus Vert.</span><br>
+      <span class="grad-purple">Plus Intelligent.</span>
+    </h1>
+    <p style="font-size:1rem;color:var(--text-s);max-width:480px;line-height:1.75;margin-bottom:32px">
+      Planification multi-modale alimentée par l'IA — métro, tram, bus, train, téléphérique et marche. Minimisez le temps, le coût et l'empreinte CO₂ en un clic.
+    </p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-plan" onclick="goTo('dashboard')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L13.5 4.5V12L8 15L2.5 12V4.5L8 1.5Z" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 8L7 9.5L10.5 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Planifier un trajet
+      </button>
+      <button class="btn btn-ghost btn-lg" onclick="scrollF()">Découvrir →</button>
+    </div>
+    <div style="display:flex;gap:28px;margin-top:36px;flex-wrap:wrap">
+      <div><div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--mint)">3</div><div style="font-size:.78rem;color:var(--text-t);margin-top:1px">Algorithmes IA</div></div>
+      <div style="width:1px;background:var(--border)"></div>
+      <div><div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--purple)">18+</div><div style="font-size:.78rem;color:var(--text-t);margin-top:1px">Stations couvertes</div></div>
+      <div style="width:1px;background:var(--border)"></div>
+      <div><div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--pink)">4</div><div style="font-size:.78rem;color:var(--text-t);margin-top:1px">Profils voyage</div></div>
+    </div>
+  </div>
+  <div style="position:relative;height:100vh;overflow:hidden" class="hero-map-col">
+    <div id="hero-map-wrap" style="position:absolute;inset:0">
+      <div id="hero-map" style="width:100%;height:100%"></div>
+      <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,var(--bg) 0%,transparent 30%);z-index:5"></div>
+      <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,var(--bg) 0%,transparent 15%,transparent 80%,var(--bg) 100%);z-index:5"></div>
+      <div class="glass" style="position:absolute;bottom:40px;right:20px;z-index:10;padding:16px;max-width:200px">
+        <div style="font-size:.7rem;color:var(--text-t);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Exemple de trajet</div>
+        <div style="font-size:.85rem;font-weight:600;margin-bottom:5px">Martyrs → Zeralda</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px"><div class="chip chip-m">Métro</div><div class="chip chip-k">Train</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:.72rem;text-align:center">
+          <div><div style="color:var(--mint);font-weight:600">42 min</div><div style="color:var(--text-t)">Durée</div></div>
+          <div><div style="color:var(--purple);font-weight:600">85 DA</div><div style="color:var(--text-t)">Coût</div></div>
+          <div><div style="color:var(--mint);font-weight:600">124g</div><div style="color:var(--text-t)">CO₂</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features-s" style="background:var(--bg-1);border-top:1px solid var(--border)">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:52px">
+      <span class="tag" style="margin-bottom:14px;display:inline-flex">Optimisation Multi-Critères</span>
+      <h2 style="font-size:clamp(1.7rem,4vw,2.5rem);font-weight:700;margin-bottom:12px">Tout optimisé en une seule requête</h2>
+      <p style="color:var(--text-s);max-width:480px;margin:0 auto;line-height:1.7">Choisissez votre profil de priorité — rapidité, économie, écologie ou équilibre.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px">
+      <div class="card" style="transition:transform var(--tr);cursor:default" onmouseenter="this.style.transform='translateY(-4px)'" onmouseleave="this.style.transform='none'">
+        <div style="width:42px;height:42px;border-radius:12px;background:var(--mint-20);display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid rgba(190,238,219,.18)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3.5" fill="var(--mint)"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4" stroke="var(--mint)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:8px">Suivi CO₂ réel</h3>
+        <p style="font-size:.83rem;color:var(--text-s);line-height:1.65">Facteurs d'émission par mode. Bus: 68g/km · Métro: 5g/km · Tram: 4g/km.</p>
+      </div>
+      <div class="card" style="transition:transform var(--tr);cursor:default;border-color:rgba(198,183,226,.18)" onmouseenter="this.style.transform='translateY(-4px)'" onmouseleave="this.style.transform='none'">
+        <div style="width:42px;height:42px;border-radius:12px;background:var(--purple-20);display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid rgba(198,183,226,.18)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10L10 3L17 10L14 10L14 17L6 17L6 10Z" stroke="var(--purple)" stroke-width="1.4" stroke-linejoin="round" fill="none"/></svg>
+        </div>
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:8px">3 Algorithmes IA</h3>
+        <p style="font-size:.83rem;color:var(--text-s);line-height:1.65">Dijkstra, A* et Recherche Bi-Directionnelle. Comparaison en temps réel.</p>
+        <div style="display:flex;gap:6px;margin-top:12px"><div class="chip chip-m">Dijkstra</div><div class="chip chip-p">A*</div><div class="chip chip-k">BiDir</div></div>
+      </div>
+      <div class="card" style="transition:transform var(--tr);cursor:default;border-color:rgba(242,196,206,.14)" onmouseenter="this.style.transform='translateY(-4px)'" onmouseleave="this.style.transform='none'">
+        <div style="width:42px;height:42px;border-radius:12px;background:var(--crimson-20);display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid rgba(103,6,39,.25)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3C6.5 3 3 6 3 9.5c0 4 7 10.5 7 10.5S17 13.5 17 9.5C17 6 13.5 3 10 3z" stroke="var(--pink)" stroke-width="1.4"/><circle cx="10" cy="9.5" r="2.2" stroke="var(--pink)" stroke-width="1.2"/></svg>
+        </div>
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:8px">Double saisie</h3>
+        <p style="font-size:.83rem;color:var(--text-s);line-height:1.65">Entrez les noms des arrêts par texte <strong style="color:var(--text-p)">ou</strong> cliquez directement sur la carte d'Alger.</p>
+      </div>
+      <div class="card" style="transition:transform var(--tr);cursor:default" onmouseenter="this.style.transform='translateY(-4px)'" onmouseleave="this.style.transform='none'">
+        <div style="width:42px;height:42px;border-radius:12px;background:var(--mint-20);display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1px solid rgba(190,238,219,.18)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="12" rx="2" stroke="var(--mint)" stroke-width="1.4"/><path d="M6 5V4a2 2 0 0 1 4 0v1M2 9h16" stroke="var(--mint)" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:8px">4 Profils utilisateur</h3>
+        <p style="font-size:.83rem;color:var(--text-s);line-height:1.65">Rapide, Économique, Écologique, Équilibré — ou personnalisez les poids manuellement.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ALGO COMPARISON -->
+<section class="section">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;flex-wrap:wrap" class="hero-grid">
+      <div>
+        <span class="tag" style="margin-bottom:14px;display:inline-flex">Performance des Algorithmes</span>
+        <h2 style="font-size:clamp(1.6rem,3.5vw,2.3rem);font-weight:700;margin-bottom:16px">Même résultat, trois chemins différents</h2>
+        <p style="color:var(--text-s);line-height:1.7;margin-bottom:24px">Les trois algorithmes garantissent le même coût optimal. La différence : le nombre de nœuds explorés.</p>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:9px;height:9px;border-radius:50%;background:var(--mint);flex-shrink:0;margin-top:5px"></div>
+            <div><div style="font-weight:600;font-size:.9rem">Dijkstra (baseline)</div><div style="font-size:.8rem;color:var(--text-s)">Explore tous les nœuds — optimal garanti, sans heuristique</div></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:9px;height:9px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:5px"></div>
+            <div><div style="font-weight:600;font-size:.9rem">A* Search</div><div style="font-size:.8rem;color:var(--text-s)">h(n) = w₁·d/Vmax×60 — heuristique admissible, moins d'expansions</div></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:9px;height:9px;border-radius:50%;background:var(--pink);flex-shrink:0;margin-top:5px"></div>
+            <div><div style="font-weight:600;font-size:.9rem">Bi-Directionnel</div><div style="font-size:.8rem;color:var(--text-s)">Recherches avant + arrière se rejoignent au milieu — le plus efficace</div></div>
+          </div>
+        </div>
+        <button class="btn btn-plan" style="margin-top:26px;font-size:.9rem;padding:12px 26px" onclick="goTo('dashboard')">Lancer la comparaison →</button>
+      </div>
+      <div class="card">
+        <div style="font-size:.8rem;color:var(--text-s);margin-bottom:18px;font-weight:500">Nœuds explorés — Martyrs → Zeralda</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.82rem"><span style="color:var(--text-s)">Dijkstra</span><span style="color:var(--mint);font-family:'DM Mono',monospace">642 nœuds</span></div>
+            <div class="progress-wrap"><div class="progress-bar pb-mint" style="width:100%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.82rem"><span style="color:var(--text-s)">A*</span><span style="color:var(--purple);font-family:'DM Mono',monospace">281 nœuds</span></div>
+            <div class="progress-wrap"><div class="progress-bar pb-purple" style="width:44%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.82rem"><span style="color:var(--text-s)">Bi-Dir</span><span style="color:var(--pink);font-family:'DM Mono',monospace">156 nœuds</span></div>
+            <div class="progress-wrap"><div class="progress-bar pb-pink" style="width:24%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" style="background:var(--bg-1);border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="card" style="text-align:center;padding:60px 40px;background:linear-gradient(135deg,rgba(103,6,39,.12),rgba(198,183,226,.06));border-color:rgba(198,183,226,.18)">
+      <div style="margin:0 auto 20px;width:60px;height:60px">
+        <svg viewBox="0 0 38 38" fill="none"><circle cx="22" cy="22" r="10" stroke="#C6B7E2" stroke-width="1" opacity=".6"/><path d="M22 13L23.2 19.8L22 21L20.8 19.8L22 13Z" fill="#C6B7E2" opacity=".8"/><path d="M22 31L20.8 24.2L22 23L23.2 24.2L22 31Z" fill="#C6B7E2" opacity=".5"/><path d="M13 22L19.8 20.8L21 22L19.8 23.2L13 22Z" fill="#C6B7E2" opacity=".5"/><path d="M31 22L24.2 23.2L23 22L24.2 20.8L31 22Z" fill="#C6B7E2" opacity=".5"/><path d="M19 10C17 10 15 11.8 15 14C15 17.5 19 22 19 22C19 22 23 17.5 23 14C23 11.8 21 10 19 10Z" fill="#670627"/><circle cx="19" cy="14" r="2.2" fill="#8A0A35"/><rect x="20.5" y="7.5" width="4" height="4" rx=".5" transform="rotate(45 22.5 9.5)" fill="#BEEEDB"/></svg>
+      </div>
+      <h2 style="font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;margin-bottom:12px">Prêt à voyager vert ?</h2>
+      <p style="color:var(--text-s);margin-bottom:28px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.7">Rejoignez la communauté LYHLYH et planifiez des trajets intelligents à travers la wilaya d'Alger.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-plan" onclick="goTo('auth')">Créer un compte</button>
+        <button class="btn btn-ghost btn-lg" onclick="goTo('dashboard')">Essayer sans compte</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="border-top:1px solid var(--border);padding:36px 0">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+    <div class="nav-logo">
+      <svg class="logo-svg" viewBox="0 0 38 38" fill="none"><circle cx="22" cy="22" r="10" stroke="#C6B7E2" stroke-width="1" opacity=".6"/><path d="M22 13L23.2 19.8L22 21L20.8 19.8L22 13Z" fill="#C6B7E2" opacity=".8"/><path d="M19 10C17 10 15 11.8 15 14C15 17.5 19 22 19 22C19 22 23 17.5 23 14C23 11.8 21 10 19 10Z" fill="#670627"/><rect x="20.5" y="7.5" width="4" height="4" rx=".5" transform="rotate(45 22.5 9.5)" fill="#BEEEDB"/></svg>
+      <span class="logo-name">LYHLYH</span>
+    </div>
+    <div style="font-size:.8rem;color:var(--text-t)">Introduction à l'IA — Printemps 2025–2026 · Projet 5</div>
+    <div style="font-size:.8rem;color:var(--text-t)">Alger, Algérie 🇩🇿</div>
+  </div>
+</footer>
+
+</div><!-- /landing -->
+<!-- ══════════════════════════════════════════════
+     PAGE : DASHBOARD (Itinéraire)
+══════════════════════════════════════════════ -->
+<div class="page" id="page-dashboard">
+  <div class="app-layout">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="s-section">
+        <div class="sidebar-label">Menu Principal</div>
+        <div class="sidebar-item active" onclick="goTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg> Itinéraire
+        </div>
+        <div class="sidebar-item" onclick="goTo('explorer')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg> Explorer
+        </div>
+        <div class="sidebar-item" onclick="goTo('profile')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profil
+        </div>
+      </div>
+      
+      <div class="s-section">
+        <div class="sidebar-label">Favoris</div>
+        <div class="sidebar-item" onclick="quickRoute('M_MARTYRS','TR_ZERALDA')">
+          <span style="font-size:1.1rem;margin-right:4px">🏠</span> Maison → Travail
+        </div>
+        <div class="sidebar-item" onclick="quickRoute('TR_AGHA','C_JARDIN')">
+          <span style="font-size:1.1rem;margin-right:4px">🎓</span> Université
+        </div>
+      </div>
+
+      <div class="s-section">
+        <div class="sidebar-label">Profil de recherche</div>
+        <select id="dash-profile" class="form-input" style="font-size:.8rem;padding:8px;background:var(--bg-2);border:none" onchange="applyProfile(this.value); updateSearchParamDisplay()">
+          <option value="balanced">⚖️ Équilibré</option>
+          <option value="fastest">⚡ Le plus rapide</option>
+          <option value="cheapest">💰 Le moins cher</option>
+          <option value="greenest">🌿 Écologique</option>
+        </select>
+      </div>
+
+      <div class="s-section" style="margin-top:auto;padding-top:20px">
+        <div class="card" style="padding:14px;background:linear-gradient(135deg,rgba(198,183,226,.1),rgba(190,238,219,.05));border-color:rgba(198,183,226,.2)">
+          <div style="font-size:.78rem;font-weight:600;color:var(--purple);margin-bottom:6px">Besoin d'aide ?</div>
+          <div style="font-size:.72rem;color:var(--text-s);line-height:1.5;margin-bottom:10px">Appuyez sur 'Echap' pour fermer les menus.</div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;font-size:.75rem">Tutoriel</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="app-main" style="position:relative;padding:0;display:flex">
+      
+      <!-- Interactive Map Panel -->
+      <div style="flex:1;position:relative">
+        <div id="dash-map"></div>
+        
+        <div class="network-toggle" onclick="toggleNetwork()">
+          <div class="dot" id="network-indicator" style="background:#ccc;box-shadow:none"></div>
+          <span id="network-lbl">Afficher réseau</span>
+        </div>
+
+        <div class="click-hint" id="click-hint">📍 Cliquez sur la carte pour définir le départ</div>
+
+        <!-- Floating Search Panel -->
+        <div class="map-panel">
+          <div class="map-search-card">
+            
+            <div class="map-input-mode">
+              <div class="mode-btn origin-active" id="btn-set-origin" onclick="setClickMode('origin')">📍 Départ</div>
+              <div class="mode-btn" id="btn-set-dest" onclick="setClickMode('dest')">🎯 Arrivée</div>
+            </div>
+
+            <div style="position:relative">
+              <div class="form-group" style="margin-bottom:8px">
+                <div class="autocomplete-wrap">
+                  <input type="text" class="form-input mint-focus" id="origin-input" placeholder="Où êtes-vous ?" autocomplete="off" oninput="acSearch('origin', this.value)" onkeydown="acKey(event, 'origin')" onfocus="setClickMode('origin')">
+                  <div class="autocomplete-list" id="ac-origin"></div>
+                </div>
+              </div>
+
+              <div style="position:absolute;left:18px;top:48px;height:24px;width:2px;background:var(--border2);z-index:10"></div>
+              <button onclick="swapPoints()" style="position:absolute;right:12px;top:44px;background:var(--bg-1);border:1px solid var(--border);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;z-index:20;color:var(--text-s);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:all var(--tr)" onmouseover="this.style.color='var(--mint)';this.style.transform='rotate(180deg)'" onmouseout="this.style.color='var(--text-s)';this.style.transform='rotate(0deg)'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l4-4M17 20l-4-4"/></svg>
+              </button>
+
+              <div class="form-group" style="margin-bottom:12px">
+                <div class="autocomplete-wrap">
+                  <input type="text" class="form-input" id="dest-input" placeholder="Où allez-vous ?" autocomplete="off" oninput="acSearch('dest', this.value)" onkeydown="acKey(event, 'dest')" onfocus="setClickMode('dest')">
+                  <div class="autocomplete-list" id="ac-dest"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Algorithm selection -->
+            <div style="margin-bottom:14px">
+              <div class="sidebar-label" style="padding:0;margin-bottom:8px">Algorithme d'IA</div>
+              <div class="tabs">
+                <label style="flex:1;cursor:pointer"><input type="radio" name="algo" value="astar" checked style="display:none"><div class="tab active" onclick="document.querySelectorAll('input[name=algo]').forEach(r=>r.nextElementSibling.classList.remove('active')); this.classList.add('active')">A*</div></label>
+                <label style="flex:1;cursor:pointer"><input type="radio" name="algo" value="bidir" style="display:none"><div class="tab" onclick="document.querySelectorAll('input[name=algo]').forEach(r=>r.nextElementSibling.classList.remove('active')); this.classList.add('active')">Bi-Dir</div></label>
+                <label style="flex:1;cursor:pointer"><input type="radio" name="algo" value="dijkstra" style="display:none"><div class="tab" onclick="document.querySelectorAll('input[name=algo]').forEach(r=>r.nextElementSibling.classList.remove('active')); this.classList.add('active')">Dijkstra</div></label>
+              </div>
+            </div>
+
+            <!-- Params Override -->
+            <div style="margin-bottom:16px">
+              <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:4px 0" onclick="toggleSearchParams()">
+                <div class="sidebar-label" style="padding:0;margin:0;color:var(--purple)">+ Filtres / Contraintes</div>
+                <svg id="toggle-params-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="transition:transform .2s"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+              
+              <div id="search-params-panel" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border2)">
+                <div class="form-group" style="margin-bottom:10px">
+                  <label class="form-label" style="font-size:.7rem">Coût max (DA)</label>
+                  <input type="number" id="search-cost" class="form-input" style="padding:6px 10px;font-size:.8rem" placeholder="Ex: 100" onchange="updateSearchParamDisplay()">
+                </div>
+                <div class="form-group" style="margin-bottom:10px">
+                  <label class="form-label" style="font-size:.7rem">Poids coût financier (0.0 à 1.0)</label>
+                  <input type="number" id="search-weight" class="form-input" style="padding:6px 10px;font-size:.8rem" step="0.1" min="0" max="1" placeholder="Ex: 0.8" onchange="updateSearchParamDisplay()">
+                </div>
+                <div style="display:flex;justify-content:flex-end">
+                  <span style="font-size:.7rem;color:var(--text-s);cursor:pointer" onclick="resetSearchParams()">Rétablir défaut</span>
+                </div>
+              </div>
+              <div id="search-param-hint" style="font-size:.7rem;color:var(--mint);margin-top:4px"></div>
+            </div>
+
+            <button class="btn btn-crimson" style="width:100%;justify-content:center;padding:12px;font-size:1rem" onclick="doRoute()">Planifier l'itinéraire</button>
+            
+            <div id="map-status" style="font-size:.75rem;color:var(--text-s);text-align:center;margin-top:12px;min-height:18px">Cliquez sur la carte pour définir le départ</div>
+          </div>
+        </div>
+
+        <div class="map-legend">
+          <div class="legend-row"><div class="legend-line" style="background:#BEEEDB"></div> Métro L1</div>
+          <div class="legend-row"><div class="legend-line" style="background:#C6B7E2;border-top:2px dashed #fff"></div> Tramway T1</div>
+          <div class="legend-row"><div class="legend-line" style="background:#F2C4CE;border-top:2px dotted #fff"></div> Train banlieue</div>
+          <div class="legend-row"><div class="legend-line" style="background:#FF7043"></div> Téléphérique</div>
+          <div class="legend-row"><div style="width:22px;height:4px;background:rgba(92,107,192,.3);border-radius:99px;flex-shrink:0"><div style="width:100%;height:2px;background:#5C6BC0;margin-top:1px"></div></div> Trajet généré</div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="map-loading" style="position:absolute;inset:0;background:rgba(10,22,40,.8);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column">
+          <div style="width:50px;height:50px;border:4px solid var(--border);border-top-color:var(--mint);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:16px"></div>
+          <div id="loading-text" style="font-weight:600;color:var(--mint);letter-spacing:.02em">Calcul en cours...</div>
+          <div style="font-size:.8rem;color:var(--text-s);margin-top:8px">Exploration de l'arbre d'états multi-modal</div>
+        </div>
+      </div>
+
+      <!-- Results Panel -->
+      <div id="results-panel" style="width:400px;background:var(--bg-1);border-left:1px solid var(--border);flex-shrink:0;overflow-y:auto;max-height:0;transition:max-height .4s cubic-bezier(.4,0,.2,1)">
+        <div class="results-panel-inner">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
+            <div>
+              <h2 id="res-title" style="font-size:1.4rem;font-weight:700;margin-bottom:4px;color:var(--mint)">-</h2>
+              <div id="res-algo-used" style="font-size:.78rem;color:var(--text-t)"></div>
+            </div>
+            <button class="btn btn-icon" style="background:var(--bg-3)" onclick="document.getElementById('results-panel').style.maxHeight='0'">✕</button>
+          </div>
+
+          <div id="res-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px"></div>
+
+          <!-- Algo Comparison (Results Row) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:24px">
+            <div class="algo-card" style="background:rgba(190,238,219,.05);border:1px solid rgba(190,238,219,.15)">
+              <div style="font-size:.7rem;color:var(--mint);font-weight:600">Dijkstra</div>
+              <div id="p-dij" style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:600;margin:4px 0">-</div>
+              <div id="p-dij-ms" style="font-size:.65rem;color:var(--text-t)">-</div>
+            </div>
+            <div class="algo-card" style="background:rgba(198,183,226,.05);border:1px solid rgba(198,183,226,.15)">
+              <div style="font-size:.7rem;color:var(--purple);font-weight:600">A*</div>
+              <div id="p-ast" style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:600;margin:4px 0">-</div>
+              <div id="p-ast-ms" style="font-size:.65rem;color:var(--text-t)">-</div>
+            </div>
+            <div class="algo-card" style="background:rgba(242,196,206,.05);border:1px solid rgba(242,196,206,.15)">
+              <div style="font-size:.7rem;color:var(--pink);font-weight:600">Bi-Dir</div>
+              <div id="p-bid" style="font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:600;margin:4px 0">-</div>
+              <div id="p-bid-ms" style="font-size:.65rem;color:var(--text-t)">-</div>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="tabs" style="margin-bottom:20px">
+            <div class="tab active" onclick="document.getElementById('p-tab-itin').style.display='block';document.getElementById('p-tab-stats').style.display='none';this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Itinéraire</div>
+            <div class="tab" onclick="document.getElementById('p-tab-itin').style.display='none';document.getElementById('p-tab-stats').style.display='block';this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Statistiques</div>
+          </div>
+
+          <!-- Tab: Itinerary -->
+          <div id="p-tab-itin">
+            <!-- Animated Donut/Bars -->
+            <div class="card route-chart-section" id="route-chart-section" style="margin-bottom:24px;padding:18px;display:none;background:var(--bg-2)">
+              <div style="font-size:.78rem;font-weight:700;color:var(--text-s);margin-bottom:14px;letter-spacing:.04em">RÉPARTITION DU TEMPS</div>
+              <div style="display:flex;gap:20px;align-items:center" class="chart-donut-wrap">
+                <div style="position:relative;width:110px;height:110px;flex-shrink:0">
+                  <svg width="110" height="110" viewBox="20 20 110 110" style="transform:rotate(-90deg)">
+                    <circle cx="75" cy="75" r="52" fill="none" stroke="var(--bg-3)" stroke-width="18"/>
+                    <g id="donut-segments"></g>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                    <span id="donut-total" style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:var(--text-p);line-height:1">0</span>
+                    <span style="font-size:.65rem;color:var(--text-t);text-transform:uppercase;margin-top:2px">min</span>
+                  </div>
+                </div>
+                <div style="flex:1;min-width:0" id="chart-legend-bars"></div>
+              </div>
+            </div>
+
+            <div id="cost-bars-section" style="margin-bottom:24px"></div>
+
+            <div class="divider-label">ÉTAPES DU TRAJET</div>
+            <div id="itin-steps"></div>
+          </div>
+
+          <!-- Tab: Stats -->
+          <div id="p-tab-stats" style="display:none">
+            <div id="path-stats">
+              <div class="card" style="background:var(--bg-2);padding:18px;margin-bottom:20px">
+                <div style="display:flex;flex-direction:column;gap:12px;font-size:.83rem" id="path-global-stats"></div>
+              </div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--text-s);margin-bottom:12px;letter-spacing:.04em">RÉSUMÉ</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px" id="path-summary-grid"></div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--text-s);margin-bottom:12px;letter-spacing:.04em">DÉTAIL DES SEGMENTS (HORS MARCHE)</div>
+              <div class="glass glass-c" style="overflow:hidden">
+                <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:6px;padding:10px 14px;background:var(--bg-3);border-bottom:1px solid var(--border);font-size:.7rem;font-weight:700;color:var(--text-t)">
+                  <span>Trajet</span><span style="text-align:center">Mode</span><span style="text-align:right">Durée</span><span style="text-align:right">Attente</span><span style="text-align:right">Coût</span>
+                </div>
+                <div id="path-segment-rows"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<!-- ══════════════════════════════════════════════
+     PAGE : AUTH
+══════════════════════════════════════════════ -->
+<div class="page" id="page-auth">
+  <div class="container" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - var(--nav-h));padding-top:40px;padding-bottom:40px">
+    <div class="card" style="width:100%;max-width:440px;padding:36px">
+      
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--purple),var(--mint));border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 24px rgba(198,183,226,.25)">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0a1628" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h2 id="auth-title" style="font-size:1.6rem;font-weight:700;margin-bottom:6px">Bon retour</h2>
+        <p id="auth-sub" style="color:var(--text-s);font-size:.9rem">Connectez-vous à LYHLYH</p>
+      </div>
+
+      <div class="tabs" id="auth-tabs" style="margin-bottom:26px">
+        <div class="tab active" onclick="authTab('login',this)">Connexion</div>
+        <div class="tab" onclick="authTab('signup',this)">Inscription</div>
+      </div>
+
+      <!-- Login Form -->
+      <div id="login-f">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="le" class="form-input" placeholder="ahmed@example.com">
+        </div>
+        <div class="form-group" style="margin-bottom:24px">
+          <div style="display:flex;justify-content:space-between">
+            <label class="form-label">Mot de passe</label>
+            <span style="font-size:.75rem;color:var(--purple);cursor:pointer">Oublié ?</span>
+          </div>
+          <input type="password" id="lp" class="form-input" placeholder="••••••••">
+        </div>
+        <button class="btn btn-cta" style="width:100%;justify-content:center;padding:12px;font-size:1rem" onclick="doLogin()">Se connecter</button>
+      </div>
+
+      <!-- Signup Form -->
+      <div id="signup-f" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Nom complet</label>
+          <input type="text" class="form-input mint-focus" placeholder="Ahmed K.">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input mint-focus" placeholder="ahmed@example.com">
+        </div>
+        <div class="form-group" style="margin-bottom:24px">
+          <label class="form-label">Mot de passe</label>
+          <input type="password" class="form-input mint-focus" placeholder="••••••••" oninput="pwStr(this.value)">
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <div class="progress-wrap" style="flex:1"><div id="pw-b" class="progress-bar"></div></div>
+            <span id="pw-l" style="font-size:.7rem;font-weight:600;width:65px;text-align:right"></span>
+          </div>
+        </div>
+        <button class="btn btn-mint" style="width:100%;justify-content:center;padding:12px;font-size:1rem;font-weight:700" onclick="doSignup()">Créer mon compte</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE : EXPLORER
+══════════════════════════════════════════════ -->
+<div class="page" id="page-explorer">
+  <div class="container" style="padding-top:40px;padding-bottom:60px">
+    
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px;flex-wrap:wrap;gap:20px">
+      <div>
+        <h1 style="font-size:2.2rem;font-weight:700;margin-bottom:8px">Explorer le réseau</h1>
+        <p style="color:var(--text-s)">Découvrez les trajets fréquents et le plan de la wilaya d'Alger.</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <input type="text" class="form-input" style="width:220px;background:var(--bg-2)" placeholder="Rechercher (ex: Zeralda)..." oninput="filterExp(this.value)">
+        <select class="form-input" style="width:auto;background:var(--bg-2)" onchange="sortExp(this.value)">
+          <option value="time">Trier par temps</option>
+          <option value="cost">Trier par coût</option>
+          <option value="co2">Trier par CO₂</option>
+          <option value="tf">Trier par corresp.</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:24px" class="hero-grid">
+      <!-- Cards grid -->
+      <div id="exp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;align-content:start"></div>
+      
+      <!-- Mini Map -->
+      <div class="glass" style="height:calc(100vh - 180px);position:sticky;top:90px;overflow:hidden">
+        <div id="explorer-map"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ══════════════════════════════════════════════
+     PAGE : PROFILE
+══════════════════════════════════════════════ -->
+<div class="page" id="page-profile">
+  <div class="container" style="padding-top:40px;padding-bottom:60px">
+    
+    <div style="display:grid;grid-template-columns:300px 1fr;gap:32px" class="hero-grid">
+      
+      <!-- Left col: User summary -->
+      <div>
+        <div class="card" style="text-align:center;padding:32px 24px">
+          <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--crimson),var(--purple));border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:#fff;border:3px solid var(--border2);box-shadow:0 8px 24px rgba(103,6,39,.3)">AK</div>
+          <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:4px">Ahmed K.</h2>
+          <p style="color:var(--text-s);font-size:.9rem;margin-bottom:16px">Membre depuis Jan 2026</p>
+          <div class="chip chip-m" style="font-size:.8rem">Niveau 4 — Explorateur</div>
+        </div>
+
+        <div style="margin-top:24px">
+          <div class="sidebar-label">Utilisation des modes (30j)</div>
+          <div class="card" style="padding:18px;display:flex;flex-direction:column;gap:14px" id="mode-b"></div>
+        </div>
+      </div>
+
+      <!-- Right col: Tabs & Content -->
+      <div>
+        <div class="tabs" style="margin-bottom:24px;background:var(--bg-1);border-color:var(--border2);padding:6px">
+          <div class="tab active" onclick="profTab('hist',this)">Historique</div>
+          <div class="tab" onclick="profTab('achiev',this)">Badges</div>
+          <div class="tab" onclick="profTab('stats',this)">Statistiques</div>
+        </div>
+
+        <div id="prof-hist" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div id="prof-achiev" style="display:none;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
+        <div id="prof-stats" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="stat-card">
+              <div class="stat-val" style="color:var(--mint)">42</div>
+              <div class="stat-lbl">Trajets planifiés</div>
+              <div class="stat-delta" style="color:var(--mint)">↗ +12 ce mois</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" style="color:var(--pink)">18k</div>
+              <div class="stat-lbl">DA économisés (vs Voiture)</div>
+              <div class="stat-delta" style="color:var(--pink)">↗ +3k ce mois</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" style="color:var(--purple)">12</div>
+              <div class="stat-lbl">Heures de marche</div>
+              <div class="stat-delta" style="color:var(--purple)">↗ +2h ce mois</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" style="color:var(--mint)">8.5</div>
+              <div class="stat-lbl">kg CO₂ évités</div>
+              <div class="stat-delta" style="color:var(--mint)">↗ +1.2kg ce mois</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE : SETTINGS
+══════════════════════════════════════════════ -->
+<div class="page" id="page-settings">
+  <div class="container" style="max-width:800px;padding-top:40px;padding-bottom:60px">
+    <h1 style="font-size:2.2rem;font-weight:700;margin-bottom:8px">Paramètres de l'IA</h1>
+    <p style="color:var(--text-s);margin-bottom:36px">Personnalisez le comportement des algorithmes de routage par défaut.</p>
+
+    <div class="card" style="margin-bottom:24px">
+      <div style="font-weight:600;font-size:1.1rem;margin-bottom:16px">Profils prédéfinis</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+        <div class="card" style="padding:14px;cursor:pointer;border-color:var(--purple);background:var(--purple-08);text-align:center;transition:all var(--tr)" onclick="selProf(this,'balanced')">
+          <div style="font-size:1.4rem;margin-bottom:6px">⚖️</div>
+          <div style="font-weight:600;font-size:.9rem">Équilibré</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center;transition:all var(--tr)" onclick="selProf(this,'fastest')">
+          <div style="font-size:1.4rem;margin-bottom:6px">⚡</div>
+          <div style="font-weight:600;font-size:.9rem">Rapide</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center;transition:all var(--tr)" onclick="selProf(this,'cheapest')">
+          <div style="font-size:1.4rem;margin-bottom:6px">💰</div>
+          <div style="font-weight:600;font-size:.9rem">Économique</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center;transition:all var(--tr)" onclick="selProf(this,'greenest')">
+          <div style="font-size:1.4rem;margin-bottom:6px">🌿</div>
+          <div style="font-weight:600;font-size:.9rem">Écologique</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <div style="font-weight:600;font-size:1.1rem">Poids des critères (Avancé)</div>
+        <div class="chip chip-p">f(n) = g(n) + h(n)</div>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <label class="form-label" style="margin:0">Temps (w₁)</label>
+            <span class="slider-val" id="sw1">0.33</span>
+          </div>
+          <input type="range" min="0" max="100" value="33" oninput="document.getElementById('sw1').textContent=(this.value/100).toFixed(2)">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <label class="form-label" style="margin:0">Coût financier (w₂)</label>
+            <span class="slider-val" id="sw2">0.33</span>
+          </div>
+          <input type="range" min="0" max="100" value="33" oninput="document.getElementById('sw2').textContent=(this.value/100).toFixed(2)">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <label class="form-label" style="margin:0">Émissions CO₂ (w₃)</label>
+            <span class="slider-val" id="sw3">0.34</span>
+          </div>
+          <input type="range" min="0" max="100" value="34" oninput="document.getElementById('sw3').textContent=(this.value/100).toFixed(2)">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <p style="font-size:.8rem;color:var(--text-s);line-height:1.6">
+        L'algorithme A* et Bi-Directionnel utilisent ces poids pour minimiser le coût fonctionnel total. La somme n'a pas besoin d'être 1.0, mais ils représentent l'importance relative dans l'heuristique de la wilaya.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE : 404
+══════════════════════════════════════════════ -->
+<div class="page" id="page-404">
+  <div class="container" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--nav-h));text-align:center">
+    <div style="font-family:'Syne',sans-serif;font-size:6rem;font-weight:800;color:var(--bg-3);line-height:1">404</div>
+    <h2 style="font-size:1.8rem;font-weight:700;margin:10px 0 16px">Vous êtes hors réseau</h2>
+    <p style="color:var(--text-s);max-width:400px;margin-bottom:24px">La page que vous cherchez n'existe pas ou n'est pas desservie par LYHLYH.</p>
+    <button class="btn btn-plan" onclick="goTo('landing')">Retour à l'accueil</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     GLOBAL MODAL (Tutoriel)
+══════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="mod-tuto" onclick="closeBD(event, 'mod-tuto')">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <h3 style="font-size:1.3rem;font-weight:700">Comment utiliser LYHLYH</h3>
+      <button class="btn btn-icon" style="background:var(--bg-3)" onclick="closeModal('mod-tuto')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;color:var(--text-s);font-size:.9rem;line-height:1.6">
+      <div style="display:flex;gap:12px"><div style="font-size:1.2rem">1️⃣</div><div><b>Définir les points :</b> Cliquez sur la carte ou tapez le nom d'une station d'Alger (ex: Tafourah).</div></div>
+      <div style="display:flex;gap:12px"><div style="font-size:1.2rem">2️⃣</div><div><b>Choisir l'IA :</b> A* est le plus équilibré. Dijkstra garantit le chemin absolu. Bi-Dir est le plus rapide en exécution.</div></div>
+      <div style="display:flex;gap:12px"><div style="font-size:1.2rem">3️⃣</div><div><b>Profils :</b> Ajustez vos priorités dans les paramètres (Temps vs Argent vs CO₂).</div></div>
+      <div style="display:flex;gap:12px"><div style="font-size:1.2rem">4️⃣</div><div><b>Résultats :</b> Analysez les coûts, l'empreinte carbone et suivez la ligne animée sur la carte.</div></div>
+    </div>
+    <button class="btn btn-cta" style="width:100%;justify-content:center;margin-top:24px;padding:12px" onclick="closeModal('mod-tuto')">J'ai compris</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCRIPTS (Strict Load Order)
+══════════════════════════════════════════════ -->
+<!-- 1. Data -->
+<script src="js/data/stations.js"></script>
+
+<!-- 2. Core Modules -->
+<script src="js/modules/notifications.js"></script>
+<script src="js/modules/modals.js"></script>
+<script src="js/modules/auth.js"></script>
+<script src="js/modules/autocomplete.js"></script>
+<script src="js/modules/routing.js"></script>
+<script src="js/modules/results.js"></script>
+
+<!-- 3. Views Modules -->
+<script src="js/modules/map.js"></script>
+<script src="js/modules/explorer.js"></script>
+<script src="js/modules/profile.js"></script>
+<script src="js/modules/settings.js"></script>
+
+<!-- 4. Router -->
+<script src="js/modules/router.js"></script>
+
+<!-- 5. App Entry Point -->
+<script src="js/app.js"></script>
+
+</body>
+</html>

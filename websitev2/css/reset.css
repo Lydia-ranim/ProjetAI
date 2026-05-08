@@ -4,11 +4,7 @@
 
 /* ── Reset ── */
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
-html {
-  scroll-behavior: smooth;
-  /* Global scroll offset: every anchor / scrollIntoView lands below the fixed nav */
-  scroll-padding-top: var(--nav-h);
-}
+html { scroll-behavior:smooth }
 body {
   font-family:'DM Sans',sans-serif;
   background:var(--bg);

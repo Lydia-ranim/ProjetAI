@@ -19,26 +19,11 @@ function goTo(p) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   closeMob();
   syncNav();
-  if (p === 'dashboard') {
-    if (!dashMapInited) initDashMap();
-    /* Revisits: container size may have changed while page was hidden,
-       so tell Leaflet to recompute or tiles render in a cropped subregion. */
-    else if (dashMap)   setTimeout(() => dashMap.invalidateSize(), 250);
-  }
-  if (p === 'landing') {
-    if (!heroMapInited) initHeroMap();
-    else if (heroMap)   setTimeout(() => heroMap.invalidateSize(), 250);
-  }
+  if (p === 'dashboard' && !dashMapInited) initDashMap();
+  if (p === 'landing'   && !heroMapInited) initHeroMap();
   if (p === 'explorer')  initExplorer();
   if (p === 'profile')   buildProfile();
 }
-
-/* Keep all live maps in sync with their container size on viewport changes. */
-window.addEventListener('resize', () => {
-  if (dashMap) dashMap.invalidateSize();
-  if (heroMap) heroMap.invalidateSize();
-  if (expMap)  expMap.invalidateSize();
-});
 
 /** Highlight the active nav link to match current page. */
 function syncNav() {
@@ -57,28 +42,5 @@ function toggleMobile() { document.getElementById('mob-menu').classList.toggle('
 /** Close the mobile menu. */
 function closeMob() { document.getElementById('mob-menu').classList.remove('open'); }
 
-/**
- * Reads the current --nav-h custom property value (in px) from :root.
- * Falls back to 62 if the property is unavailable (SSR / very old browsers).
- * @returns {number}
- */
-function getNavHeight() {
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue('--nav-h').trim();          /* e.g. "62px" */
-  return parseInt(raw, 10) || 62;
-}
-
-/**
- * Smooth-scroll to an element, offsetting by the fixed navbar height so the
- * first visible line of content is never hidden behind the bar.
- * Works on all modern browsers regardless of scroll-padding-top support.
- * @param {Element|null} el
- */
-function smoothScrollTo(el) {
-  if (!el) return;
-  const top = el.getBoundingClientRect().top + window.scrollY - getNavHeight();
-  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-}
-
 /** Smooth-scroll to the features section on the landing page. */
-function scrollF() { smoothScrollTo(document.getElementById('features-s')); }
+function scrollF() { document.getElementById('features-s')?.scrollIntoView({ behavior: 'smooth' }); }

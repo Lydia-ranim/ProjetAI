@@ -1,0 +1,45 @@
+/* ═══════════════════════════════════════════════════════════
+   LYHLYH — Sidebar
+═══════════════════════════════════════════════════════════ */
+
+.sidebar {
+  width:var(--sw);
+  flex-shrink:0;
+  background:var(--bg-1);
+  border-right:1px solid var(--border);
+  padding:20px 12px;
+  position:sticky;
+  top:var(--nav-h);
+  height:calc(100vh - var(--nav-h));
+  overflow-y:auto;
+}
+
+.sidebar-label {
+  font-size:.68rem;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--text-t);
+  padding:0 10px;
+  margin-bottom:7px;
+}
+
+.sidebar-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  border-radius:9px;
+  font-size:.87rem;
+  font-weight:500;
+  color:var(--text-s);
+  cursor:pointer;
+  transition:all var(--tr);
+  margin-bottom:2px;
+}
+.sidebar-item svg { width:16px; height:16px; flex-shrink:0; opacity:.7 }
+.sidebar-item:hover { color:var(--text-p); background:var(--mint-08) }
+.sidebar-item.active { color:var(--mint); background:var(--mint-20) }
+.sidebar-item.active svg { opacity:1 }
+
+.s-section { margin-bottom:22px }

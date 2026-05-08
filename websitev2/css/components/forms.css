@@ -27,10 +27,7 @@
 }
 .form-input:focus          { border-color:var(--purple); box-shadow:0 0 0 3px rgba(198,183,226,.12) }
 .form-input::placeholder   { color:var(--text-t) }
-.form-input.mint-focus:focus   { border-color:var(--mint);   box-shadow:0 0 0 3px var(--mint-08) }
-/* Accent-focus: pairs with CTA crimson — use on destination input or any
-   field that is semantically linked to the "Planifier" action */
-.form-input.accent-focus:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft) }
+.form-input.mint-focus:focus { border-color:var(--mint); box-shadow:0 0 0 3px var(--mint-08) }
 
 /* ── Select arrow ── */
 select.form-input {
@@ -80,34 +77,6 @@ select.form-input {
 }
 .ac-item .ac-name { font-weight:500 }
 .ac-item .ac-line { font-size:.72rem; color:var(--text-t); margin-top:1px }
-
-/* ── Custom number stepper (replaces native spinner arrows) ── */
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0 }
-input[type=number] { -moz-appearance:textfield; appearance:textfield }
-
-.num-input-wrap { position:relative }
-.num-step {
-  position:absolute;
-  right:4px;
-  width:22px;
-  height:13px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  background:var(--bg-2);
-  border:1px solid var(--border2);
-  border-radius:5px;
-  color:var(--text-s);
-  cursor:pointer;
-  transition:color var(--tr), border-color var(--tr), background var(--tr);
-}
-.num-step:hover    { color:var(--mint); border-color:var(--mint); background:var(--bg-3) }
-.num-step:active   { transform:translateY(1px) }
-.num-step svg      { width:8px; height:8px; pointer-events:none }
-.num-step-up       { top:4px }
-.num-step-down     { bottom:4px }
 
 /* ── Range slider ── */
 input[type=range] {
