@@ -287,10 +287,10 @@
       
       <div class="s-section">
         <div class="sidebar-label" data-i18n="dash.favorites">Favoris</div>
-        <div class="sidebar-item" onclick="quickRoute('M_MARTYRS','TR_ZERALDA')">
+        <div class="sidebar-item" onclick="quickRoute('M1_MARTYRS','TRN_ZERALDA')">
           <span style="font-size:1.1rem;margin-right:4px">🏠</span> <span data-i18n="dash.fav1">Maison → Travail</span>
         </div>
-        <div class="sidebar-item" onclick="quickRoute('TR_AGHA','C_JARDIN')">
+        <div class="sidebar-item" onclick="quickRoute('TRN_AGHA','M1_JARDIN')">
           <span style="font-size:1.1rem;margin-right:4px">🎓</span> <span data-i18n="dash.fav2">Université</span>
         </div>
       </div>
@@ -435,6 +435,8 @@
           </div>
 
           <div id="res-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px"></div>
+
+          <div id="route-variant-tabs" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
 
           <!-- Algo Comparison (Results Row) -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:24px">
@@ -769,6 +771,8 @@
 </div>
 
 <script src="js/data/stations.js"></script>
+<script src="js/api.js"></script>
+<script src="js/transit-store.js"></script>
 <script src="js/modules/i18n.js"></script>
 <script src="js/modules/theme.js"></script>
 <script src="js/modules/notifications.js"></script>

@@ -1,6 +1,14 @@
 (function init() {
   syncNav();
   setTimeout(initHeroMap, 200);
+
+  loadAllStops()
+    .then(n => {
+      if (typeof refreshDashStationMarkers === 'function') refreshDashStationMarkers();
+      if (typeof refreshHeroMapAfterStops === 'function') refreshHeroMapAfterStops();
+      if (!n) console.warn('LYHLYH: no stops — check GET /api/stops');
+    })
+    .catch(err => console.error('LYHLYH: stops load failed', err));
 })();
 
 function numStep(id, dir) {
