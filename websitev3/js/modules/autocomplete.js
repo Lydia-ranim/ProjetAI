@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    LYHLYH — Autocomplete: station search & keyboard nav
-   Depends on: stations.js (STATIONS, SMAP, TYPE_COLOR)
+   Depends on: stations.js (STATIONS filled via loadAllStops)
                map.js (placeMarker), routing.js (setStatus)
 ═══════════════════════════════════════════════════════════ */
 

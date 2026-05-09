@@ -2,7 +2,9 @@
    LYHLYH — app.js  (Entry point)
    Script load order in index.html must be:
      1. js/data/stations.js
-     2. js/modules/notifications.js
+     2. js/api.js
+     3. js/transit-store.js
+     4. js/modules/notifications.js
      3. js/modules/modals.js
      4. js/modules/auth.js
      5. js/modules/map.js
@@ -18,11 +20,17 @@
 
 /* ── Initialise on DOM ready ── */
 (function init() {
-  /* Sync nav highlight for the initial landing page */
   syncNav();
 
-  /* Kick off the hero map slightly deferred so the DOM is painted first */
   setTimeout(initHeroMap, 200);
+
+  loadAllStops()
+    .then(n => {
+      if (typeof refreshDashStationMarkers === 'function') refreshDashStationMarkers();
+      if (typeof refreshHeroMapAfterStops === 'function') refreshHeroMapAfterStops();
+      if (!n) console.warn('LYHLYH: aucun arrêt chargé — vérifiez GET /api/stops');
+    })
+    .catch(err => console.error('LYHLYH: échec chargement des arrêts', err));
 })();
 
 /**

@@ -1,42 +1,117 @@
 /* ═══════════════════════════════════════════════════════════
-   LYHLYH — Data: Stations, network lines, type colours
+   LYHLYH — stations.js  Stop registry (filled from GET /api/stops)
 ═══════════════════════════════════════════════════════════ */
 
-const STATIONS = [
-  {id:'M_MARTYRS',  name:'Place des Martyrs',         short:'Martyrs',        coords:[36.7894,3.0624], type:'metro', line:'Métro L1',       icon:'🚇'},
-  {id:'M_TAFOURAH', name:'Tafourah - Grande Poste',   short:'Tafourah',       coords:[36.7768,3.0591], type:'metro', line:'Métro L1',       icon:'🚇'},
-  {id:'M_BOUMENDIL',name:'Boumendil',                  short:'Boumendil',      coords:[36.7692,3.0541], type:'metro', line:'Métro L1',       icon:'🚇'},
-  {id:'M_PREMIER',  name:'Premier Mai',               short:'Premier Mai',    coords:[36.7628,3.0488], type:'metro', line:'Métro L1',       icon:'🚇'},
-  {id:'M_EL_BADR',  name:'Haï El Badr',               short:'El Badr',        coords:[36.7440,3.0880], type:'metro', line:'Métro L1',       icon:'🚇'},
-  {id:'M_HARRACH',  name:'El Harrach (Métro)',         short:'Harrach M.',     coords:[36.7180,3.1025], type:'metro', line:'Métro L1',       icon:'🚇'},
-  {id:'M_AIN',      name:'Aïn Naâdja',                 short:'Aïn Naâdja',     coords:[36.7068,3.0392], type:'metro', line:'Métro L1',       icon:'🚇'},
-  {id:'M_BACH',     name:'Bachdjarah',                 short:'Bachdjarah',     coords:[36.7348,3.0958], type:'metro', line:'Métro L1',       icon:'🚇'},
-  {id:'T_RUISSEAU', name:'Ruisseau (Tram)',            short:'Ruisseau',       coords:[36.7414,3.0631], type:'tram',  line:'Tramway T1',     icon:'🚊'},
-  {id:'T_FUSILLES', name:'Les Fusillés (Tram)',        short:'Fusillés',       coords:[36.7505,3.0547], type:'tram',  line:'Tramway T1',     icon:'🚊'},
-  {id:'T_TPTH',     name:'TP-TH (Tram)',               short:'TP-TH',          coords:[36.7580,3.0450], type:'tram',  line:'Tramway T1',     icon:'🚊'},
-  {id:'TR_ALGER',   name:"Gare Centrale d'Alger",    short:'Gare Centrale',  coords:[36.7661,3.0664], type:'train', line:'Train banlieue', icon:'🚆'},
-  {id:'TR_AGHA',    name:'Agha (Train)',               short:'Agha',           coords:[36.7430,3.0890], type:'train', line:'Train banlieue', icon:'🚆'},
-  {id:'TR_HARRACH', name:'El Harrach (Train)',         short:'Harrach T.',     coords:[36.7180,3.1025], type:'train', line:'Train banlieue', icon:'🚆'},
-  {id:'TR_ZERALDA', name:'Zeralda (Train)',            short:'Zeralda',        coords:[36.6980,2.8580], type:'train', line:'Train banlieue', icon:'🚆'},
-  {id:'TR_THENIA',  name:'Thénia (Train)',             short:'Thénia',         coords:[36.7220,3.5500], type:'train', line:'Train banlieue', icon:'🚆'},
-  {id:'C_HAMMA',    name:'Hamma (Téléphérique)',      short:'Hamma',          coords:[36.7682,3.0780], type:'cable', line:'Téléphérique',   icon:'🚡'},
-  {id:'C_JARDIN',   name:"Jardin d'Essai (Téléph.)", short:"Jardin d'Essai", coords:[36.7745,3.0820], type:'cable', line:'Téléphérique',   icon:'🚡'},
-];
+/** @type {Array<Object>} Populated by loadAllStops() */
+const STATIONS = [];
 
-/* Lookup map: id → station object */
+/** @type {Record<string, Object>} id → station */
 const SMAP = {};
-STATIONS.forEach(s => { SMAP[s.id] = s; });
 
-/* Ordered line arrays (used for path finding + network drawing) */
-const METRO_L1   = ['M_AIN','M_BACH','M_HARRACH','M_EL_BADR','M_PREMIER','M_BOUMENDIL','M_TAFOURAH','M_MARTYRS'];
-const TRAM_T1    = ['T_RUISSEAU','T_FUSILLES','T_TPTH'];
-const TRAIN_WEST = ['TR_ZERALDA','TR_ALGER','TR_AGHA','TR_HARRACH'];
-
-/* Transport type → colour mapping */
 const TYPE_COLOR = {
-  metro: '#BEEEDB',
-  tram:  '#C6B7E2',
+  metro: '#2196F3',
+  bus: '#FF9800',
+  tram: '#4CAF50',
   train: '#F2C4CE',
-  cable: '#FF7043',
-  walk:  'rgba(140,170,200,.5)',
+  walk: '#9E9E9E',
+  telepherique: '#9C27B0',
+  cable: '#9C27B0',
+  escalator: '#78909C',
+  default: '#BEEEDB',
+};
+
+const MODE_ICON = {
+  metro: '🚇',
+  bus: '🚌',
+  tram: '🚊',
+  train: '🚆',
+  walk: '🚶',
+  telepherique: '🚡',
+  cable: '🚡',
+  escalator: '🛗',
+  default: '📍',
+};
+
+/** Normalize backend mode strings for comparisons and colouring. */
+function normalizeModeKey(m) {
+  let k = String(m || '')
+    .toLowerCase()
+    .trim();
+  if (k === 'téléphérique' || k === 'telepherique') return 'telepherique';
+  if (k === 'cable') return 'telepherique';
+  return k;
+}
+
+function formatLineLabel(type) {
+  const t = (type || '').toLowerCase();
+  const labels = {
+    metro: 'Métro',
+    bus: 'Bus',
+    tram: 'Tram',
+    train: 'Train',
+    walk: 'Marche',
+    telepherique: 'Téléphérique',
+    cable: 'Téléphérique',
+    escalator: 'Escalier mécanique',
+  };
+  return labels[t] || (type ? String(type) : 'Arrêt');
+}
+
+/**
+ * Map a row from GET /api/stops into the shape used by the UI.
+ * @param {{ id:string, name:string, lat:number, lon:number, type:string, isHub?:boolean }} raw
+ */
+function normalizeApiStop(raw) {
+  const id = String(raw.id);
+  const name = raw.name || id;
+  const lat = Number(raw.lat);
+  const lon = Number(raw.lon);
+  const type = String(raw.type || 'metro').toLowerCase();
+  const short = name.length > 22 ? `${name.slice(0, 20)}…` : name;
+  const hub = !!raw.isHub;
+  return {
+    id,
+    name,
+    short,
+    coords: [lat, lon],
+    type,
+    line: hub ? `${formatLineLabel(type)} · hub` : formatLineLabel(type),
+    icon: MODE_ICON[type] || MODE_ICON.default,
+    isHub: hub,
+  };
+}
+
+function rebuildSMAP() {
+  Object.keys(SMAP).forEach(k => {
+    delete SMAP[k];
+  });
+  STATIONS.forEach(s => {
+    SMAP[s.id] = s;
+  });
+}
+
+/** Insert or update a single stop (e.g. from /api/nearest-stop) without rebuilding all ids. */
+function ensureStopInRegistry(stopObj) {
+  if (!stopObj || !stopObj.id) return;
+  if (SMAP[stopObj.id]) {
+    Object.assign(SMAP[stopObj.id], stopObj);
+    const ix = STATIONS.findIndex(s => s.id === stopObj.id);
+    if (ix >= 0) STATIONS[ix] = SMAP[stopObj.id];
+    return;
+  }
+  STATIONS.push(stopObj);
+  SMAP[stopObj.id] = stopObj;
+}
+
+/** Hex stroke color for map polylines by backend mode key. */
+const MODE_LINE_COLOR_HEX = {
+  bus: '#FF9800',
+  metro: '#2196F3',
+  tram: '#4CAF50',
+  walk: '#9E9E9E',
+  telepherique: '#9C27B0',
+  cable: '#9C27B0',
+  train: '#E91E63',
+  escalator: '#78909C',
+  default: '#5C6BC0',
 };
