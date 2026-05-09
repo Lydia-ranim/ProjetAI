@@ -1,8 +1,3 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Explorer page
-   Depends on: stations.js, map.js (drawNetwork), routing.js (quickRoute)
-═══════════════════════════════════════════════════════════ */
-
 const explorerData = [
   {from:'Place des Martyrs', to:'Zeralda',      o:'M_MARTYRS',  d:'TR_ZERALDA',  time:55, cost:85, co2:50, tf:2, modes:['Métro','Train']},
   {from:'Agha',              to:'Boumendil',    o:'TR_AGHA',    d:'M_BOUMENDIL', time:22, cost:50, co2:10, tf:0, modes:['Métro']},
@@ -17,7 +12,6 @@ const explorerData = [
 let expFiltered  = [...explorerData];
 let expMapInited = false;
 
-/** Initialise the explorer page (called by router on every visit). */
 function initExplorer() {
   renderExpCards(expFiltered);
   if (!expMapInited) {
@@ -36,7 +30,6 @@ function initExplorer() {
   }
 }
 
-/** Render the route cards grid. */
 function renderExpCards(data) {
   const g = document.getElementById('exp-grid');
   if (!g) return;
@@ -57,12 +50,11 @@ function renderExpCards(data) {
       </div>
       <div class="divider" style="margin:8px 0"></div>
       <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-s)">
-        <span>${r.cost} DA</span><span>${r.co2}g CO₂</span><span>${r.tf} corresp.</span>
+        <span>${r.cost} DA</span><span>${r.co2}g CO₂</span><span>${r.tf} ${t('res.transfers')}</span>
       </div>
     </div>`).join('');
 }
 
-/** Filter cards by text query. */
 function filterExp(q) {
   expFiltered = explorerData.filter(r =>
     r.from.toLowerCase().includes(q.toLowerCase()) ||
@@ -72,7 +64,6 @@ function filterExp(q) {
   renderExpCards(expFiltered);
 }
 
-/** Sort cards by a metric key. */
 function sortExp(by) {
   const k = {time:'time', cost:'cost', co2:'co2', tf:'tf'}[by];
   renderExpCards([...expFiltered].sort((a,b) => a[k]-b[k]));

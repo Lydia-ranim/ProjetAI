@@ -1,19 +1,6 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Autocomplete: station search & keyboard nav
-   Depends on: stations.js (STATIONS, SMAP, TYPE_COLOR)
-               map.js (placeMarker), routing.js (setStatus)
-═══════════════════════════════════════════════════════════ */
-
-/* Selected station per field */
 const acSel   = { origin: null, dest: null };
-/* Focused index per field for keyboard nav */
 const acFocus = { origin: -1,   dest: -1 };
 
-/**
- * Filter stations and render dropdown.
- * @param {'origin'|'dest'} which
- * @param {string} q  Query string
- */
 function acSearch(which, q) {
   const list = document.getElementById('ac-' + which);
   acSel[which] = null;
@@ -40,11 +27,6 @@ function acSearch(which, q) {
   list.classList.add('open');
 }
 
-/**
- * Keyboard navigation for autocomplete dropdown.
- * @param {KeyboardEvent} e
- * @param {'origin'|'dest'} which
- */
 function acKey(e, which) {
   const list  = document.getElementById('ac-' + which);
   const items = list.querySelectorAll('.ac-item');
@@ -61,11 +43,6 @@ function acKey(e, which) {
   items.forEach((it, i) => it.classList.toggle('focused', i === acFocus[which]));
 }
 
-/**
- * Confirm a station selection from the dropdown.
- * @param {'origin'|'dest'} which
- * @param {string} id  Station id
- */
 function selectStation(which, id) {
   const s = SMAP[id];
   if (!s) return;
@@ -78,7 +55,6 @@ function selectStation(which, id) {
   setStatus();
 }
 
-/* Close dropdowns when clicking outside */
 document.addEventListener('click', e => {
   if (!e.target.closest('.autocomplete-wrap')) {
     document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('open'));

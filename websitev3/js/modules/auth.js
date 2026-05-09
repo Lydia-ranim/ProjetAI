@@ -1,56 +1,43 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Auth: login, signup, password strength
-   Depends on: notifications.js (notif), router.js (goTo)
-═══════════════════════════════════════════════════════════ */
-
-/**
- * Switch between Login and Signup tabs on the auth page.
- * @param {'login'|'signup'} mode
- * @param {HTMLElement} el   The clicked tab element
- */
 function authTab(mode, el) {
   document.querySelectorAll('#auth-tabs .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   const isLogin = mode === 'login';
   document.getElementById('login-f').style.display  = isLogin ? '' : 'none';
   document.getElementById('signup-f').style.display = isLogin ? 'none' : '';
-  document.getElementById('auth-title').textContent  = isLogin ? 'Bon retour' : 'Créer un compte';
-  document.getElementById('auth-sub').textContent    = isLogin ? 'Connectez-vous à LYHLYH' : 'Rejoignez la communauté LYHLYH';
+  document.getElementById('auth-title').textContent  = isLogin ? t('auth.title') : t('cta.btn1');
+  document.getElementById('auth-sub').textContent    = isLogin ? t('auth.sub') : t('cta.desc');
 }
 
-/** Handle login form submission (mock). */
 function doLogin() {
   const email = document.getElementById('le').value;
   const pass  = document.getElementById('lp').value;
-  if (!email || !pass) { notif('Champs manquants', 'Veuillez remplir tous les champs', 'error'); return; }
-  notif('Connecté !', 'Bienvenue, Ahmed 👋', 'success');
+  if (!email || !pass) {
+    notif(t('notif.missing-fields-title'), t('notif.missing-fields-msg'), 'error');
+    return;
+  }
+  notif(t('notif.login-title'), t('notif.login-msg'), 'success');
   setTimeout(() => goTo('dashboard'), 800);
 }
 
-/** Handle signup form submission (mock). */
 function doSignup() {
-  notif('Compte créé !', 'Bienvenue chez LYHLYH 🌿', 'success');
+  notif(t('notif.signup-title'), t('notif.signup-msg'), 'success');
   setTimeout(() => goTo('dashboard'), 800);
 }
 
-/**
- * Live password strength indicator.
- * @param {string} v  Current password value
- */
 function pwStr(v) {
   const bar   = document.getElementById('pw-b');
   const label = document.getElementById('pw-l');
   let score = 0;
-  if (v.length >= 6)              score++;
-  if (v.length >= 10)             score++;
-  if (/[A-Z]/.test(v))           score++;
-  if (/[0-9!@#$%]/.test(v))     score++;
+  if (v.length >= 6)           score++;
+  if (v.length >= 10)          score++;
+  if (/[A-Z]/.test(v))        score++;
+  if (/[0-9!@#$%]/.test(v))  score++;
   const cfg = [
-    [0, 'Très faible', '#670627'],
-    [1, 'Faible',      '#670627'],
-    [2, 'Correct',     'var(--pink)'],
-    [3, 'Bien',        'var(--purple)'],
-    [4, 'Fort',        'var(--mint)'],
+    [0, t('auth.pw-weak'), '#670627'],
+    [1, t('auth.pw-weak'), '#670627'],
+    [2, t('auth.pw-med'),  'var(--pink)'],
+    [3, t('auth.pw-good'), 'var(--purple)'],
+    [4, t('auth.pw-str'),  'var(--mint)'],
   ];
   const [, lbl, clr] = cfg[Math.min(score, 4)];
   bar.style.width      = (score * 25) + '%';

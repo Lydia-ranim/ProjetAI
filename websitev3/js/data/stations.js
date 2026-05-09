@@ -1,7 +1,3 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Data: Stations, network lines, type colours
-═══════════════════════════════════════════════════════════ */
-
 const STATIONS = [
   {id:'M_MARTYRS',  name:'Place des Martyrs',         short:'Martyrs',        coords:[36.7894,3.0624], type:'metro', line:'Métro L1',       icon:'🚇'},
   {id:'M_TAFOURAH', name:'Tafourah - Grande Poste',   short:'Tafourah',       coords:[36.7768,3.0591], type:'metro', line:'Métro L1',       icon:'🚇'},
@@ -23,16 +19,13 @@ const STATIONS = [
   {id:'C_JARDIN',   name:"Jardin d'Essai (Téléph.)", short:"Jardin d'Essai", coords:[36.7745,3.0820], type:'cable', line:'Téléphérique',   icon:'🚡'},
 ];
 
-/* Lookup map: id → station object */
 const SMAP = {};
 STATIONS.forEach(s => { SMAP[s.id] = s; });
 
-/* Ordered line arrays (used for path finding + network drawing) */
 const METRO_L1   = ['M_AIN','M_BACH','M_HARRACH','M_EL_BADR','M_PREMIER','M_BOUMENDIL','M_TAFOURAH','M_MARTYRS'];
 const TRAM_T1    = ['T_RUISSEAU','T_FUSILLES','T_TPTH'];
 const TRAIN_WEST = ['TR_ZERALDA','TR_ALGER','TR_AGHA','TR_HARRACH'];
 
-/* Transport type → colour mapping */
 const TYPE_COLOR = {
   metro: '#BEEEDB',
   tram:  '#C6B7E2',

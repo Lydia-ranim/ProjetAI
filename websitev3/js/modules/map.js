@@ -1,27 +1,14 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Map: Leaflet init, markers, network, click
-   Depends on: stations.js, notifications.js, autocomplete.js
-═══════════════════════════════════════════════════════════ */
-
-/* ── State ── */
 let dashMap = null, heroMap = null, expMap = null;
 let dashMapInited = false, heroMapInited = false;
 let originMarker = null, destMarker = null, routeLayer = null;
 let networkVisible = false, networkLayerGroup = null;
+let clickMode = 'origin';
 
-/* ── Map config ──
-   Tiles: OpenStreetMap "Standard" (Mapnik) — colorful natural look with
-   green parks/forests, blue water, and the classic red/orange/yellow
-   road hierarchy. Used identically in light & dark site modes. */
 const TILE_URL  = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_OPT  = { attribution:'© OpenStreetMap contributors', maxZoom:19, subdomains:'abc' };
 const ALG_BOUNDS = [[36.48,2.75],[36.98,3.55]];
 const ALG_CENTER = [36.737,3.086];
 
-/* Current click mode: 'origin' | 'dest' */
-let clickMode = 'origin';
-
-/* ── Custom pin markers ── */
 function makeIcon(color, emoji) {
   return L.divIcon({
     className: '',
@@ -35,9 +22,6 @@ function makeIcon(color, emoji) {
 const originIcon = makeIcon('#3DAB82','📍');
 const destIcon   = makeIcon('#8A0A35','🎯');
 
-/* ─────────────────────────────────────────────
-   HERO MAP (landing page — read-only preview)
-───────────────────────────────────────────── */
 function initHeroMap() {
   heroMapInited = true;
   heroMap = L.map('hero-map', {
@@ -48,8 +32,6 @@ function initHeroMap() {
   });
   L.tileLayer(TILE_URL, TILE_OPT).addTo(heroMap);
   drawNetwork(heroMap);
-
-  /* Sample route preview: Martyrs → Zeralda */
   const sample = ['M_MARTYRS','M_TAFOURAH','M_BOUMENDIL','M_PREMIER','M_EL_BADR','M_HARRACH','TR_HARRACH','TR_AGHA','TR_ALGER','TR_ZERALDA'].map(id => SMAP[id]);
   const coords = sample.map(s => s.coords);
   L.polyline(coords,{color:'rgba(92,107,192,.25)',weight:14,lineCap:'round',lineJoin:'round'}).addTo(heroMap);
@@ -60,9 +42,6 @@ function initHeroMap() {
   setTimeout(() => heroMap.invalidateSize(), 200);
 }
 
-/* ─────────────────────────────────────────────
-   DASHBOARD MAP (main interactive map)
-───────────────────────────────────────────── */
 function initDashMap() {
   dashMapInited = true;
   dashMap = L.map('dash-map', {
@@ -76,7 +55,6 @@ function initDashMap() {
   setTimeout(() => dashMap.invalidateSize(), 300);
 }
 
-/* ── Network toggle (dashboard only) ── */
 function toggleNetwork() {
   networkVisible = !networkVisible;
   const ind = document.getElementById('network-indicator');
@@ -87,16 +65,17 @@ function toggleNetwork() {
       drawNetworkLines(networkLayerGroup);
     }
     networkLayerGroup.addTo(dashMap);
-    ind.style.background = '#BEEEDB';
-    lbl.textContent = 'Masquer réseau';
+    ind.style.background  = '#BEEEDB';
+    ind.style.boxShadow   = '0 0 6px #BEEEDB';
+    lbl.textContent = t('map.hide-network');
   } else {
     if (networkLayerGroup) dashMap.removeLayer(networkLayerGroup);
     ind.style.background = '#ccc';
-    lbl.textContent = 'Afficher réseau';
+    ind.style.boxShadow  = 'none';
+    lbl.textContent = t('map.show-network');
   }
 }
 
-/* ── Station markers (clickable, no network lines) ── */
 function addStationMarkers(map) {
   STATIONS.forEach(s => {
     const c = L.circleMarker(s.coords, {
@@ -108,14 +87,13 @@ function addStationMarkers(map) {
     c.bindPopup(`<div style="font-family:'DM Sans',sans-serif;padding:2px">
       <div style="font-weight:600;margin-bottom:4px">${s.icon} ${s.name}</div>
       <div style="font-size:.78rem;color:#888;margin-bottom:8px">${s.line}</div>
-      <button onclick="selectStation('origin','${s.id}')" style="margin-right:6px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;font-weight:600">📍 Départ</button>
-      <button onclick="selectStation('dest','${s.id}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem;font-weight:600">🎯 Arrivée</button>
+      <button onclick="selectStation('origin','${s.id}')" style="margin-right:6px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;font-weight:600">📍 ${t('map.origin-btn')}</button>
+      <button onclick="selectStation('dest','${s.id}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem;font-weight:600">🎯 ${t('map.dest-btn')}</button>
     </div>`, {className:'route-popup', closeButton:true});
     c.on('click', e => { e.originalEvent.stopPropagation(); });
   });
 }
 
-/* ── Network lines (reusable — adds to any Leaflet target) ── */
 function drawNetworkLines(target) {
   const addLine = (ids, color, dash='') => {
     const pts = ids.filter(id => SMAP[id]).map(id => SMAP[id].coords);
@@ -130,7 +108,6 @@ function drawNetworkLines(target) {
     {color:'#FF7043', weight:2.5, opacity:.7, dashArray:'5,5'}).addTo(target);
 }
 
-/* ── Full network: lines + markers (hero + explorer maps) ── */
 function drawNetwork(map) {
   drawNetworkLines(map);
   STATIONS.forEach(s => {
@@ -143,14 +120,13 @@ function drawNetwork(map) {
     c.bindPopup(`<div style="font-family:'DM Sans',sans-serif">
       <div style="font-weight:600;margin-bottom:4px">${s.icon} ${s.name}</div>
       <div style="font-size:.78rem;color:#888">${s.line}</div>
-      <button onclick="selectStation('origin','${s.id}')" style="margin-top:8px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;margin-right:6px">Départ</button>
-      <button onclick="selectStation('dest','${s.id}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem">Arrivée</button>
+      <button onclick="selectStation('origin','${s.id}')" style="margin-top:8px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;margin-right:6px">${t('map.origin-btn')}</button>
+      <button onclick="selectStation('dest','${s.id}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem">${t('map.dest-btn')}</button>
     </div>`, {className:'route-popup', closeButton:true});
     c.on('click', e => { e.originalEvent.stopPropagation(); });
   });
 }
 
-/* ── Map click: snap to nearest station or free-place ── */
 function onMapClick(e) {
   const {lat, lng} = e.latlng;
   let best = null, bestD = Infinity;
@@ -160,38 +136,36 @@ function onMapClick(e) {
   });
   if (bestD < 0.05) {
     selectStation(clickMode, best.id);
-    notif(`${clickMode === 'origin' ? 'Départ' : 'Arrivée'} défini`, best.name, 'success');
+    const label = clickMode === 'origin' ? t('notif.pt-origin') : t('notif.pt-dest');
+    notif(`${label} ${t('notif.pt-set-title')}`, best.name, 'success');
   } else {
-    const lbl = clickMode === 'origin' ? 'Départ personnalisé' : 'Arrivée personnalisée';
+    const lbl = clickMode === 'origin' ? t('map.custom-origin') : t('map.custom-dest');
     placeMarker(clickMode, [lat, lng], lbl);
     document.getElementById(clickMode === 'origin' ? 'origin-input' : 'dest-input').value =
       `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-    notif(lbl, 'Aucun arrêt proche — position libre', 'info');
+    notif(lbl, t('notif.no-station-msg'), 'info');
   }
   if (clickMode === 'origin') setClickMode('dest');
   setStatus();
 }
 
-/* ── Click mode toggle ── */
 function setClickMode(m) {
   clickMode = m;
   document.getElementById('btn-set-origin').className = 'mode-btn' + (m==='origin'?' origin-active':'');
   document.getElementById('btn-set-dest').className   = 'mode-btn' + (m==='dest'  ?' dest-active':'');
-  document.getElementById('click-hint').textContent   = m==='origin'
-    ? '📍 Cliquez sur la carte pour définir le départ'
-    : "🎯 Cliquez sur la carte pour définir l'arrivée";
+  const hint = document.getElementById('click-hint');
+  if (hint) hint.textContent = m === 'origin' ? t('map.click-origin') : t('map.click-dest');
 }
 
-/* ── Place a pin marker on the dashboard map ── */
 function placeMarker(which, coords, label) {
   if (!dashMap) return;
   if (which === 'origin') {
     if (originMarker) dashMap.removeLayer(originMarker);
-    originMarker = L.marker(coords, {icon:originIcon}).addTo(dashMap).bindPopup(`<b>Départ:</b> ${label}`);
+    originMarker = L.marker(coords, {icon:originIcon}).addTo(dashMap).bindPopup(`<b>${t('map.origin-btn')}:</b> ${label}`);
     dashMap.setView(coords, 13, {animate:true});
   } else {
     if (destMarker) dashMap.removeLayer(destMarker);
-    destMarker = L.marker(coords, {icon:destIcon}).addTo(dashMap).bindPopup(`<b>Arrivée:</b> ${label}`);
+    destMarker = L.marker(coords, {icon:destIcon}).addTo(dashMap).bindPopup(`<b>${t('map.dest-btn')}:</b> ${label}`);
     if (originMarker) {
       dashMap.fitBounds(L.latLngBounds([originMarker.getLatLng(), destMarker.getLatLng()]), {padding:[60,60], animate:true});
     } else {
@@ -200,7 +174,6 @@ function placeMarker(which, coords, label) {
   }
 }
 
-/* ── Swap origin ↔ destination markers ── */
 function swapPoints() {
   const oi = document.getElementById('origin-input');
   const di = document.getElementById('dest-input');
@@ -214,11 +187,9 @@ function swapPoints() {
   }
 }
 
-/* ── Draw the calculated route (Google Maps nav style) ── */
 function drawRoute(origin, dest, steps) {
   if (!dashMap) return;
   if (routeLayer) dashMap.removeLayer(routeLayer);
-
   const via = [
     origin.coords,
     ...steps
@@ -229,7 +200,6 @@ function drawRoute(origin, dest, steps) {
   ];
   const uniqueVia = [...new Map(via.map(c => c.join(','))).values()].map(k => k.split(',').map(Number));
   const smoothed  = addMidpoints(uniqueVia);
-
   const rg = L.layerGroup();
   L.polyline(smoothed,{color:'rgba(92,107,192,.18)',weight:18,lineCap:'round',lineJoin:'round'}).addTo(rg);
   L.polyline(smoothed,{color:'rgba(255,255,255,.85)',weight:9, lineCap:'round',lineJoin:'round'}).addTo(rg);
@@ -239,7 +209,6 @@ function drawRoute(origin, dest, steps) {
   dashMap.fitBounds(L.latLngBounds([origin.coords, dest.coords, ...smoothed]), {padding:[100,80], animate:true});
 }
 
-/** Add midpoints between waypoints for a smoother rendered path. */
 function addMidpoints(coords) {
   if (coords.length < 2) return coords;
   const result = [coords[0]];

@@ -1,15 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Router: page navigation & nav sync
-   Depends on: map.js (initDashMap, initHeroMap, initExplorer)
-               profile.js (buildProfile)
-═══════════════════════════════════════════════════════════ */
-
 let currentPage = 'landing';
 
-/**
- * Navigate to a named page.
- * @param {string} p  Page key: 'landing'|'dashboard'|'auth'|'explorer'|'profile'|'settings'
- */
 function goTo(p) {
   document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
   const el = document.getElementById('page-' + p);
@@ -21,64 +11,40 @@ function goTo(p) {
   syncNav();
   if (p === 'dashboard') {
     if (!dashMapInited) initDashMap();
-    /* Revisits: container size may have changed while page was hidden,
-       so tell Leaflet to recompute or tiles render in a cropped subregion. */
-    else if (dashMap)   setTimeout(() => dashMap.invalidateSize(), 250);
+    else if (dashMap) setTimeout(() => dashMap.invalidateSize(), 250);
   }
   if (p === 'landing') {
     if (!heroMapInited) initHeroMap();
-    else if (heroMap)   setTimeout(() => heroMap.invalidateSize(), 250);
+    else if (heroMap) setTimeout(() => heroMap.invalidateSize(), 250);
   }
-  if (p === 'explorer')  initExplorer();
-  if (p === 'profile')   buildProfile();
+  if (p === 'explorer') initExplorer();
+  if (p === 'profile') buildProfile();
 }
 
-/* Keep all live maps in sync with their container size on viewport changes. */
 window.addEventListener('resize', () => {
   if (dashMap) dashMap.invalidateSize();
   if (heroMap) heroMap.invalidateSize();
-  if (expMap)  expMap.invalidateSize();
+  if (expMap) expMap.invalidateSize();
 });
 
-/** Highlight the active nav link to match current page. */
 function syncNav() {
-  const pageMap = {
-    accueil:'landing', itinéraire:'dashboard',
-    explorer:'explorer', profil:'profile', paramètres:'settings',
-  };
-  document.querySelectorAll('.nav-link').forEach(l => {
-    l.classList.toggle('active', pageMap[l.textContent.trim().toLowerCase()] === currentPage);
+  document.querySelectorAll('.nav-link[data-page]').forEach(l => {
+    l.classList.toggle('active', l.dataset.page === currentPage);
   });
 }
 
-/** Toggle the mobile menu open/closed. */
 function toggleMobile() { document.getElementById('mob-menu').classList.toggle('open'); }
-
-/** Close the mobile menu. */
 function closeMob() { document.getElementById('mob-menu').classList.remove('open'); }
 
-/**
- * Reads the current --nav-h custom property value (in px) from :root.
- * Falls back to 62 if the property is unavailable (SSR / very old browsers).
- * @returns {number}
- */
 function getNavHeight() {
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue('--nav-h').trim();          /* e.g. "62px" */
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--nav-h').trim();
   return parseInt(raw, 10) || 62;
 }
 
-/**
- * Smooth-scroll to an element, offsetting by the fixed navbar height so the
- * first visible line of content is never hidden behind the bar.
- * Works on all modern browsers regardless of scroll-padding-top support.
- * @param {Element|null} el
- */
 function smoothScrollTo(el) {
   if (!el) return;
   const top = el.getBoundingClientRect().top + window.scrollY - getNavHeight();
   window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
 
-/** Smooth-scroll to the features section on the landing page. */
 function scrollF() { smoothScrollTo(document.getElementById('features-s')); }

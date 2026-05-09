@@ -1,25 +1,11 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Settings page
-   Depends on: notifications.js (notif)
-═══════════════════════════════════════════════════════════ */
-
-/**
- * Select a profile preset card in the settings page.
- * Highlights the card and syncs the weight sliders.
- * @param {HTMLElement} el  The clicked card element
- * @param {'fastest'|'cheapest'|'greenest'|'balanced'} p
- */
 function selProf(el, p) {
-  /* Reset all sibling cards */
   document.querySelectorAll('#page-settings .card .card').forEach(c => {
     c.style.borderColor = 'var(--border)';
     c.style.background  = 'var(--bg-2)';
   });
-  /* Highlight selected card */
   el.style.borderColor = 'var(--purple)';
   el.style.background  = 'var(--purple-08)';
 
-  /* Sync sliders */
   const pp = {
     fastest:  {w1:80, w2:10, w3:10},
     cheapest: {w1:10, w2:80, w3:10},
