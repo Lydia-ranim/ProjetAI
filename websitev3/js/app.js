@@ -1,5 +1,11 @@
-(function init() {
+(async function init() {
   syncNav();
+  try {
+    await initGoogleMapsPlatform();
+    if (typeof initPlacesAutocomplete === 'function') initPlacesAutocomplete();
+  } catch (err) {
+    console.error('LYHLYH: Google Maps init failed', err);
+  }
   setTimeout(initHeroMap, 200);
 
   loadAllStops()

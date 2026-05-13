@@ -1,5 +1,6 @@
 const acSel   = { origin: null, dest: null };
 const acFocus = { origin: -1,   dest: -1 };
+const googlePlaceAutocomplete = { origin: null, dest: null };
 
 function acSearch(which, q) {
   const list = document.getElementById('ac-' + which);
@@ -53,6 +54,47 @@ function selectStation(which, id) {
   if (which === 'origin') placeMarker('origin', s.coords, s.name);
   else                    placeMarker('dest',   s.coords, s.name);
   setStatus();
+}
+
+function selectGooglePlace(which, place) {
+  if (!place || !place.geometry || !place.geometry.location) return;
+  const loc = place.geometry.location;
+  const lat = loc.lat();
+  const lon = loc.lng();
+  const name = place.name || place.formatted_address || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  const synthetic = {
+    id: null,
+    name,
+    short: name.length > 22 ? `${name.slice(0, 20)}...` : name,
+    coords: [lat, lon],
+    type: 'walk',
+    line: place.formatted_address || 'Google Places',
+    icon: 'place',
+    placeId: place.place_id || null,
+  };
+  acSel[which] = synthetic;
+  const input = document.getElementById(which === 'origin' ? 'origin-input' : 'dest-input');
+  input.value = name;
+  document.getElementById('ac-' + which).classList.remove('open');
+  placeMarker(which, synthetic.coords, synthetic.name);
+  setStatus();
+}
+
+function initPlacesAutocomplete() {
+  if (!window.google || !google.maps || !google.maps.places) return;
+  ['origin', 'dest'].forEach(which => {
+    const input = document.getElementById(which === 'origin' ? 'origin-input' : 'dest-input');
+    if (!input || googlePlaceAutocomplete[which]) return;
+    googlePlaceAutocomplete[which] = new google.maps.places.Autocomplete(input, {
+      fields: ['geometry', 'name', 'formatted_address', 'place_id'],
+      bounds: googleMapsBoundsLiteral(),
+      strictBounds: false,
+      componentRestrictions: { country: 'dz' },
+    });
+    googlePlaceAutocomplete[which].addListener('place_changed', () => {
+      selectGooglePlace(which, googlePlaceAutocomplete[which].getPlace());
+    });
+  });
 }
 
 document.addEventListener('click', e => {

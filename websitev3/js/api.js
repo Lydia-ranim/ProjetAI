@@ -58,3 +58,21 @@ function fetchRoutes(body) {
     body: JSON.stringify(body),
   });
 }
+
+function fetchMapConfig() {
+  return apiFetchJson('/api/maps/config');
+}
+
+function fetchGeocode(q) {
+  return apiFetchJson(`/api/geocode?q=${encodeURIComponent(q)}`);
+}
+
+function fetchReverseGeocode(lat, lon) {
+  const q = `lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+  return apiFetchJson(`/api/reverse-geocode?${q}`);
+}
+
+async function fetchNetworkLines(limit = 2500) {
+  const data = await apiFetchJson(`/api/network-lines?limit=${encodeURIComponent(limit)}`);
+  return data && Array.isArray(data.lines) ? data.lines : [];
+}

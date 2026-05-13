@@ -397,3 +397,11 @@
   margin-top:5px;
   letter-spacing:.01em;
 }
+
+/* Google Maps controls */
+.gm-style { font-family:'DM Sans',sans-serif !important }
+.gm-style .gm-style-iw-c {
+  border-radius:10px !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.25) !important;
+}
+.gm-style .gm-style-iw-d { overflow:hidden !important }

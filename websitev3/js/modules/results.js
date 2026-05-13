@@ -237,6 +237,11 @@ function searchResultLegendColor(modeStr) {
 function renderSearchResult(origin, dest, totalCost, transferCount, steps) {
   const panel = document.getElementById('search-result');
   if (!panel) return;
+  panel.hidden = true;
+  panel.innerHTML = '';
+  const hiddenStatus = document.getElementById('map-status');
+  if (hiddenStatus) hiddenStatus.style.display = 'none';
+  return;
 
   const isRide = s =>
     normalizeModeKey(s.rawMode || s.mode) !== 'walk' &&

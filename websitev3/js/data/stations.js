@@ -1,18 +1,13 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — stations.js  Stop registry (filled from GET /api/stops)
-═══════════════════════════════════════════════════════════ */
+/* LYHLYH stop registry. Populated from GET /api/stops. */
 
-/** @type {Array<Object>} Populated by loadAllStops() */
 const STATIONS = [];
-
-/** @type {Record<string, Object>} id → station */
 const SMAP = {};
 
 const TYPE_COLOR = {
   metro: '#2196F3',
   bus: '#FF9800',
   tram: '#4CAF50',
-  train: '#F2C4CE',
+  train: '#E91E63',
   walk: '#9E9E9E',
   telepherique: '#9C27B0',
   cable: '#9C27B0',
@@ -21,62 +16,56 @@ const TYPE_COLOR = {
 };
 
 const MODE_ICON = {
-  metro: '🚇',
-  bus: '🚌',
-  tram: '🚊',
-  train: '🚆',
-  walk: '🚶',
-  telepherique: '🚡',
-  cable: '🚡',
-  escalator: '🛗',
-  default: '📍',
+  metro: 'M',
+  bus: 'B',
+  tram: 'T',
+  train: 'R',
+  walk: 'W',
+  telepherique: 'C',
+  cable: 'C',
+  escalator: 'E',
+  default: 'P',
 };
 
-/** Normalize backend mode strings for comparisons and colouring. */
 function normalizeModeKey(m) {
-  let k = String(m || '')
-    .toLowerCase()
-    .trim();
-  if (k === 'téléphérique' || k === 'telepherique') return 'telepherique';
-  if (k === 'cable') return 'telepherique';
+  const k = String(m || '').toLowerCase().trim();
+  if (k === 'telepherique' || k === 'téléphérique' || k === 'cable') return 'telepherique';
   return k;
 }
 
 function formatLineLabel(type) {
-  const t = (type || '').toLowerCase();
+  const t = normalizeModeKey(type);
   const labels = {
-    metro: 'Métro',
+    metro: 'Metro',
     bus: 'Bus',
     tram: 'Tram',
     train: 'Train',
-    walk: 'Marche',
-    telepherique: 'Téléphérique',
-    cable: 'Téléphérique',
-    escalator: 'Escalier mécanique',
+    walk: 'Walk',
+    telepherique: 'Telepherique',
+    escalator: 'Escalator',
   };
-  return labels[t] || (type ? String(type) : 'Arrêt');
+  return labels[t] || (type ? String(type) : 'Stop');
 }
 
-/**
- * Map a row from GET /api/stops into the shape used by the UI.
- * @param {{ id:string, name:string, lat:number, lon:number, type:string, isHub?:boolean }} raw
- */
 function normalizeApiStop(raw) {
   const id = String(raw.id);
   const name = raw.name || id;
   const lat = Number(raw.lat);
   const lon = Number(raw.lon);
-  const type = String(raw.type || 'metro').toLowerCase();
-  const short = name.length > 22 ? `${name.slice(0, 20)}…` : name;
+  const type = normalizeModeKey(raw.type || 'metro');
+  const short = name.length > 22 ? `${name.slice(0, 20)}...` : name;
   const hub = !!raw.isHub;
+  const map = raw.map || {};
   return {
     id,
     name,
     short,
     coords: [lat, lon],
     type,
-    line: hub ? `${formatLineLabel(type)} · hub` : formatLineLabel(type),
-    icon: MODE_ICON[type] || MODE_ICON.default,
+    line: hub ? `${formatLineLabel(type)} - hub` : formatLineLabel(type),
+    icon: map.icon || MODE_ICON[type] || MODE_ICON.default,
+    color: map.color || TYPE_COLOR[type] || TYPE_COLOR.default,
+    map,
     isHub: hub,
   };
 }
@@ -90,7 +79,6 @@ function rebuildSMAP() {
   });
 }
 
-/** Insert or update a single stop (e.g. from /api/nearest-stop) without rebuilding all ids. */
 function ensureStopInRegistry(stopObj) {
   if (!stopObj || !stopObj.id) return;
   if (SMAP[stopObj.id]) {
@@ -103,7 +91,6 @@ function ensureStopInRegistry(stopObj) {
   SMAP[stopObj.id] = stopObj;
 }
 
-/** Hex stroke color for map polylines by backend mode key. */
 const MODE_LINE_COLOR_HEX = {
   bus: '#FF9800',
   metro: '#2196F3',

@@ -17,18 +17,13 @@ function initExplorer() {
   if (!expMapInited) {
     expMapInited = true;
     setTimeout(() => {
-      expMap = L.map('explorer-map', {
-        center: ALG_CENTER,
+      expMap = createMap('explorer-map', {
         zoom: 11,
-        maxBounds: ALG_BOUNDS,
         zoomControl: false,
-        scrollWheelZoom: false,
-        dragging: false,
-        attributionControl: false,
+        gestureHandling: 'none',
+        disableDefaultUI: true,
       });
-      L.tileLayer(TILE_URL, TILE_OPT).addTo(expMap);
       drawNetwork(expMap);
-      expMap.invalidateSize();
     }, 100);
   }
 }

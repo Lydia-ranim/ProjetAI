@@ -1,9 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Map: Leaflet init, markers, route polylines
-   Depends on: stations.js, notifications.js, autocomplete.js, api.js
-═══════════════════════════════════════════════════════════ */
+/* LYHLYH Google Maps rendering. No route computation happens here. */
 
-/* ── State ── */
 let dashMap = null;
 let heroMap = null;
 let expMap = null;
@@ -11,208 +7,217 @@ let dashMapInited = false;
 let heroMapInited = false;
 let originMarker = null;
 let destMarker = null;
-let routeLayer = null;
+let routeLayer = [];
 let networkVisible = false;
-let networkLayerGroup = null;
-let heroRoutePreviewLayer = null;
+let networkLayerGroup = [];
+let heroRoutePreviewLayer = [];
+let stationMarkers = [];
+let stationCluster = null;
+let currentLocationMarker = null;
+let directionsService = null;
+let networkLinesCache = null;
 
-/* ── Map config ── */
-const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const TILE_OPT = { attribution: '© OpenStreetMap contributors', maxZoom: 19, subdomains: 'abc' };
-const ALG_BOUNDS = [[36.48, 2.75], [36.98, 3.55]];
 const ALG_CENTER = [36.737, 3.086];
+const ALG_BOUNDS = [[36.48, 2.75], [36.98, 3.55]];
 
 let clickMode = 'origin';
+
+function latLngLiteral(coords) {
+  return { lat: Number(coords[0]), lng: Number(coords[1]) };
+}
+
+function clearGoogleItems(items) {
+  (items || []).forEach(item => {
+    if (item && typeof item.setMap === 'function') item.setMap(null);
+  });
+}
 
 function polylineColorForMode(mode) {
   const k = normalizeModeKey(mode);
   return MODE_LINE_COLOR_HEX[k] || MODE_LINE_COLOR_HEX.default;
 }
 
-/* ── Custom pin markers ── */
-function makeIcon(color, emoji) {
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:34px;height:40px;position:relative;filter:drop-shadow(0 3px 8px rgba(0,0,0,.4))">
-      <div style="width:34px;height:34px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);border:2.5px solid rgba(255,255,255,.4)"></div>
-      <div style="position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:15px;line-height:1">${emoji}</div>
-    </div>`,
-    iconSize: [34, 40],
-    iconAnchor: [17, 40],
-    popupAnchor: [0, -42],
-  });
+function markerIcon(color, label) {
+  const safe = encodeURIComponent(label || '');
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="38" height="44" viewBox="0 0 38 44">
+    <path d="M19 43S4 27.8 4 17.5C4 8.4 10.7 2 19 2s15 6.4 15 15.5C34 27.8 19 43 19 43z" fill="${color}" stroke="white" stroke-width="2"/>
+    <text x="19" y="22" font-family="Arial" font-size="10" font-weight="700" fill="white" text-anchor="middle">${safe.slice(0, 2).toUpperCase()}</text>
+  </svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(38, 44),
+    anchor: new google.maps.Point(19, 43),
+  };
 }
-const originIcon = makeIcon('#3DAB82', '📍');
-const destIcon = makeIcon('#8A0A35', '🎯');
 
-/* ─────────────────────────────────────────────
-   HERO MAP (landing)
-───────────────────────────────────────────── */
-function initHeroMap() {
-  heroMapInited = true;
-  heroMap = L.map('hero-map', {
-    center: ALG_CENTER,
-    zoom: 12,
-    maxBounds: ALG_BOUNDS,
-    maxBoundsViscosity: 0.7,
-    zoomControl: false,
-    scrollWheelZoom: false,
-    dragging: true,
-    attributionControl: false,
+function modeMarkerIcon(mode) {
+  return markerIcon(TYPE_COLOR[normalizeModeKey(mode)] || TYPE_COLOR.default, '');
+}
+
+function createMap(elId, options = {}) {
+  const el = document.getElementById(elId);
+  if (!el || !window.google || !google.maps) return null;
+  const map = new google.maps.Map(el, {
+    center: googleMapsCenterLiteral(),
+    zoom: options.zoom || 12,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
+    clickableIcons: true,
+    restriction: {
+      latLngBounds: googleMapsBoundsLiteral(),
+      strictBounds: false,
+    },
+    styles: [
+      { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      { featureType: 'transit.station', elementType: 'labels', stylers: [{ visibility: 'on' }] },
+    ],
+    ...options,
   });
-  L.tileLayer(TILE_URL, TILE_OPT).addTo(heroMap);
+  return map;
+}
+
+function initHeroMap() {
+  if (heroMapInited) return;
+  heroMapInited = true;
+  heroMap = createMap('hero-map', {
+    zoom: 12,
+    zoomControl: false,
+    gestureHandling: 'cooperative',
+    disableDefaultUI: true,
+  });
+  if (!heroMap) return;
   drawNetwork(heroMap);
   refreshHeroSampleRoute();
-  setTimeout(() => heroMap.invalidateSize(), 200);
 }
 
-/** Redraw landing map stop dots after GET /api/stops completes. */
 function refreshHeroMapAfterStops() {
   if (!heroMap) return;
-  heroMap.eachLayer(layer => {
-    if (layer instanceof L.CircleMarker) heroMap.removeLayer(layer);
-  });
+  clearGoogleItems(heroRoutePreviewLayer);
+  heroRoutePreviewLayer = [];
   drawNetwork(heroMap);
   refreshHeroSampleRoute();
 }
 
-/** Preview polyline on landing map once `/api/stops` has been loaded. */
 function refreshHeroSampleRoute() {
-  if (!heroMap) return;
-  if (heroRoutePreviewLayer) {
-    heroMap.removeLayer(heroRoutePreviewLayer);
-    heroRoutePreviewLayer = null;
-  }
-  if (STATIONS.length < 2) return;
-
+  if (!heroMap || STATIONS.length < 2) return;
+  clearGoogleItems(heroRoutePreviewLayer);
+  heroRoutePreviewLayer = [];
   const a = STATIONS[0];
   const b = STATIONS[Math.min(50, STATIONS.length - 1)];
-  const coords = [a.coords, b.coords];
-  heroRoutePreviewLayer = L.layerGroup();
-  L.polyline(coords, {
-    color: 'rgba(92,107,192,.25)',
-    weight: 14,
-    lineCap: 'round',
-    lineJoin: 'round',
-  }).addTo(heroRoutePreviewLayer);
-  L.polyline(coords, {
-    color: 'rgba(255,255,255,.6)',
-    weight: 8,
-    lineCap: 'round',
-    lineJoin: 'round',
-  }).addTo(heroRoutePreviewLayer);
-  L.polyline(coords, {
-    color: '#5C6BC0',
-    weight: 5,
-    lineCap: 'round',
-    lineJoin: 'round',
-  }).addTo(heroRoutePreviewLayer);
-  L.marker(a.coords, { icon: originIcon }).addTo(heroRoutePreviewLayer);
-  L.marker(b.coords, { icon: destIcon }).addTo(heroRoutePreviewLayer);
-  heroRoutePreviewLayer.addTo(heroMap);
+  const path = [latLngLiteral(a.coords), latLngLiteral(b.coords)];
+  const shadow = new google.maps.Polyline({
+    map: heroMap,
+    path,
+    strokeColor: '#ffffff',
+    strokeOpacity: 0.55,
+    strokeWeight: 10,
+  });
+  const line = new google.maps.Polyline({
+    map: heroMap,
+    path,
+    strokeColor: '#5C6BC0',
+    strokeOpacity: 0.95,
+    strokeWeight: 5,
+  });
+  const start = new google.maps.Marker({ map: heroMap, position: path[0], icon: markerIcon('#3DAB82', 'A') });
+  const end = new google.maps.Marker({ map: heroMap, position: path[1], icon: markerIcon('#8A0A35', 'B') });
+  heroRoutePreviewLayer.push(shadow, line, start, end);
 }
 
-/* ─────────────────────────────────────────────
-   DASHBOARD MAP
-───────────────────────────────────────────── */
 function initDashMap() {
+  if (dashMapInited) return;
   dashMapInited = true;
-  dashMap = L.map('dash-map', {
-    center: ALG_CENTER,
-    zoom: 12,
-    maxBounds: ALG_BOUNDS,
-    maxBoundsViscosity: 0.85,
-    minZoom: 10,
-    maxZoom: 17,
-  });
-  L.tileLayer(TILE_URL, TILE_OPT).addTo(dashMap);
+  dashMap = createMap('dash-map', { zoom: 12, zoomControl: true });
+  if (!dashMap) return;
+  directionsService = new google.maps.DirectionsService();
   refreshDashStationMarkers();
-  dashMap.on('click', onMapClick);
-  setTimeout(() => dashMap.invalidateSize(), 300);
+  dashMap.addListener('click', onMapClick);
+  showCurrentLocation(false);
 }
 
 function refreshDashStationMarkers() {
   if (!dashMap) return;
-  dashMap.eachLayer(layer => {
-    if (layer instanceof L.CircleMarker) dashMap.removeLayer(layer);
-  });
-  addStationMarkers(dashMap);
+  if (stationCluster && typeof stationCluster.clearMarkers === 'function') stationCluster.clearMarkers();
+  clearGoogleItems(stationMarkers);
+  stationMarkers = addStationMarkers(dashMap);
+  if (window.markerClusterer && markerClusterer.MarkerClusterer) {
+    stationCluster = new markerClusterer.MarkerClusterer({ map: dashMap, markers: stationMarkers });
+  }
 }
 
-function toggleNetwork() {
+async function toggleNetwork() {
   networkVisible = !networkVisible;
   const ind = document.getElementById('network-indicator');
   const lbl = document.getElementById('network-lbl');
   if (networkVisible) {
-    if (!networkLayerGroup) {
-      networkLayerGroup = L.layerGroup();
-      drawNetworkLines(networkLayerGroup);
-    }
-    networkLayerGroup.addTo(dashMap);
-    ind.style.background = '#BEEEDB';
-    lbl.textContent = t('map.hide-network');
+    networkLayerGroup = await drawNetworkLines(dashMap);
+    if (ind) ind.style.background = '#BEEEDB';
+    if (lbl) lbl.textContent = t('map.hide-network');
   } else {
-    if (networkLayerGroup) dashMap.removeLayer(networkLayerGroup);
-    ind.style.background = '#ccc';
-    lbl.textContent = t('map.show-network');
+    clearGoogleItems(networkLayerGroup);
+    networkLayerGroup = [];
+    if (ind) ind.style.background = '#ccc';
+    if (lbl) lbl.textContent = t('map.show-network');
   }
 }
 
-/* ── Station markers ── */
+function stopInfoHtml(s) {
+  const safeId = String(s.id).replace(/'/g, "\\'");
+  return `
+    <div style="font-family:'DM Sans',sans-serif;padding:4px;min-width:170px">
+      <div style="font-weight:700;margin-bottom:4px">${s.name}</div>
+      <div style="font-size:.78rem;color:#666;margin-bottom:8px">${s.line}</div>
+      <button onclick="selectStation('origin','${safeId}')" style="margin-right:6px;padding:5px 10px;border-radius:6px;background:#E6F4EA;color:#137333;border:1px solid #C8E6C9;cursor:pointer;font-size:.75rem;font-weight:700">${t('map.origin-btn')}</button>
+      <button onclick="selectStation('dest','${safeId}')" style="padding:5px 10px;border-radius:6px;background:#FCE8E6;color:#A50E0E;border:1px solid #F4C7C3;cursor:pointer;font-size:.75rem;font-weight:700">${t('map.dest-btn')}</button>
+    </div>`;
+}
+
 function addStationMarkers(map) {
-  STATIONS.forEach(s => {
-    const c = L.circleMarker(s.coords, {
-      radius: s.type === 'train' ? 5 : 4,
-      fillColor: TYPE_COLOR[s.type] || TYPE_COLOR.default,
-      color: 'rgba(255,255,255,.9)',
-      weight: 2,
-      fillOpacity: 0.85,
-    }).addTo(map);
-    const safeId = String(s.id).replace(/'/g, "\\'");
-    c.bindPopup(
-      `<div style="font-family:'DM Sans',sans-serif;padding:2px">
-      <div style="font-weight:600;margin-bottom:4px">${s.icon} ${s.name}</div>
-      <div style="font-size:.78rem;color:#888;margin-bottom:8px">${s.line}</div>
-      <button onclick="selectStation('origin','${safeId}')" style="margin-right:6px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;font-weight:600">${t('map.origin-btn')}</button>
-      <button onclick="selectStation('dest','${safeId}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem;font-weight:600">${t('map.dest-btn')}</button>
-    </div>`,
-      { className: 'route-popup', closeButton: true }
-    );
-    c.on('click', e => {
-      e.originalEvent.stopPropagation();
+  const info = new google.maps.InfoWindow();
+  return STATIONS.map(s => {
+    const marker = new google.maps.Marker({
+      map,
+      position: latLngLiteral(s.coords),
+      title: s.name,
+      icon: modeMarkerIcon(s.type),
+      optimized: true,
     });
+    marker.addListener('click', () => {
+      info.setContent(stopInfoHtml(s));
+      info.open(map, marker);
+    });
+    return marker;
   });
 }
 
-/* Hardcoded line geometry removed — network overlay is optional / empty. */
-function drawNetworkLines(_target) {
-  /* No client-side graph; full topology lives on the API. */
+async function drawNetworkLines(map) {
+  if (!map) return [];
+  if (!networkLinesCache) {
+    try {
+      networkLinesCache = await fetchNetworkLines(2500);
+    } catch (err) {
+      console.warn('LYHLYH: network overlay failed', err);
+      networkLinesCache = [];
+    }
+  }
+
+  return networkLinesCache
+    .filter(line => Array.isArray(line.path) && line.path.length >= 2)
+    .map(line => new google.maps.Polyline({
+      map,
+      path: line.path.map(p => ({ lat: Number(p[0]), lng: Number(p[1]) })),
+      strokeColor: line.color || polylineColorForMode(line.mode),
+      strokeOpacity: 0.38,
+      strokeWeight: normalizeModeKey(line.mode) === 'bus' ? 2 : 3,
+      zIndex: 5,
+    }));
 }
 
 function drawNetwork(map) {
-  drawNetworkLines(map);
-  STATIONS.forEach(s => {
-    const c = L.circleMarker(s.coords, {
-      radius: s.type === 'train' ? 6 : 4,
-      fillColor: TYPE_COLOR[s.type] || TYPE_COLOR.default,
-      color: 'rgba(255,255,255,.85)',
-      weight: 1.5,
-      fillOpacity: 0.88,
-    }).addTo(map);
-    const safeId = String(s.id).replace(/'/g, "\\'");
-    c.bindPopup(
-      `<div style="font-family:'DM Sans',sans-serif">
-      <div style="font-weight:600;margin-bottom:4px">${s.icon} ${s.name}</div>
-      <div style="font-size:.78rem;color:#888">${s.line}</div>
-      <button onclick="selectStation('origin','${safeId}')" style="margin-top:8px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;margin-right:6px">${t('map.origin-btn')}</button>
-      <button onclick="selectStation('dest','${safeId}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem">${t('map.dest-btn')}</button>
-    </div>`,
-      { className: 'route-popup', closeButton: true }
-    );
-    c.on('click', e => {
-      e.originalEvent.stopPropagation();
-    });
-  });
+  if (!map) return;
+  addStationMarkers(map);
 }
 
 function fallbackNearestStation(lat, lng) {
@@ -229,7 +234,8 @@ function fallbackNearestStation(lat, lng) {
 }
 
 async function onMapClick(e) {
-  const { lat, lng } = e.latlng;
+  const lat = e.latLng.lat();
+  const lng = e.latLng.lng();
   let stop = null;
 
   try {
@@ -249,6 +255,7 @@ async function onMapClick(e) {
     selectStation(clickMode, stop.id);
     const ptLbl = clickMode === 'origin' ? t('notif.pt-origin') : t('notif.pt-dest');
     notif(`${ptLbl} ${t('notif.pt-set-title')}`, stop.name, 'success');
+    highlightNearestStop(stop);
   } else {
     const lbl = clickMode === 'origin' ? t('map.custom-origin') : t('map.custom-dest');
     const synthetic = {
@@ -257,8 +264,8 @@ async function onMapClick(e) {
       short: 'Point',
       coords: [lat, lng],
       type: 'walk',
-      line: '—',
-      icon: '📌',
+      line: '-',
+      icon: 'pin',
     };
     acSel[clickMode] = synthetic;
     document.getElementById(clickMode === 'origin' ? 'origin-input' : 'dest-input').value = synthetic.name;
@@ -279,25 +286,31 @@ function setClickMode(m) {
 }
 
 function placeMarker(which, coords, label) {
-  if (!dashMap) return;
+  if (!dashMap || !window.google) return;
+  const position = latLngLiteral(coords);
+  const marker = new google.maps.Marker({
+    map: dashMap,
+    position,
+    title: label,
+    icon: markerIcon(which === 'origin' ? '#3DAB82' : '#8A0A35', which === 'origin' ? 'A' : 'B'),
+    zIndex: 1000,
+  });
   if (which === 'origin') {
-    if (originMarker) dashMap.removeLayer(originMarker);
-    originMarker = L.marker(coords, { icon: originIcon })
-      .addTo(dashMap)
-      .bindPopup(`<b>${t('map.origin-btn')}:</b> ${label}`);
-    dashMap.setView(coords, 13, { animate: true });
+    if (originMarker) originMarker.setMap(null);
+    originMarker = marker;
+    dashMap.panTo(position);
+    dashMap.setZoom(Math.max(dashMap.getZoom(), 13));
   } else {
-    if (destMarker) dashMap.removeLayer(destMarker);
-    destMarker = L.marker(coords, { icon: destIcon })
-      .addTo(dashMap)
-      .bindPopup(`<b>${t('map.dest-btn')}:</b> ${label}`);
+    if (destMarker) destMarker.setMap(null);
+    destMarker = marker;
     if (originMarker) {
-      dashMap.fitBounds(L.latLngBounds([originMarker.getLatLng(), destMarker.getLatLng()]), {
-        padding: [60, 60],
-        animate: true,
-      });
+      const bounds = new google.maps.LatLngBounds();
+      bounds.extend(originMarker.getPosition());
+      bounds.extend(destMarker.getPosition());
+      dashMap.fitBounds(bounds, 80);
     } else {
-      dashMap.setView(coords, 13, { animate: true });
+      dashMap.panTo(position);
+      dashMap.setZoom(Math.max(dashMap.getZoom(), 13));
     }
   }
 }
@@ -307,61 +320,147 @@ function swapPoints() {
   const di = document.getElementById('dest-input');
   [oi.value, di.value] = [di.value, oi.value];
   [acSel.origin, acSel.dest] = [acSel.dest, acSel.origin];
-  if (originMarker && destMarker && dashMap) {
-    const oc = originMarker.getLatLng();
-    const dc = destMarker.getLatLng();
-    dashMap.removeLayer(originMarker);
-    dashMap.removeLayer(destMarker);
-    originMarker = L.marker(dc, { icon: originIcon }).addTo(dashMap);
-    destMarker = L.marker(oc, { icon: destIcon }).addTo(dashMap);
-  }
+  if (acSel.origin) placeMarker('origin', acSel.origin.coords, acSel.origin.name);
+  if (acSel.dest) placeMarker('dest', acSel.dest.coords, acSel.dest.name);
 }
 
-/**
- * Draw each API segment polyline with mode colour (bus / metro / tram / walk / téléphérique).
- * @param {Object} origin
- * @param {Object} dest
- * @param {Array<{mode:string,polyline?:Array<[number,number]>}>} segments
- */
-function drawRouteSegments(origin, dest, segments) {
-  if (!dashMap) return;
-  if (routeLayer) dashMap.removeLayer(routeLayer);
+function shouldUseGoogleVisualPath(seg) {
+  if (!googleMapsConfig?.visualDirections || !directionsService) return false;
+  const mode = normalizeModeKey(seg.mode);
+  return mode === 'bus' || mode === 'walk';
+}
 
-  const rg = L.layerGroup();
-  const allLatLngs = [];
+function travelModeForSegment(seg) {
+  const mode = normalizeModeKey(seg.mode);
+  if (mode === 'walk') return google.maps.TravelMode.WALKING;
+  return google.maps.TravelMode.DRIVING;
+}
 
-  (segments || []).forEach(seg => {
-    const raw = seg.polyline;
-    if (!raw || raw.length < 2) return;
-    const latlngs = raw.map(p => {
-      const lat = p[0];
-      const lon = p[1];
-      return [lat, lon];
-    });
-    latlngs.forEach(ll => allLatLngs.push(ll));
-    const color = polylineColorForMode(seg.mode);
-    L.polyline(latlngs, {
-      color: 'rgba(255,255,255,.35)',
-      weight: 10,
-      lineCap: 'round',
-      lineJoin: 'round',
-    }).addTo(rg);
-    L.polyline(latlngs, {
-      color,
-      weight: 6,
-      opacity: 0.92,
-      lineCap: 'round',
-      lineJoin: 'round',
-    }).addTo(rg);
+function requestVisualDirections(seg, fallbackPath) {
+  if (!shouldUseGoogleVisualPath(seg) || fallbackPath.length < 2) return Promise.resolve(null);
+  const origin = fallbackPath[0];
+  const destination = fallbackPath[fallbackPath.length - 1];
+  const waypoints = fallbackPath
+    .slice(1, -1)
+    .filter((_, i, arr) => arr.length <= 8 || i % Math.ceil(arr.length / 8) === 0)
+    .slice(0, 8)
+    .map(location => ({ location, stopover: false }));
+
+  return new Promise(resolve => {
+    directionsService.route(
+      {
+        origin,
+        destination,
+        waypoints,
+        travelMode: travelModeForSegment(seg),
+        optimizeWaypoints: false,
+        provideRouteAlternatives: false,
+      },
+      (response, status) => {
+        if (status !== google.maps.DirectionsStatus.OK || !response?.routes?.[0]?.overview_path) {
+          console.warn('LYHLYH: visual Google path fallback used', status);
+          resolve(null);
+          return;
+        }
+        resolve(response.routes[0].overview_path.map(p => ({ lat: p.lat(), lng: p.lng() })));
+      }
+    );
   });
+}
 
-  rg.addTo(dashMap);
-  routeLayer = rg;
+function addSegmentPolyline(path, seg, idx, bounds) {
+  path.forEach(p => bounds.extend(p));
+  const color = seg.display?.color || polylineColorForMode(seg.mode);
+  const shadow = new google.maps.Polyline({
+    map: dashMap,
+    path,
+    strokeColor: '#ffffff',
+    strokeOpacity: 0.55,
+    strokeWeight: 11,
+    zIndex: 20 + idx,
+  });
+  const line = new google.maps.Polyline({
+    map: dashMap,
+    path,
+    strokeColor: color,
+    strokeOpacity: 0.95,
+    strokeWeight: seg.display?.isTransfer ? 4 : 6,
+    zIndex: 30 + idx,
+    icons: seg.display?.isTransfer
+      ? [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 }, offset: '0', repeat: '14px' }]
+      : undefined,
+  });
+  routeLayer.push(shadow, line);
+}
 
-  const boundsPts = [...allLatLngs];
-  if (origin && origin.coords) boundsPts.push(origin.coords);
-  if (dest && dest.coords) boundsPts.push(dest.coords);
-  if (boundsPts.length >= 2) {
-    dashMap.fitBounds(boundsPts, { padding: [100, 80], animate: true });
+async function drawRouteSegments(origin, dest, segments) {
+  if (!dashMap || !window.google) return;
+  clearGoogleItems(routeLayer);
+  routeLayer = [];
+
+  const bounds = new google.maps.LatLngBounds();
+  let hasPoint = false;
+
+  for (const [idx, seg] of (segments || []).entries()) {
+    const raw = seg.polyline || [];
+    if (raw.length < 2) continue;
+    const path = raw.map(p => ({ lat: Number(p[0]), lng: Number(p[1]) }));
+    const visualPath = await requestVisualDirections(seg, path);
+    addSegmentPolyline(visualPath || path, seg, idx, bounds);
+    hasPoint = true;
+
+    const transfer = seg.display?.isTransfer || idx > 0;
+    if (transfer && seg.markers?.start?.position) {
+      routeLayer.push(new google.maps.Marker({
+        map: dashMap,
+        position: seg.markers.start.position,
+        title: seg.fromName,
+        icon: markerIcon('#5f6368', 'T'),
+        zIndex: 900,
+      }));
+    }
   }
+
+  if (origin && origin.coords) {
+    bounds.extend(latLngLiteral(origin.coords));
+    hasPoint = true;
+  }
+  if (dest && dest.coords) {
+    bounds.extend(latLngLiteral(dest.coords));
+    hasPoint = true;
+  }
+  if (hasPoint) dashMap.fitBounds(bounds, 80);
+}
+
+function highlightNearestStop(stop) {
+  if (!dashMap || !stop) return;
+  const marker = new google.maps.Marker({
+    map: dashMap,
+    position: latLngLiteral(stop.coords),
+    title: stop.name,
+    icon: markerIcon('#FFD54F', 'N'),
+    zIndex: 1100,
+  });
+  routeLayer.push(marker);
+  setTimeout(() => marker.setMap(null), 3500);
+}
+
+function showCurrentLocation(panToUser = true) {
+  if (!dashMap || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const position = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (currentLocationMarker) currentLocationMarker.setMap(null);
+      currentLocationMarker = new google.maps.Marker({
+        map: dashMap,
+        position,
+        title: 'Current location',
+        icon: markerIcon('#1A73E8', 'ME'),
+        zIndex: 1200,
+      });
+      if (panToUser) dashMap.panTo(position);
+    },
+    () => {},
+    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+  );
 }
