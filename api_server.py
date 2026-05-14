@@ -1,6 +1,6 @@
 """
 FastAPI backend for LYHLYH — serves /api/stops, /api/nearest-stop, /api/route
-using ucs.TransitRouter and data/*.csv.
+using A_star.AStarRouter (which extends ucs.TransitRouter) and data/*.csv.
 """
 
 from __future__ import annotations
@@ -12,13 +12,16 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+# IMPORT AJOUTÉ : On importe AStarRouter en plus de la base UCS
+from A_star import AStarRouter
 from ucs import TransitRouter, Segment, RouteResult
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
-router_engine: Optional[TransitRouter] = None
+# Le moteur principal est maintenant AStarRouter (qui contient aussi l'UCS)
+router_engine: Optional[AStarRouter] = None
 
-app = FastAPI(title="LYHLYH Transit API", version="1.0.0")
+app = FastAPI(title="LYHLYH Transit API", version="1.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,10 +34,11 @@ app.add_middleware(
 @app.on_event("startup")
 def load_graph() -> None:
     global router_engine
-    router_engine = TransitRouter(DATA_DIR)
+    # AStarRouter charge les mêmes données que TransitRouter mais prépare le vmax
+    router_engine = AStarRouter(DATA_DIR)
 
 
-def get_router() -> TransitRouter:
+def get_router() -> AStarRouter:
     if router_engine is None:
         raise HTTPException(status_code=503, detail="Graph not loaded")
     return router_engine
@@ -51,6 +55,9 @@ class RouteRequest(BaseModel):
     end: GeoPoint
     weights: dict[str, float] = Field(default_factory=dict)
     transportModes: dict[str, bool] = Field(default_factory=dict)
+    # SÉCURITÉ GROUPE : Paramètres optionnels. Si l'interface ne les envoie pas, ça ne crash pas.
+    departureTime: float = 8.0 
+    algorithm: str = "A*" # Par défaut A*, mais tes collègues peuvent envoyer "UCS" pour tester
 
 
 def resolve_endpoint(r: TransitRouter, pt: GeoPoint) -> str:
@@ -74,27 +81,25 @@ def segment_to_api(r: TransitRouter, seg: Segment) -> dict[str, Any]:
             s1 = seg.stops[i]
             s2 = seg.stops[i+1]
             
-            # Try to find the exact road geometry between the two stops
             key1 = f"{s1}|{s2}|{seg.route_id}"
             key2 = f"{s2}|{s1}|{seg.route_id}"
             
             if hasattr(r, 'bus_geometries') and key1 in r.bus_geometries:
                 poly.extend(r.bus_geometries[key1])
             elif hasattr(r, 'bus_geometries') and key2 in r.bus_geometries:
-                # Reverse the geometry to match the travel direction
                 poly.extend(reversed(r.bus_geometries[key2]))
             else:
                 s1_node = r.stops.get(s1)
                 if s1_node:
                     poly.append([s1_node.lat, s1_node.lon])
         
-        # Append the very last stop
         last_stop = r.stops.get(seg.stops[-1])
         if last_stop:
             poly.append([last_stop.lat, last_stop.lon])
+            
     mode = seg.transport_type
     if mode == "telepherique":
-        pass  # keep backend spelling
+        pass  
     return {
         "mode": mode,
         "lineId": seg.route_id,
@@ -114,7 +119,7 @@ def route_result_to_api(
     r: TransitRouter,
     label: str,
     result: RouteResult,
-    algo: str = "UCS",
+    algo: str = "A*",
 ) -> dict[str, Any]:
     rid = {"fastest": "r-fast", "cheapest": "r-cheap", "greenest": "r-green"}.get(
         label, "r-1"
@@ -182,14 +187,10 @@ def api_nearest_stop(lat: float, lon: float, limit: int = 5) -> list[dict[str, A
 
 @app.post("/api/route")
 def api_route(body: RouteRequest) -> dict[str, Any]:
-    """
-    Returns up to three Pareto-style variants:
-    fastest (time), greenest (co2), cheapest uses distance-minimizing UCS as a proxy
-    for lower overall resource use (fare is still reported from the actual path).
-    """
     r = get_router()
     start_id = resolve_endpoint(r, body.start)
     end_id = resolve_endpoint(r, body.end)
+    
     if start_id == end_id:
         empty = RouteResult(
             found=True,
@@ -202,7 +203,7 @@ def api_route(body: RouteRequest) -> dict[str, Any]:
             total_fare=0,
             nodes_explored=0,
         )
-        z = route_result_to_api(r, "fastest", empty)
+        z = route_result_to_api(r, "fastest", empty, algo=body.algorithm)
         return {"routes": [z, z, z]}
 
     variants = [
@@ -210,9 +211,27 @@ def api_route(body: RouteRequest) -> dict[str, Any]:
         ("greenest", "co2"),
         ("cheapest", "distance"),
     ]
+    
     routes_out = []
+    w1 = body.weights.get("time", 1.0)
+    w2 = body.weights.get("cost", 0.0)
+    w3 = body.weights.get("co2", 0.0)
+
     for label, metric in variants:
-        res = r.find_route(start_id, end_id, metric=metric)
-        routes_out.append(route_result_to_api(r, label, res))
+        if body.algorithm.upper() == "UCS":
+            # Le travail de tes collègues reste intact et appelable
+            res = r.find_route(start_id, end_id, metric=metric)
+            algo_used = "UCS"
+        else:
+            # Ton algorithme A* optimisé
+            res = r.find_route_astar(
+                start_id, end_id, 
+                metric=metric, 
+                w1=w1, w2=w2, w3=w3, 
+                departure_time=body.departureTime
+            )
+            algo_used = "A*"
+            
+        routes_out.append(route_result_to_api(r, label, res, algo=algo_used))
 
     return {"routes": routes_out}
