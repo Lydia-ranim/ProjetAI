@@ -68,6 +68,30 @@ def segment_to_api(r: TransitRouter, seg: Segment) -> dict[str, Any]:
         s = r.stops.get(sid)
         if s:
             poly.append([s.lat, s.lon])
+    
+    if len(seg.stops) > 0:
+        for i in range(len(seg.stops) - 1):
+            s1 = seg.stops[i]
+            s2 = seg.stops[i+1]
+            
+            # Try to find the exact road geometry between the two stops
+            key1 = f"{s1}|{s2}|{seg.route_id}"
+            key2 = f"{s2}|{s1}|{seg.route_id}"
+            
+            if hasattr(r, 'bus_geometries') and key1 in r.bus_geometries:
+                poly.extend(r.bus_geometries[key1])
+            elif hasattr(r, 'bus_geometries') and key2 in r.bus_geometries:
+                # Reverse the geometry to match the travel direction
+                poly.extend(reversed(r.bus_geometries[key2]))
+            else:
+                s1_node = r.stops.get(s1)
+                if s1_node:
+                    poly.append([s1_node.lat, s1_node.lon])
+        
+        # Append the very last stop
+        last_stop = r.stops.get(seg.stops[-1])
+        if last_stop:
+            poly.append([last_stop.lat, last_stop.lon])
     mode = seg.transport_type
     if mode == "telepherique":
         pass  # keep backend spelling

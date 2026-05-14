@@ -74,6 +74,15 @@
   --cta-bg:    linear-gradient(135deg, #670627 0%, #8A0A35 50%, #A01040 100%);
   --cta-glow:  0 4px 22px rgba(103,6,39,.55), 0 1px 6px rgba(103,6,39,.3);
   --cta-glow-h:0 6px 28px rgba(103,6,39,.7), 0 2px 10px rgba(103,6,39,.45);
+
+  /* ── Accent (= CTA crimson) — single token used for map border, focus,
+     active states, and any highlighted UI element ── */
+  --accent:        #8A0A35;
+  --accent-soft:   rgba(138,10,53,.18);
+  --accent-glow:   0 0 18px rgba(103,6,39,.55), 0 0 6px rgba(138,10,53,.4);
+  --accent-glow-h: 0 0 28px rgba(103,6,39,.75), 0 0 10px rgba(138,10,53,.55);
+  --accent-border: rgba(138,10,53,.6);
+  --accent-shadow: 0 8px 32px rgba(103,6,39,.3), 0 2px 10px rgba(103,6,39,.18);
 }
 
 /* ═══════════════════════════════════════════════════════════

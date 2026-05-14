@@ -2,6 +2,74 @@
    LYHLYH — Map: Leaflet overrides, panels, legend, markers
 ═══════════════════════════════════════════════════════════ */
 
+/* ── Hero map column ──
+   Outer shell: rounded frame + faint crimson-tinted background.
+   overflow is intentionally NOT hidden here — that job belongs to
+   .hero-map-wrap so the glow on the wrapper is not clipped.       */
+.hero-map-col {
+  border-radius: var(--rxl);
+  /* Barely-there crimson radial wash visible behind the rounded map */
+  background: radial-gradient(
+    ellipse 80% 70% at 65% 45%,
+    rgba(103,6,39,.22)  0%,
+    rgba(103,6,39,.09) 50%,
+    transparent        100%
+  );
+}
+:root.light-mode .hero-map-col {
+  background: radial-gradient(
+    ellipse 80% 70% at 65% 45%,
+    rgba(103,6,39,.10)  0%,
+    rgba(103,6,39,.04) 55%,
+    transparent        100%
+  );
+}
+
+/* ── Hero map wrapper ──
+   Sits inside .hero-map-col (position:absolute;inset:0).
+   Border is a barely-visible crimson line — just enough to
+   hint at the accent colour without competing with the map.
+   Glow is diffuse and very low-opacity: futuristic not flashy.   */
+.hero-map-wrap {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--rxl);
+  overflow: hidden;
+  border: 1px solid rgba(138,10,53,.18);      /* whisper-thin line   */
+  box-shadow:
+    0 0 40px rgba(103,6,39,.13),              /* wide soft halo      */
+    0 0  8px rgba(138,10,53,.09),             /* tight edge glow     */
+    0 14px 44px rgba(0,0,0,.38),              /* depth / lift        */
+    inset 0 0 0 1px rgba(255,255,255,.02);    /* inner rim           */
+  transition:
+    box-shadow   .4s cubic-bezier(.4,0,.2,1),
+    border-color .4s cubic-bezier(.4,0,.2,1);
+  will-change: box-shadow;
+}
+.hero-map-wrap:hover {
+  border-color: rgba(138,10,53,.30);
+  box-shadow:
+    0 0 54px rgba(103,6,39,.20),
+    0 0 14px rgba(138,10,53,.14),
+    0 18px 54px rgba(0,0,0,.44),
+    inset 0 0 0 1px rgba(255,255,255,.03);
+}
+/* Light-mode — even gentler, pale bg can’t absorb dark glows */
+:root.light-mode .hero-map-wrap {
+  border-color: rgba(103,6,39,.12);
+  box-shadow:
+    0 0 28px rgba(103,6,39,.09),
+    0 0  6px rgba(138,10,53,.06),
+    0 8px 28px rgba(0,0,0,.07);
+}
+:root.light-mode .hero-map-wrap:hover {
+  border-color: rgba(103,6,39,.22);
+  box-shadow:
+    0 0 40px rgba(103,6,39,.14),
+    0 0 10px rgba(138,10,53,.10),
+    0 12px 36px rgba(0,0,0,.09);
+}
+
 /* ── Map containers ──
    Use absolute positioning so each map fills its (positioned) wrapper
    regardless of any height % cascade. This prevents the dashboard map
@@ -151,12 +219,27 @@
 /* ── Results panel ── */
 .results-panel-inner { padding:20px 24px }
 
-/* ── In-sidebar route summary (lives inside .map-search-card) ── */
 .search-result {
-  margin-top:14px;
-  padding-top:14px;
-  border-top:1px solid var(--border);
+  position:absolute;
+  top:56px;
+  right:16px;
+  z-index:400;
+  width:290px;
+  background:rgba(255,255,255,.95);
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:12px;
+  padding:14px;
+  backdrop-filter:blur(12px);
+  box-shadow:0 4px 18px rgba(0,0,0,.18);
   animation:fadeUp .28s ease both;
+  font-size:.82rem;
+  color:#333;
+}
+:root:not(.light-mode) .search-result {
+  background:var(--bg-1);
+  border-color:var(--border2);
+  color:var(--text-p);
+  box-shadow:0 4px 24px rgba(0,0,0,.45);
 }
 .search-result[hidden] { display:none }
 

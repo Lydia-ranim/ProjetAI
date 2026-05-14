@@ -150,11 +150,11 @@ function toggleNetwork() {
     }
     networkLayerGroup.addTo(dashMap);
     ind.style.background = '#BEEEDB';
-    lbl.textContent = 'Masquer réseau';
+    lbl.textContent = t('map.hide-network');
   } else {
     if (networkLayerGroup) dashMap.removeLayer(networkLayerGroup);
     ind.style.background = '#ccc';
-    lbl.textContent = 'Afficher réseau';
+    lbl.textContent = t('map.show-network');
   }
 }
 
@@ -173,8 +173,8 @@ function addStationMarkers(map) {
       `<div style="font-family:'DM Sans',sans-serif;padding:2px">
       <div style="font-weight:600;margin-bottom:4px">${s.icon} ${s.name}</div>
       <div style="font-size:.78rem;color:#888;margin-bottom:8px">${s.line}</div>
-      <button onclick="selectStation('origin','${safeId}')" style="margin-right:6px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;font-weight:600">📍 Départ</button>
-      <button onclick="selectStation('dest','${safeId}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem;font-weight:600">🎯 Arrivée</button>
+      <button onclick="selectStation('origin','${safeId}')" style="margin-right:6px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;font-weight:600">${t('map.origin-btn')}</button>
+      <button onclick="selectStation('dest','${safeId}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem;font-weight:600">${t('map.dest-btn')}</button>
     </div>`,
       { className: 'route-popup', closeButton: true }
     );
@@ -204,8 +204,8 @@ function drawNetwork(map) {
       `<div style="font-family:'DM Sans',sans-serif">
       <div style="font-weight:600;margin-bottom:4px">${s.icon} ${s.name}</div>
       <div style="font-size:.78rem;color:#888">${s.line}</div>
-      <button onclick="selectStation('origin','${safeId}')" style="margin-top:8px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;margin-right:6px">Départ</button>
-      <button onclick="selectStation('dest','${safeId}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem">Arrivée</button>
+      <button onclick="selectStation('origin','${safeId}')" style="margin-top:8px;padding:4px 10px;border-radius:6px;background:#BEEEDB22;color:#3DAB82;border:1px solid #BEEEDB44;cursor:pointer;font-size:.75rem;margin-right:6px">${t('map.origin-btn')}</button>
+      <button onclick="selectStation('dest','${safeId}')"   style="padding:4px 10px;border-radius:6px;background:#67062722;color:#cc3355;border:1px solid #67062744;cursor:pointer;font-size:.75rem">${t('map.dest-btn')}</button>
     </div>`,
       { className: 'route-popup', closeButton: true }
     );
@@ -247,9 +247,10 @@ async function onMapClick(e) {
 
   if (stop) {
     selectStation(clickMode, stop.id);
-    notif(`${clickMode === 'origin' ? 'Départ' : 'Arrivée'} défini`, stop.name, 'success');
+    const ptLbl = clickMode === 'origin' ? t('notif.pt-origin') : t('notif.pt-dest');
+    notif(`${ptLbl} ${t('notif.pt-set-title')}`, stop.name, 'success');
   } else {
-    const lbl = clickMode === 'origin' ? 'Départ (coordonnées)' : 'Arrivée (coordonnées)';
+    const lbl = clickMode === 'origin' ? t('map.custom-origin') : t('map.custom-dest');
     const synthetic = {
       id: null,
       name: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
@@ -262,7 +263,7 @@ async function onMapClick(e) {
     acSel[clickMode] = synthetic;
     document.getElementById(clickMode === 'origin' ? 'origin-input' : 'dest-input').value = synthetic.name;
     placeMarker(clickMode, [lat, lng], synthetic.name);
-    notif(lbl, 'Aucun arrêt renvoyé — utilisation des coordonnées brutes', 'info');
+    notif(lbl, t('notif.nearest-fallback-msg'), 'info');
   }
 
   if (clickMode === 'origin') setClickMode('dest');
@@ -273,10 +274,8 @@ function setClickMode(m) {
   clickMode = m;
   document.getElementById('btn-set-origin').className = 'mode-btn' + (m === 'origin' ? ' origin-active' : '');
   document.getElementById('btn-set-dest').className = 'mode-btn' + (m === 'dest' ? ' dest-active' : '');
-  document.getElementById('click-hint').textContent =
-    m === 'origin'
-      ? '📍 Cliquez sur la carte pour définir le départ'
-      : "🎯 Cliquez sur la carte pour définir l'arrivée";
+  const hint = document.getElementById('click-hint');
+  if (hint) hint.textContent = m === 'origin' ? t('map.click-origin') : t('map.click-dest');
 }
 
 function placeMarker(which, coords, label) {
@@ -285,13 +284,13 @@ function placeMarker(which, coords, label) {
     if (originMarker) dashMap.removeLayer(originMarker);
     originMarker = L.marker(coords, { icon: originIcon })
       .addTo(dashMap)
-      .bindPopup(`<b>Départ:</b> ${label}`);
+      .bindPopup(`<b>${t('map.origin-btn')}:</b> ${label}`);
     dashMap.setView(coords, 13, { animate: true });
   } else {
     if (destMarker) dashMap.removeLayer(destMarker);
     destMarker = L.marker(coords, { icon: destIcon })
       .addTo(dashMap)
-      .bindPopup(`<b>Arrivée:</b> ${label}`);
+      .bindPopup(`<b>${t('map.dest-btn')}:</b> ${label}`);
     if (originMarker) {
       dashMap.fitBounds(L.latLngBounds([originMarker.getLatLng(), destMarker.getLatLng()]), {
         padding: [60, 60],

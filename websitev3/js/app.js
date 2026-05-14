@@ -33,14 +33,6 @@
     .catch(err => console.error('LYHLYH: échec chargement des arrêts', err));
 })();
 
-/**
- * Custom number-input stepper (replaces the native spinner arrows).
- * Honors the input's step / min / max attributes; falls back to step=1.
- * Fires a `change` event so any existing onchange handlers still run.
- *
- * @param {string} id    Input element id.
- * @param {number} dir   +1 to increment, -1 to decrement.
- */
 function numStep(id, dir) {
   const input = document.getElementById(id);
   if (!input) return;
@@ -51,7 +43,6 @@ function numStep(id, dir) {
   const max  = parseFloat(input.max);
   if (!isNaN(min)) next = Math.max(next, min);
   if (!isNaN(max)) next = Math.min(next, max);
-  /* Round to the precision implied by `step` (avoids 0.30000000004). */
   const decimals = ((input.step || '').split('.')[1] || '').length;
   input.value = decimals ? next.toFixed(decimals) : String(next);
   input.dispatchEvent(new Event('change', { bubbles: true }));

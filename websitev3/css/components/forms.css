@@ -27,7 +27,10 @@
 }
 .form-input:focus          { border-color:var(--purple); box-shadow:0 0 0 3px rgba(198,183,226,.12) }
 .form-input::placeholder   { color:var(--text-t) }
-.form-input.mint-focus:focus { border-color:var(--mint); box-shadow:0 0 0 3px var(--mint-08) }
+.form-input.mint-focus:focus   { border-color:var(--mint);   box-shadow:0 0 0 3px var(--mint-08) }
+/* Accent-focus: pairs with CTA crimson — use on destination input or any
+   field that is semantically linked to the "Planifier" action */
+.form-input.accent-focus:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft) }
 
 /* ── Select arrow ── */
 select.form-input {

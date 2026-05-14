@@ -1,13 +1,9 @@
-/* ═══════════════════════════════════════════════════════════
-   LYHLYH — Profile page: trips, badges, mode stats
-═══════════════════════════════════════════════════════════ */
-
 const trips = [
-  {from:'Martyrs',      to:'Zeralda',   date:"Aujourd'hui, 08:24", time:55, co2:50, cost:85, modes:['Métro','Train']},
-  {from:'Agha',         to:'Boumendil', date:'Hier, 17:45',         time:22, co2:10, cost:50, modes:['Métro']},
-  {from:'Ruisseau',     to:'TP-TH',     date:'Lun, 09:10',          time:18, co2:8,  cost:35, modes:['Tram']},
-  {from:'Hamma',        to:'Jardin',    date:'Dim, 14:30',          time:12, co2:5,  cost:30, modes:['Téléphérique']},
-  {from:'Gare Centrale',to:'Harrach',   date:'Sam, 07:55',          time:28, co2:20, cost:35, modes:['Train']},
+  {from:'Martyrs',       to:'Zeralda',   time:55, co2:50, cost:85, modes:['Métro','Train']},
+  {from:'Agha',          to:'Boumendil', time:22, co2:10, cost:50, modes:['Métro']},
+  {from:'Ruisseau',      to:'TP-TH',     time:18, co2:8,  cost:35, modes:['Tram']},
+  {from:'Hamma',         to:'Jardin',    time:12, co2:5,  cost:30, modes:['Téléphérique']},
+  {from:'Gare Centrale', to:'Harrach',   time:28, co2:20, cost:35, modes:['Train']},
 ];
 
 const achiev = [
@@ -29,30 +25,27 @@ const modeUse = [
 
 let profTabActive = 'hist';
 
-/** Build all three profile tab contents (history, badges, stats). */
 function buildProfile() {
-  /* ── History ── */
   const h = document.getElementById('prof-hist');
-  if (h) h.innerHTML = trips.map(t => `
+  if (h) h.innerHTML = trips.map(trip => `
     <div class="card" style="padding:16px;transition:transform var(--tr)"
          onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='none'">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
-          <div style="font-weight:600;font-size:.9rem">${t.from} → ${t.to}</div>
-          <div style="font-size:.75rem;color:var(--text-t);margin-top:2px">${t.date}</div>
+          <div style="font-weight:600;font-size:.9rem">${trip.from} → ${trip.to}</div>
+          <div style="font-size:.75rem;color:var(--text-t);margin-top:2px">${t('prof.today')}</div>
           <div style="display:flex;gap:5px;margin-top:7px;flex-wrap:wrap">
-            ${t.modes.map(m => `<div class="chip ${m==='Métro'?'chip-m':m==='Tram'?'chip-p':m==='Train'?'chip-k':'chip-c'}" style="font-size:.68rem">${m}</div>`).join('')}
+            ${trip.modes.map(m => `<div class="chip ${m==='Métro'?'chip-m':m==='Tram'?'chip-p':m==='Train'?'chip-k':'chip-c'}" style="font-size:.68rem">${m}</div>`).join('')}
           </div>
         </div>
         <div style="text-align:right">
-          <div style="font-weight:600;font-size:.9rem">${t.time} min</div>
-          <div style="font-size:.75rem;color:var(--text-s);margin-top:2px">${t.cost} DA</div>
-          <div style="font-size:.72rem;color:var(--mint);margin-top:1px">${t.co2}g CO₂</div>
+          <div style="font-weight:600;font-size:.9rem">${trip.time} min</div>
+          <div style="font-size:.75rem;color:var(--text-s);margin-top:2px">${trip.cost} DA</div>
+          <div style="font-size:.72rem;color:var(--mint);margin-top:1px">${trip.co2}g CO₂</div>
         </div>
       </div>
     </div>`).join('');
 
-  /* ── Badges ── */
   const a = document.getElementById('prof-achiev');
   if (a) a.innerHTML = achiev.map(ac => `
     <div class="card" style="padding:18px;text-align:center;opacity:${ac.ok?1:.4};transition:transform var(--tr)"
@@ -61,11 +54,10 @@ function buildProfile() {
       <div style="font-weight:600;font-size:.86rem;margin-bottom:4px">${ac.title}</div>
       <div style="font-size:.74rem;color:var(--text-s)">${ac.desc}</div>
       ${ac.ok
-        ? `<div class="chip chip-m" style="font-size:.68rem;display:inline-flex;margin-top:10px">Débloqué</div>`
-        : `<div class="chip" style="font-size:.68rem;display:inline-flex;margin-top:10px;background:var(--bg-3);color:var(--text-t)">Verrouillé</div>`}
+        ? `<div class="chip chip-m" style="font-size:.68rem;display:inline-flex;margin-top:10px">${t('prof.completed')}</div>`
+        : `<div class="chip" style="font-size:.68rem;display:inline-flex;margin-top:10px;background:var(--bg-3);color:var(--text-t)">🔒</div>`}
     </div>`).join('');
 
-  /* ── Mode usage bars ── */
   const mb = document.getElementById('mode-b');
   if (mb) mb.innerHTML = modeUse.map(m => `
     <div>
@@ -78,11 +70,6 @@ function buildProfile() {
     </div>`).join('');
 }
 
-/**
- * Switch profile tab.
- * @param {'hist'|'achiev'|'stats'} tab
- * @param {HTMLElement} el  The clicked tab element
- */
 function profTab(tab, el) {
   profTabActive = tab;
   document.querySelectorAll('#page-profile .tab').forEach(t => t.classList.remove('active'));
