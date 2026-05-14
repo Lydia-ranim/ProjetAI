@@ -14,6 +14,28 @@ let heroRoutePreviewLayer = [];
 let stationMarkers = [];
 let stationCluster = null;
 let currentLocationMarker = null;
+/*
+ * ARCHITECTURAL NOTE — Google Directions API (DISPLAY-ONLY)
+ * ─────────────────────────────────────────────────────────
+ * This module uses google.maps.DirectionsService EXCLUSIVELY for
+ * visual polyline refinement of bus / walk segments.  It is NEVER
+ * used for routing decisions, path selection, or cost computation.
+ *
+ * Why keep it:
+ *   Bus and walk segments from the backend contain only stop-to-stop
+ *   straight lines.  DirectionsService provides a street-level path
+ *   that follows real roads, giving a more accurate visual preview.
+ *
+ * What it does NOT do:
+ *   - It does not select, rank, or filter routes.
+ *   - It does not influence travel time, cost, or CO₂ computations.
+ *   - All routing decisions are made by the LYHLYH custom engine
+ *     (UCS, A*, Bidirectional) in the FastAPI backend.
+ *
+ * The flag  googleMapsConfig.visualDirections  (set via .env)
+ * can disable this behavior entirely.  When disabled, the backend's
+ * straight-line coordinates are drawn directly.
+ */
 let directionsService = null;
 let networkLinesCache = null;
 
@@ -336,6 +358,17 @@ function travelModeForSegment(seg) {
   return google.maps.TravelMode.DRIVING;
 }
 
+/**
+ * DISPLAY-ONLY — Refine visual polyline via Google Directions.
+ *
+ * This function is used SOLELY for rendering smoother street-level
+ * paths on the map for bus/walk segments.  It does NOT participate
+ * in any routing decision — origin/destination/stops are already
+ * decided by the LYHLYH backend engine before this call runs.
+ *
+ * If the call fails, we gracefully fall back to the backend's
+ * straight-line coordinates.  The route remains unchanged.
+ */
 function requestVisualDirections(seg, fallbackPath) {
   if (!shouldUseGoogleVisualPath(seg) || fallbackPath.length < 2) return Promise.resolve(null);
   const origin = fallbackPath[0];
@@ -358,6 +391,7 @@ function requestVisualDirections(seg, fallbackPath) {
       },
       (response, status) => {
         if (status !== google.maps.DirectionsStatus.OK || !response?.routes?.[0]?.overview_path) {
+          // Visual fallback failed — route is unaffected, we draw straight lines
           console.warn('LYHLYH: visual Google path fallback used', status);
           resolve(null);
           return;

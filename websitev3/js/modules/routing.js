@@ -95,6 +95,18 @@ function getTransportModesPayload() {
   };
 }
 
+/**
+ * Read the selected algorithm from the radio buttons in the search panel.
+ * Maps to the 'algorithm' field in the backend RouteRequest model.
+ *   - astar    → A* Search
+ *   - dijkstra → UCS / Dijkstra
+ *   - bidir    → Bidirectional UCS
+ */
+function getSelectedAlgorithm() {
+  const checked = document.querySelector('input[name="algo"]:checked');
+  return checked ? checked.value : 'astar';
+}
+
 function buildRouteRequestPayload(origin, dest) {
   const point = stop => {
     const [lat, lon] = stop.coords;
@@ -107,6 +119,7 @@ function buildRouteRequestPayload(origin, dest) {
     end: point(dest),
     weights: getApiWeights(),
     transportModes: getTransportModesPayload(),
+    algorithm: getSelectedAlgorithm(),
   };
 }
 
