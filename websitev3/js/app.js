@@ -24,13 +24,28 @@
 
   setTimeout(initHeroMap, 200);
 
-  loadAllStops()
-    .then(n => {
-      if (typeof refreshDashStationMarkers === 'function') refreshDashStationMarkers();
-      if (typeof refreshHeroMapAfterStops === 'function') refreshHeroMapAfterStops();
-      if (!n) console.warn('LYHLYH: aucun arrêt chargé — vérifiez GET /api/stops');
+  // Fetch working hours first, then load stops so markers respect schedule
+  fetchWorkingHours()
+    .then(data => {
+      setWorkingHours(data);
+      console.log('LYHLYH: working hours loaded', data);
     })
-    .catch(err => console.error('LYHLYH: échec chargement des arrêts', err));
+    .catch(err => console.warn('LYHLYH: working hours unavailable — showing all stops', err))
+    .finally(() => {
+      loadAllStops()
+        .then(n => {
+          if (typeof refreshDashStationMarkers === 'function') refreshDashStationMarkers();
+          if (typeof refreshHeroMapAfterStops === 'function') refreshHeroMapAfterStops();
+          if (!n) console.warn('LYHLYH: aucun arrêt chargé — vérifiez GET /api/stops');
+        })
+        .catch(err => console.error('LYHLYH: échec chargement des arrêts', err));
+    });
+
+  // Re-render markers every 5 min so stops appear/disappear at service boundaries
+  setInterval(() => {
+    if (typeof refreshDashStationMarkers === 'function') refreshDashStationMarkers();
+    if (typeof refreshHeroMapAfterStops === 'function') refreshHeroMapAfterStops();
+  }, 5 * 60 * 1000);
 })();
 
 function numStep(id, dir) {

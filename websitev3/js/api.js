@@ -58,3 +58,11 @@ function fetchRoutes(body) {
     body: JSON.stringify(body),
   });
 }
+
+/**
+ * GET /api/working-hours
+ * @returns {Promise<Record<string, {open:number, close:number}>>}
+ */
+function fetchWorkingHours() {
+  return apiFetchJson('/api/working-hours');
+}

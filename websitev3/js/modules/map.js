@@ -161,6 +161,9 @@ function toggleNetwork() {
 /* ── Station markers ── */
 function addStationMarkers(map) {
   STATIONS.forEach(s => {
+    // Hide stops whose transport mode is outside operating hours
+    if (!isStopInService(normalizeModeKey(s.type))) return;
+
     const c = L.circleMarker(s.coords, {
       radius: s.type === 'train' ? 5 : 4,
       fillColor: TYPE_COLOR[s.type] || TYPE_COLOR.default,
@@ -192,6 +195,9 @@ function drawNetworkLines(_target) {
 function drawNetwork(map) {
   drawNetworkLines(map);
   STATIONS.forEach(s => {
+    // Hide stops whose transport mode is outside operating hours
+    if (!isStopInService(normalizeModeKey(s.type))) return;
+
     const c = L.circleMarker(s.coords, {
       radius: s.type === 'train' ? 6 : 4,
       fillColor: TYPE_COLOR[s.type] || TYPE_COLOR.default,

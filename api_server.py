@@ -6,22 +6,22 @@ using A_star.AStarRouter (which extends ucs.TransitRouter) and data/*.csv.
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-# IMPORT AJOUTÉ : On importe AStarRouter en plus de la base UCS
 from A_star import AStarRouter
 from ucs import TransitRouter, Segment, RouteResult
+from schedule import WORKING_HOURS
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
-# Le moteur principal est maintenant AStarRouter (qui contient aussi l'UCS)
-router_engine: Optional[AStarRouter] = None
+router_engine: Optional[TransitRouter] = None
 
-app = FastAPI(title="LYHLYH Transit API", version="1.1.0")
+app = FastAPI(title="LYHLYH Transit API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,11 +34,10 @@ app.add_middleware(
 @app.on_event("startup")
 def load_graph() -> None:
     global router_engine
-    # AStarRouter charge les mêmes données que TransitRouter mais prépare le vmax
     router_engine = AStarRouter(DATA_DIR)
 
 
-def get_router() -> AStarRouter:
+def get_router() -> TransitRouter:
     if router_engine is None:
         raise HTTPException(status_code=503, detail="Graph not loaded")
     return router_engine
@@ -55,9 +54,8 @@ class RouteRequest(BaseModel):
     end: GeoPoint
     weights: dict[str, float] = Field(default_factory=dict)
     transportModes: dict[str, bool] = Field(default_factory=dict)
-    # SÉCURITÉ GROUPE : Paramètres optionnels. Si l'interface ne les envoie pas, ça ne crash pas.
-    departureTime: float = 8.0 
-    algorithm: str = "A*" # Par défaut A*, mais tes collègues peuvent envoyer "UCS" pour tester
+    departureTime: Optional[float] = None  # Fractional hour (8.5 = 08:30)
+    algorithm: str = "A*"
 
 
 def resolve_endpoint(r: TransitRouter, pt: GeoPoint) -> str:
@@ -81,25 +79,27 @@ def segment_to_api(r: TransitRouter, seg: Segment) -> dict[str, Any]:
             s1 = seg.stops[i]
             s2 = seg.stops[i+1]
             
+            # Try to find the exact road geometry between the two stops
             key1 = f"{s1}|{s2}|{seg.route_id}"
             key2 = f"{s2}|{s1}|{seg.route_id}"
             
             if hasattr(r, 'bus_geometries') and key1 in r.bus_geometries:
                 poly.extend(r.bus_geometries[key1])
             elif hasattr(r, 'bus_geometries') and key2 in r.bus_geometries:
+                # Reverse the geometry to match the travel direction
                 poly.extend(reversed(r.bus_geometries[key2]))
             else:
                 s1_node = r.stops.get(s1)
                 if s1_node:
                     poly.append([s1_node.lat, s1_node.lon])
         
+        # Append the very last stop
         last_stop = r.stops.get(seg.stops[-1])
         if last_stop:
             poly.append([last_stop.lat, last_stop.lon])
-            
     mode = seg.transport_type
     if mode == "telepherique":
-        pass  
+        pass  # keep backend spelling
     return {
         "mode": mode,
         "lineId": seg.route_id,
@@ -115,16 +115,39 @@ def segment_to_api(r: TransitRouter, seg: Segment) -> dict[str, Any]:
     }
 
 
+def build_schedule_warnings(result: RouteResult, depart: float) -> list:
+    """Generate schedule warnings for segments near service closure."""
+    warnings = []
+    clock = depart
+    for seg in result.segments:
+        mode = seg.transport_type
+        if mode != 'walk':
+            o, c = WORKING_HOURS.get(mode, (0, 24))
+            end_clock = clock + seg.time_min / 60.0
+            if c - end_clock < 0.5 and c - end_clock > 0:
+                warnings.append({
+                    "type": "service_ending_soon",
+                    "mode": mode,
+                    "closesAt": c,
+                    "message": f"{mode.capitalize()} closes at {int(c)}:{int((c % 1) * 60):02d}"
+                })
+        clock += seg.time_min / 60.0
+    return warnings
+
+
 def route_result_to_api(
     r: TransitRouter,
     label: str,
     result: RouteResult,
     algo: str = "A*",
+    depart: float = None,
 ) -> dict[str, Any]:
-    rid = {"fastest": "r-fast", "cheapest": "r-cheap", "greenest": "r-green"}.get(
-        label, "r-1"
-    )
+    rid = {
+        "fastest": "r-fast", "cheapest": "r-cheap",
+        "greenest": "r-green", "recommended": "r-rec",
+    }.get(label, "r-1")
     segments = [segment_to_api(r, s) for s in result.segments]
+    warnings = build_schedule_warnings(result, depart) if depart is not None else []
     return {
         "id": rid,
         "label": label,
@@ -138,13 +161,24 @@ def route_result_to_api(
             "totalDistanceKm": float(result.total_dist),
             "numStops": len(result.path),
             "nodesExplored": int(result.nodes_explored),
+            "departureTime": depart,
         },
+        "scheduleWarnings": warnings,
     }
 
 
 @app.get("/")
 def root() -> dict[str, str]:
     return {"service": "LYHLYH API", "docs": "/docs", "health": "ok"}
+
+
+@app.get("/api/working-hours")
+def api_working_hours() -> dict[str, Any]:
+    """Return operating hours for each transport mode (fractional hours, 24h)."""
+    return {
+        mode: {"open": hours[0], "close": hours[1]}
+        for mode, hours in WORKING_HOURS.items()
+    }
 
 
 @app.get("/api/stops")
@@ -187,51 +221,53 @@ def api_nearest_stop(lat: float, lon: float, limit: int = 5) -> list[dict[str, A
 
 @app.post("/api/route")
 def api_route(body: RouteRequest) -> dict[str, Any]:
+    """
+    Returns up to four route variants:
+      1. recommended — uses user's weight preferences (w1*Time + w2*Price + w3*CO2)
+      2. fastest     — pure time optimization
+      3. greenest    — pure CO2 optimization
+      4. cheapest    — distance-minimizing (proxy for lower fare)
+
+    Supports algorithm switching via body.algorithm ('A*' or 'UCS').
+    """
     r = get_router()
     start_id = resolve_endpoint(r, body.start)
     end_id = resolve_endpoint(r, body.end)
-    
+
+    # Determine departure time
+    depart = body.departureTime if body.departureTime is not None else (datetime.now().hour + datetime.now().minute / 60.0)
+
     if start_id == end_id:
         empty = RouteResult(
-            found=True,
-            path=[start_id],
-            edges=[],
-            segments=[],
-            total_time=0,
-            total_dist=0,
-            total_co2=0,
-            total_fare=0,
-            nodes_explored=0,
+            found=True, path=[start_id], edges=[], segments=[], total_time=0,
+            total_dist=0, total_co2=0, total_fare=0, nodes_explored=0
         )
-        z = route_result_to_api(r, "fastest", empty, algo=body.algorithm)
+        z = route_result_to_api(r, "fastest", empty, algo=body.algorithm, depart=depart)
         return {"routes": [z, z, z]}
 
-    variants = [
-        ("fastest", "time"),
-        ("greenest", "co2"),
-        ("cheapest", "distance"),
-    ]
-    
-    routes_out = []
-    w1 = body.weights.get("time", 1.0)
-    w2 = body.weights.get("cost", 0.0)
-    w3 = body.weights.get("co2", 0.0)
+    # Extract user weight preferences
+    w = body.weights or {}
+    w1, w2, w3 = float(w.get("time", 0.33)), float(w.get("cost", 0.33)), float(w.get("co2", 0.34))
 
-    for label, metric in variants:
+    routes_out = []
+
+    # ── Recommended ──
+    if body.algorithm.upper() == "UCS":
+        rec = r.find_route(start_id, end_id, metric="weighted", depart=depart, w1=w1, w2=w2, w3=w3)
+        rec_algo = "UCS-weighted"
+    else:
+        rec = r.find_route_astar(start_id, end_id, metric="weighted", w1=w1, w2=w2, w3=w3, departure_time=depart)
+        rec_algo = "A*-weighted"
+    routes_out.append(route_result_to_api(r, "recommended", rec, algo=rec_algo, depart=depart))
+
+    # ── Pareto variants ──
+    for label, metric in [("fastest", "time"), ("greenest", "co2"), ("cheapest", "distance")]:
         if body.algorithm.upper() == "UCS":
-            # Le travail de tes collègues reste intact et appelable
-            res = r.find_route(start_id, end_id, metric=metric)
+            res = r.find_route(start_id, end_id, metric=metric, depart=depart)
             algo_used = "UCS"
         else:
-            # Ton algorithme A* optimisé
-            res = r.find_route_astar(
-                start_id, end_id, 
-                metric=metric, 
-                w1=w1, w2=w2, w3=w3, 
-                departure_time=body.departureTime
-            )
+            res = r.find_route_astar(start_id, end_id, metric=metric, w1=w1, w2=w2, w3=w3, departure_time=depart)
             algo_used = "A*"
-            
-        routes_out.append(route_result_to_api(r, label, res, algo=algo_used))
+        routes_out.append(route_result_to_api(r, label, res, algo=algo_used, depart=depart))
 
     return {"routes": routes_out}

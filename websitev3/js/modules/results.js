@@ -4,9 +4,9 @@
                notifications.js (notif), stations.js (normalizeModeKey, MODE_ICON)
 ═══════════════════════════════════════════════════════════ */
 
-/** Localized Pareto label (fastest / cheapest / greenest). */
+/** Localized Pareto label (fastest / cheapest / greenest / recommended). */
 function labelLocalized(label) {
-  const key = { fastest: 'res.label-fastest', cheapest: 'res.label-cheapest', greenest: 'res.label-greenest' }[label];
+  const key = { fastest: 'res.label-fastest', cheapest: 'res.label-cheapest', greenest: 'res.label-greenest', recommended: 'res.label-recommended' }[label];
   return key ? t(key) : label || '—';
 }
 
