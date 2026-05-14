@@ -265,15 +265,6 @@ function renderSearchResult(origin, dest, totalCost, transferCount, steps) {
   const dLabel = dest.name || dest.short || '—';
   const transfersText =
     transferCount === 0
-<<<<<<< HEAD
-      ? 'Aucune correspondance'
-      : `${transferCount} correspondance${transferCount > 1 ? 's' : ''}`;
-
-  const chartSegments = [
-    { label: 'Trajet', value: rideTime, color: '#BEEEDB' },
-    { label: 'Attente', value: waitTime, color: '#F2C4CE' },
-    { label: 'Marche', value: walkTime, color: '#8AAAC8' },
-=======
       ? t('res.no-transfer')
       : `${transferCount} ${t('res.transfer-s')}`;
 
@@ -281,7 +272,6 @@ function renderSearchResult(origin, dest, totalCost, transferCount, steps) {
     { label: t('res.ride-time'), value: rideTime, color: '#BEEEDB' },
     { label: t('res.wait-time'), value: waitTime, color: '#F2C4CE' },
     { label: t('res.walk'), value: walkTime, color: '#8AAAC8' },
->>>>>>> frontend-ui
   ].filter(s => s.value > 0);
   const cx = 50;
   const cy = 50;
