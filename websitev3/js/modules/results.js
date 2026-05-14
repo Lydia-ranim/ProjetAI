@@ -4,10 +4,9 @@
                notifications.js (notif), stations.js (normalizeModeKey, MODE_ICON)
 ═══════════════════════════════════════════════════════════ */
 
-/** Localized Pareto label (fastest / cheapest / greenest). */
-function labelLocalized(label) {
-  const key = { fastest: 'res.label-fastest', cheapest: 'res.label-cheapest', greenest: 'res.label-greenest' }[label];
-  return key ? t(key) : label || '—';
+function labelFr(label) {
+  const m = { fastest: 'Plus rapide', cheapest: 'Moins cher', greenest: 'Plus vert' };
+  return m[label] || label || '—';
 }
 
 function modeChipColorByKey(k) {
@@ -79,7 +78,7 @@ function estimateTransfersFromSegments(segments) {
 
 function fillParetoAlgoCards(routes) {
   const order = ['fastest', 'cheapest', 'greenest'];
-  const titles = [t('res.card-fast'), t('res.card-cheap'), t('res.card-green')];
+  const titles = ['Plus rapide', 'Moins cher', 'Plus vert'];
   const colors = ['var(--mint)', 'var(--purple)', 'var(--pink)'];
   const cards = document.querySelectorAll('#results-panel .algo-card');
   order.forEach((lbl, i) => {
@@ -115,14 +114,14 @@ function renderRouteVariantTabs(routes) {
   const idx = transitStoreSelectedIndex();
   wrap.innerHTML = routes
     .map((r, i) => {
-      const tw =
+      const t =
         r.summary && r.summary.totalTimeMin != null ? Math.round(r.summary.totalTimeMin) : '—';
       const active = i === idx ? 'chip-m' : '';
       const bg = i === idx ? 'var(--bg-3)' : 'var(--bg-2)';
       return `
     <button type="button" class="chip ${active}" style="cursor:pointer;border:1px solid var(--border);background:${bg};font-size:.72rem"
       onclick="selectRouteVariant(${i})">
-      ${labelLocalized(r.label)} · ${tw} ${t('time.min')}
+      ${labelFr(r.label)} · ${t} min
     </button>`;
     })
     .join('');
@@ -153,7 +152,7 @@ function refreshRouteResultsView(origin, dest, elapsedMs) {
   const params = getEffectiveParams();
 
   if (!sel || sel.found === false) {
-    renderSearchError(t('res.no-route'), t('res.no-path-server'));
+    renderSearchError('Aucun itinéraire trouvé', "Le serveur n'a pas trouvé de chemin pour ces critères.");
     return;
   }
 
@@ -161,20 +160,20 @@ function refreshRouteResultsView(origin, dest, elapsedMs) {
   const steps = segmentsToDisplaySteps(sel.segments, sum.totalCo2G);
   const tf = estimateTransfersFromSegments(sel.segments);
   const dist = sum.totalDistanceKm != null ? Number(sum.totalDistanceKm) : 0;
-  const totalMin = Math.round(sum.totalTimeMin || 0);
+  const t = Math.round(sum.totalTimeMin || 0);
   const c = Math.round(sum.totalCostDzd || 0);
   const co2 = Math.round(sum.totalCo2G || 0);
   const ms = elapsedMs != null ? elapsedMs : transitStoreLastElapsedMs();
 
   document.getElementById('res-title').textContent = `${origin.short} → ${dest.short}`;
-  const algoBits = routes.map(r => `${labelLocalized(r.label)}: ${r.algorithmUsed || '—'}`).join(' · ');
+  const algoBits = routes.map(r => `${labelFr(r.label)}: ${r.algorithmUsed || '—'}`).join(' · ');
   document.getElementById('res-algo-used').textContent = algoBits;
 
   document.getElementById('res-chips').innerHTML = `
-    <div class="chip chip-m">${totalMin} ${t('time.min')}</div>
+    <div class="chip chip-m">${t} min</div>
     <div class="chip chip-p">${c} DA</div>
     <div class="chip chip-k">${co2}g CO₂</div>
-    <div class="chip chip-c">${labelLocalized(sel.label)}</div>`;
+    <div class="chip chip-c">${labelFr(sel.label)}</div>`;
 
   document.getElementById('itin-steps').innerHTML = steps
     .map(
@@ -191,9 +190,9 @@ function refreshRouteResultsView(origin, dest, elapsedMs) {
             <div style="font-size:.75rem;margin-top:2px;color:${s.col}">${s.mode} · ${s.line}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:.84rem;font-weight:500">${s.time} ${t('time.min')}</div>
+            <div style="font-size:.84rem;font-weight:500">${s.time} min</div>
             <div style="font-size:.73rem;color:var(--text-t);margin-top:2px">
-              ${s.cost > 0 ? `${s.cost} DA` : t('res.free')}${s.co2 > 0 ? ` · ${s.co2}g` : ''}
+              ${s.cost > 0 ? `${s.cost} DA` : 'Gratuit'}${s.co2 > 0 ? ` · ${s.co2}g` : ''}
             </div>
           </div>
         </div>
@@ -202,12 +201,12 @@ function refreshRouteResultsView(origin, dest, elapsedMs) {
     )
     .join('');
 
-  renderRouteChart(steps, { t: totalMin, c, co2, tf, dist });
+  renderRouteChart(steps, { t, c, co2, tf, dist });
   renderPathStats(steps, {
     origin,
     dest,
     dist,
-    t: totalMin,
+    t,
     c,
     co2,
     tf,
@@ -265,13 +264,13 @@ function renderSearchResult(origin, dest, totalCost, transferCount, steps) {
   const dLabel = dest.name || dest.short || '—';
   const transfersText =
     transferCount === 0
-      ? t('res.no-transfer')
-      : `${transferCount} ${t('res.transfer-s')}`;
+      ? 'Aucune correspondance'
+      : `${transferCount} correspondance${transferCount > 1 ? 's' : ''}`;
 
   const chartSegments = [
-    { label: t('res.ride-time'), value: rideTime, color: '#BEEEDB' },
-    { label: t('res.wait-time'), value: waitTime, color: '#F2C4CE' },
-    { label: t('res.walk'), value: walkTime, color: '#8AAAC8' },
+    { label: 'Trajet', value: rideTime, color: '#BEEEDB' },
+    { label: 'Attente', value: waitTime, color: '#F2C4CE' },
+    { label: 'Marche', value: walkTime, color: '#8AAAC8' },
   ].filter(s => s.value > 0);
   const cx = 50;
   const cy = 50;
@@ -300,7 +299,7 @@ function renderSearchResult(origin, dest, totalCost, transferCount, steps) {
         </svg>
         <div class="sr-donut-center">
           <span class="sr-donut-total">${totalTime}</span>
-          <span class="sr-donut-unit">${t('time.min')}</span>
+          <span class="sr-donut-unit">min</span>
         </div>
       </div>
       <div class="sr-chart-legend">
@@ -322,24 +321,24 @@ function renderSearchResult(origin, dest, totalCost, transferCount, steps) {
       : '';
 
   panel.innerHTML = `
-    <div class="sidebar-label" style="padding:0;margin-bottom:4px">${t('res.summary-title')}</div>
+    <div class="sidebar-label" style="padding:0;margin-bottom:4px">Résumé du trajet</div>
     <div class="sr-route">${oLabel}<span class="sr-arrow">→</span>${dLabel}</div>
 
     <div class="sr-stats">
-      <div class="sr-stat" title="${t('res.price-total')}">
+      <div class="sr-stat" title="Prix total">
         <span class="sr-stat-icon">💰</span>
         <div class="sr-stat-val">${totalCost} DA</div>
-        <div class="sr-stat-lbl">${t('res.price-total')}</div>
+        <div class="sr-stat-lbl">Prix total</div>
       </div>
-      <div class="sr-stat" title="${t('res.ride-time')}">
+      <div class="sr-stat" title="Temps de trajet">
         <span class="sr-stat-icon">⏱</span>
-        <div class="sr-stat-val">${rideTime} ${t('time.min')}</div>
-        <div class="sr-stat-lbl">${t('res.ride-time')}</div>
+        <div class="sr-stat-val">${rideTime} min</div>
+        <div class="sr-stat-lbl">Trajet</div>
       </div>
-      <div class="sr-stat" title="${t('res.wait-time')}">
+      <div class="sr-stat" title="Temps d'attente">
         <span class="sr-stat-icon">⏳</span>
-        <div class="sr-stat-val">${waitTime} ${t('time.min')}</div>
-        <div class="sr-stat-lbl">${t('res.wait-time')}</div>
+        <div class="sr-stat-val">${waitTime} min</div>
+        <div class="sr-stat-lbl">Attente</div>
       </div>
     </div>
 
@@ -355,7 +354,7 @@ function renderSearchResult(origin, dest, totalCost, transferCount, steps) {
         <div class="sr-mode-row">
           <span class="sr-dot" style="background:${u.color};color:${u.color}"></span>
           <span class="sr-mode-name">${u.mode}</span>
-          <span class="sr-mode-time">${u.time} ${t('time.min')}</span>
+          <span class="sr-mode-time">${u.time} min</span>
         </div>`
         )
         .join('')}
@@ -376,7 +375,7 @@ function renderSearchError(title, hint) {
   if (!panel) return;
   panel.innerHTML = `
     <div class="sr-error">
-      ${title || t('res.no-route')}
+      ${title || 'Aucun itinéraire trouvé'}
       ${hint ? `<div class="sr-error-hint">${hint}</div>` : ''}
     </div>
   `;
@@ -409,9 +408,9 @@ function renderRouteChart(steps, meta) {
   const totalTime = walkTime + waitTime + rideTime;
 
   const segments = [
-    { label: t('res.ride-time'), value: rideTime, color: '#BEEEDB', colorDark: '#3DAB82' },
-    { label: t('res.wait-time'), value: waitTime, color: '#F2C4CE', colorDark: '#cc3355' },
-    { label: t('res.walk'), value: walkTime, color: '#8AAAC8', colorDark: '#4A7090' },
+    { label: 'Trajet', value: rideTime, color: '#BEEEDB', colorDark: '#3DAB82' },
+    { label: 'Attente', value: waitTime, color: '#F2C4CE', colorDark: '#cc3355' },
+    { label: 'Marche', value: walkTime, color: '#8AAAC8', colorDark: '#4A7090' },
   ].filter(s => s.value > 0);
 
   const cx = 75;
@@ -430,7 +429,7 @@ function renderRouteChart(steps, meta) {
       fill="none" stroke="${seg.color}" stroke-width="18"
       stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${dashOffset}" stroke-linecap="butt"
       style="transition:stroke-width .2s ease,opacity .3s ease;animation:donutFadeIn .6s ease ${i * 0.15}s both;opacity:0"
-      title="${seg.label}: ${seg.value} ${t('time.min')}"/>`;
+      title="${seg.label}: ${seg.value} min"/>`;
     })
     .join('');
   document.getElementById('donut-segments').innerHTML = svgSegments;
@@ -446,7 +445,7 @@ function renderRouteChart(steps, meta) {
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${seg.color};flex-shrink:0;box-shadow:0 0 6px ${seg.color}44"></span>
           <span style="font-weight:500">${seg.label}</span>
         </div>
-        <span style="font-family:'DM Mono',monospace;color:${seg.colorDark};font-weight:600">${seg.value} ${t('time.min')} <span style="color:var(--text-t);font-size:.72rem">(${pct}%)</span></span>
+        <span style="font-family:'DM Mono',monospace;color:${seg.colorDark};font-weight:600">${seg.value} min <span style="color:var(--text-t);font-size:.72rem">(${pct}%)</span></span>
       </div>
       <div style="background:var(--bg-4);border-radius:99px;overflow:hidden;height:6px">
         <div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${seg.color},${seg.colorDark});animation-delay:${i * 0.12 + 0.3}s"></div>
@@ -461,7 +460,7 @@ function renderRouteChart(steps, meta) {
   const totalCostBreak = costBreakdown.reduce((a, b) => a + b.cost, 0);
   if (costSection && costBreakdown.length) {
     costSection.innerHTML = `
-      <div style="font-size:.78rem;font-weight:700;color:var(--text-s);margin-bottom:10px;letter-spacing:.04em">${t('res.cost-dist')}</div>
+      <div style="font-size:.78rem;font-weight:700;color:var(--text-s);margin-bottom:10px;letter-spacing:.04em">💰 RÉPARTITION DES COÛTS</div>
       <div style="display:flex;flex-direction:column;gap:8px">
         ${costBreakdown
           .map((s, i) => {
@@ -478,7 +477,7 @@ function renderRouteChart(steps, meta) {
           })
           .join('')}
         <div style="display:flex;justify-content:flex-end;padding-top:6px;border-top:1px solid var(--border);margin-top:2px">
-          <span style="font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;color:var(--purple)">${t('res.total')}: ${totalCostBreak} DA</span>
+          <span style="font-family:'DM Mono',monospace;font-size:.82rem;font-weight:700;color:var(--purple)">Total: ${totalCostBreak} DA</span>
         </div>
       </div>`;
   } else if (costSection) {
@@ -520,12 +519,12 @@ function renderPathStats(steps, meta) {
     meta.dist != null ? Number(meta.dist).toFixed(2) : meta.distKmApprox || '—';
 
   document.getElementById('path-summary-grid').innerHTML = [
-    { label: t('res.price-total'), val: `${totalCost} DA`, col: 'var(--purple)' },
-    { label: t('res.ride-time'), val: `${rideTime} ${t('time.min')}`, col: 'var(--mint)' },
-    { label: t('res.wait-time'), val: `${waitTime} ${t('time.min')}`, col: 'var(--pink)' },
-    { label: t('res.walk'), val: `${walkTime} ${t('time.min')}`, col: 'var(--text-s)' },
-    { label: t('res.modes'), val: `${modeSet.length || 1}`, col: 'var(--mint)' },
-    { label: t('res.dist'), val: `${distKm} km`, col: 'var(--text-s)' },
+    { label: 'Prix total', val: `${totalCost} DA`, col: 'var(--purple)' },
+    { label: 'Temps trajet', val: `${rideTime} min`, col: 'var(--mint)' },
+    { label: 'Temps attente', val: `${waitTime} min`, col: 'var(--pink)' },
+    { label: 'Marche', val: `${walkTime} min`, col: 'var(--text-s)' },
+    { label: 'Modes', val: `${modeSet.length || 1}`, col: 'var(--mint)' },
+    { label: 'Distance', val: `${distKm} km`, col: 'var(--text-s)' },
   ]
     .map(
       d => `
@@ -544,8 +543,8 @@ function renderPathStats(steps, meta) {
          onmouseenter="this.style.background='var(--bg-3)'" onmouseleave="this.style.background='transparent'">
       <span style="font-weight:500">${s.from} → ${s.to}</span>
       <span style="text-align:center"><span class="chip" style="font-size:.65rem;background:${modeChipColorByKey(normalizeModeKey(s.rawMode || s.mode))}22;color:${modeChipColorByKey(normalizeModeKey(s.rawMode || s.mode))}">${s.icon} ${s.mode}</span></span>
-      <span style="text-align:right;font-family:'DM Mono',monospace">${s.mode === 'Transfert' ? '—' : `${s.time} ${t('time.min')}`}</span>
-      <span style="text-align:right;font-family:'DM Mono',monospace;color:var(--text-t)">${s.mode === 'Transfert' ? `${s.time} ${t('time.min')}` : '—'}</span>
+      <span style="text-align:right;font-family:'DM Mono',monospace">${s.mode === 'Transfert' ? '—' : `${s.time} min`}</span>
+      <span style="text-align:right;font-family:'DM Mono',monospace;color:var(--text-t)">${s.mode === 'Transfert' ? `${s.time} min` : '—'}</span>
       <span style="text-align:right;font-family:'DM Mono',monospace;color:var(--purple)">${s.cost > 0 ? `${s.cost} DA` : '—'}</span>
     </div>`
     )
@@ -553,25 +552,15 @@ function renderPathStats(steps, meta) {
 
   const algoLabel = meta.algo || '—';
   const efficiency = Math.round(100 - (meta.tf / Math.max(steps.length, 1)) * 30);
-  const paramNote = meta.params.maxCost ? `${t('map.cost-lbl')} ${meta.params.maxCost} DA · ` : '';
+  const paramNote = meta.params.maxCost ? `coût max ${meta.params.maxCost} DA · ` : '';
   document.getElementById('path-global-stats').innerHTML = `
-    <span>📦 <b>${steps.length}</b> ${t('res.segments-tot')}</span>
+    <span>📦 <b>${steps.length}</b> segments</span>
     <span>🛣️ <b>${distKm}</b> km</span>
-    <span>🔄 <b>${meta.tf}</b> ${t('res.transfer-s')}</span>
-    <span>⚡ <b>${algoLabel}</b> · <b>${meta.ms.toFixed(0)} ms</b></span>
-    ${meta.nodesExplored != null ? `<span>🔍 <b>${meta.nodesExplored}</b> ${t('res.nodes')}</span>` : ''}
-    <span>🎯 ${t('res.efficiency')}: <b>${efficiency}%</b></span>
-    <span style="color:var(--text-t);font-size:.72rem">${paramNote}${t('res.profile')}: ${meta.params.profile}</span>`;
+    <span>🔄 <b>${meta.tf}</b> corresp.</span>
+    <span>⚡ <b>${algoLabel}</b> · <b>${meta.ms.toFixed(0)} ms</b> client</span>
+    ${meta.nodesExplored != null ? `<span>🔍 <b>${meta.nodesExplored}</b> nœuds explorés</span>` : ''}
+    <span>🎯 Efficacité: <b>${efficiency}%</b></span>
+    <span style="color:var(--text-t);font-size:.72rem">${paramNote}profil: ${meta.params.profile}</span>`;
 
   statsPanel.style.display = 'block';
 }
-
-document.addEventListener('lang-changed', () => {
-  if (typeof transitStoreGetRoutes === 'function' && transitStoreGetRoutes().length) {
-    const { origin, dest } = transitStoreGetPlanningContext();
-    if (origin && dest) {
-      renderRouteVariantTabs(transitStoreGetRoutes());
-      refreshRouteResultsView(origin, dest, transitStoreLastElapsedMs());
-    }
-  }
-});
