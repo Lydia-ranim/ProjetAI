@@ -25,10 +25,10 @@ HEADWAY_MIN: Dict[str, float] = {
 
 FARES: Dict[str, float] = {
     'metro':        50.0,
-    'tram':         50.0,
+    'tram':         40.0,
     'train':        50.0,
-    'telepherique': 50.0,
-    'bus':          50.0,
+    'telepherique': 30.0,
+    'bus':          30.0,
 }
 
 
