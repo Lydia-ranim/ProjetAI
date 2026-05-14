@@ -1,5 +1,8 @@
+
+
 from __future__ import annotations
 
+import bisect
 import csv
 import os
 from collections import defaultdict, deque
@@ -21,6 +24,7 @@ HEADWAY_MIN: Dict[str, float] = {
     'train':        30.0,
     'telepherique': 10.0,
     'bus':          15.0,
+    'walk':         0.0,
 }
 
 FARES: Dict[str, float] = {
@@ -29,8 +33,8 @@ FARES: Dict[str, float] = {
     'train':        50.0,
     'telepherique': 50.0,
     'bus':          50.0,
+    'walk':          0.0,
 }
-
 
 @dataclass(frozen=True)
 class Stop:
@@ -44,6 +48,7 @@ class Stop:
 
 @dataclass(frozen=True)
 class Edge:
+    from_id:        str        
     to_id:          str
     time_min:       float
     distance_km:    float
@@ -53,16 +58,38 @@ class Edge:
 
 
 @dataclass
+class Node:
+   
+    state:     Tuple[str, Optional[str], Optional[str]]
+    parent:    Optional['Node']
+    action:    Optional[Edge]
+    path_cost: float
+
+    @property
+    def stop_id(self) -> str:
+        return self.state[0]
+
+    @property
+    def prev_mode(self) -> Optional[str]:
+        return self.state[1]
+
+    @property
+    def prev_route(self) -> Optional[str]:
+        return self.state[2]
+
+
+@dataclass
 class BFSResult:
-    found:          bool
-    path_ids:       List[str]  = field(default_factory=list)
-    path_edges:     List[Edge] = field(default_factory=list)
-    total_time:     float      = 0.0
-    total_wait:     float      = 0.0
-    total_price:    float      = 0.0
-    total_co2:      float      = 0.0
-    num_transfers:  int        = 0
-    nodes_expanded: int        = 0
+    found:           bool
+    path_ids:        List[str]  = field(default_factory=list)
+    path_edges:      List[Edge] = field(default_factory=list)
+    total_time:      float      = 0.0
+    total_wait:      float      = 0.0
+    total_price:     float      = 0.0
+    total_co2:       float      = 0.0
+    num_transfers:   int        = 0
+    nodes_expanded:  int        = 0
+    nodes_generated: int        = 0   
 
     @property
     def total_journey_time(self) -> float:
@@ -70,7 +97,13 @@ class BFSResult:
 
     def __str__(self) -> str:
         if not self.found:
-            return f"No path found (expanded {self.nodes_expanded} nodes)."
+            return (
+                f"{'─'*60}\n"
+                f"  No path found.\n"
+                f"  Expanded : {self.nodes_expanded} nodes\n"
+                f"  Generated: {self.nodes_generated} nodes\n"
+                f"{'─'*60}"
+            )
         lines = [
             f"{'─'*60}",
             f"  {len(self.path_edges)} hop(s)  |  {self.num_transfers} transfer(s)",
@@ -83,16 +116,85 @@ class BFSResult:
         ]
         for i, (src, edge) in enumerate(zip(self.path_ids, self.path_edges)):
             dst = self.path_ids[i + 1]
-            lines.append(f"  {i+1:>3}. [{edge.transport_type.upper():<12}]  {src}  →  {dst}")
-            wait_note = ''
-            if edge.transport_type == 'train':
-                wait_note = '  ← exact schedule wait applied'
-            lines.append(f"         {edge.time_min:.1f} min  |  {edge.distance_km:.2f} km  |  {edge.route_id}{wait_note}")
+            lines.append(
+                f"  {i+1:>3}. [{edge.transport_type.upper():<12}]  {src}  →  {dst}"
+            )
+            wait_note = '  ← exact schedule wait applied' if edge.transport_type == 'train' else ''
+            lines.append(
+                f"         {edge.time_min:.1f} min  |  {edge.distance_km:.2f} km"
+                f"  |  {edge.route_id}{wait_note}"
+            )
+        lines.append(f"{'─'*60}")
+        lines.append(f"  Expanded : {self.nodes_expanded} nodes")
+        lines.append(f"  Generated: {self.nodes_generated} nodes")
         lines.append(f"{'─'*60}")
         return "\n".join(lines)
 
 
+class TransitProblem:
+   
+    def __init__(
+        self,
+        router:        'BFSRouter',
+        initial_state: str,
+        goal_id:       str,
+    ) -> None:
+        self._router       = router
+        self.initial_state = initial_state
+        self.goal_id       = goal_id
+
+
+    def goal_test(self, stop_id: str) -> bool:
+        return stop_id == self.goal_id
+
+
+    def actions(
+        self,
+        stop_id:  str,
+        clock:    float,
+        allowed:  Set[str],
+    ) -> List[Edge]:
+        r = self._router
+        result: List[Edge] = []
+        for edge in r.graph.get(stop_id, []):
+            if edge.transport_type not in allowed:
+                continue
+            if not r._in_service(edge.transport_type, clock):
+                continue
+            # For trains: skip edge if no more trains today from this stop
+            if edge.transport_type == 'train':
+                arr = clock + edge.time_min / 60.0
+                if r._train_wait(edge.to_id, arr) == float('inf'):
+                    continue
+            result.append(edge)
+        return result
+
+   
+    def result(
+        self,
+        state:  Tuple[str, Optional[str], Optional[str]],
+        action: Edge,
+    ) -> Tuple[str, Optional[str], Optional[str]]:
+        """RESULT(state, action) → new state."""
+        return (action.to_id, action.transport_type, action.route_id)
+
+
+    def step_cost(
+        self,
+        state:  Tuple[str, Optional[str], Optional[str]],
+        action: Edge,
+    ) -> float:
+      
+        prev_mode    = state[1]
+        is_new_board = (
+            action.transport_type != 'walk' and
+            action.transport_type != prev_mode
+        )
+        wait = self._router._avg_wait(action.transport_type) if is_new_board else 0.0
+        return action.time_min + wait
+
 class BFSRouter:
+  
 
     def __init__(self, data_dir: str) -> None:
         stops_path = os.path.join(data_dir, "stops.csv")
@@ -102,6 +204,7 @@ class BFSRouter:
             if not os.path.isfile(path):
                 raise FileNotFoundError(f"Required data file not found: {path!r}")
 
+       
         self.stops: Dict[str, Stop] = {}
         try:
             with open(stops_path, encoding="utf-8-sig", newline="") as fh:
@@ -115,7 +218,9 @@ class BFSRouter:
                         lat            = float(row["latitude"]),
                         lon            = float(row["longitude"]),
                         transport_type = row["transport_type"].strip().lower(),
-                        is_hub         = row.get("is_hub", "").strip().lower() in ("true", "1", "yes"),
+                        # FIX-C: handle 'True'/'False' strings
+                        is_hub         = str(row.get("is_hub", "")).strip().lower()
+                                         in ("true", "1", "yes"),
                     )
         except (KeyError, ValueError) as exc:
             raise ValueError(f"Malformed stops.csv: {exc}") from exc
@@ -123,6 +228,7 @@ class BFSRouter:
         if not self.stops:
             raise ValueError("stops.csv is empty or contains no valid rows.")
 
+       
         self.graph: Dict[str, List[Edge]] = defaultdict(list)
         try:
             with open(edges_path, encoding="utf-8-sig", newline="") as fh:
@@ -132,6 +238,7 @@ class BFSRouter:
                     if not src or not dst:
                         continue
                     self.graph[src].append(Edge(
+                        from_id        = src,
                         to_id          = dst,
                         time_min       = float(row["time_min"]),
                         distance_km    = float(row["distance_km"]),
@@ -142,7 +249,7 @@ class BFSRouter:
         except (KeyError, ValueError) as exc:
             raise ValueError(f"Malformed edges.csv: {exc}") from exc
 
-        # ── Train schedule: stop_id → sorted list of departure hours ──
+        
         self.train_schedule: Dict[str, List[float]] = {}
         stop_times_path = os.path.join(data_dir, "stop_times.csv")
         if os.path.isfile(stop_times_path):
@@ -154,95 +261,130 @@ class BFSRouter:
                         dep = row.get("departure_time", "").strip()
                         if not sid or not dep:
                             continue
-                        # Parse HH:MM:SS — GTFS allows hours >= 24
                         parts = dep.split(":")
                         if len(parts) != 3:
                             continue
                         try:
                             h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
-                            dep_hour = h + m / 60.0 + s / 3600.0
-                            # Normalise past-midnight times into [0, 48)
-                            # We keep them as-is so that a 25:10 train
-                            # is still later than a 23:50 one on the same night.
-                            raw_sched[sid].append(dep_hour)
+                            raw_sched[sid].append(h + m / 60.0 + s / 3600.0)
                         except ValueError:
                             continue
             except Exception:
-                pass  # schedule is optional — fall back to avg wait
+                pass  
             for sid, times in raw_sched.items():
                 self.train_schedule[sid] = sorted(times)
-        # If stop_times.csv is absent, self.train_schedule stays {}
-        # and _train_wait falls back to HEADWAY_MIN average.
+
 
     def _in_service(self, mode: str, t: float) -> bool:
-        if mode == "walk":
-            return True
         o, c = WORKING_HOURS.get(mode, (0.0, 24.0))
         return o <= t < c
 
     def _avg_wait(self, mode: str) -> float:
-        """
-        Average waiting time for non-train modes.
-        Train wait is computed exactly via _train_wait — do NOT call
-        this method for mode == 'train'.
-        """
-        if mode == 'train':
-            # Should not be called for trains; return average as fallback
-            return HEADWAY_MIN.get('train', 30.0) / 2.0
         return HEADWAY_MIN.get(mode, 0.0) / 2.0
 
     def _train_wait(self, stop_id: str, clock_hour: float) -> float:
-        """
-        Compute exact waiting time (minutes) for a train at stop_id,
-        given that the traveller arrives at clock_hour (fractional hours,
-        e.g. 8.5 = 08:30).
-
-        Logic:
-          1. Look up sorted departure list for this stop in self.train_schedule.
-          2. Find the first departure >= clock_hour using binary search.
-          3. If found: wait = (next_departure - clock_hour) * 60  minutes.
-          4. If none found today (past last train): service has ended,
-             return inf so the caller can mark the edge as out of service.
-          5. If stop has no schedule entry: fall back to HEADWAY_MIN['train']/2.
-
-        Clock values >= 24.0 are treated as next-day GTFS times and
-        compared directly against GTFS departure_time values that may
-        also exceed 24.
-        """
-        import bisect
+        
         schedule = self.train_schedule.get(stop_id)
         if not schedule:
-            # No schedule data for this stop — use average headway
             return HEADWAY_MIN.get('train', 30.0) / 2.0
-
-        # Binary search: index of first departure >= clock_hour
         idx = bisect.bisect_left(schedule, clock_hour)
         if idx >= len(schedule):
-            # Past the last train of the day
             return float('inf')
-
-        next_dep = schedule[idx]
-        wait_min = (next_dep - clock_hour) * 60.0
-        # Clamp negatives caused by float precision
+        wait_min = (schedule[idx] - clock_hour) * 60.0
         return max(0.0, round(wait_min, 2))
 
-    def _fare(self, edge: Edge, prev_mode: Optional[str], prev_route: Optional[str]) -> float:
+    def _fare(
+        self,
+        edge:       Edge,
+        prev_mode:  Optional[str],
+        prev_route: Optional[str],
+    ) -> float:
         mode = edge.transport_type
-        if mode == "walk":
+        if mode == 'walk':
             return 0.0
-        if mode == "bus":
-            return FARES["bus"] if edge.route_id != prev_route else 0.0
+        if mode == 'bus':
+            return FARES['bus'] if edge.route_id != prev_route else 0.0
         return FARES.get(mode, 0.0) if mode != prev_mode else 0.0
+
+
+    def _solution(
+        self,
+        goal_node:       Node,
+        nodes_expanded:  int,
+        nodes_generated: int,
+        depart:          float,
+    ) -> BFSResult:
+       
+        # Walk parent chain
+        path_edges: List[Edge] = []
+        node = goal_node
+        while node.action is not None:
+            path_edges.append(node.action)
+            node = node.parent  
+        path_edges.reverse()
+
+        if path_edges:
+            path_ids = [path_edges[0].from_id] + [e.to_id for e in path_edges]
+        else:
+            path_ids = [goal_node.stop_id]
+
+        time = wait = price = co2 = 0.0
+        transfers  = 0
+        prev_mode  = prev_route = None
+        clock      = depart
+
+        for i, edge in enumerate(path_edges):
+            mode  = edge.transport_type
+            is_tr = (
+                prev_mode is not None
+                and prev_mode != 'walk'
+                and mode     != 'walk'
+                and mode     != prev_mode
+            )
+
+            if mode == 'train':
+                w = self._train_wait(path_ids[i], clock)
+                if w == float('inf'):
+                    w = HEADWAY_MIN.get('train', 30.0) / 2.0  # safe fallback
+            else:
+                w = self._avg_wait(mode)
+
+            price     += self._fare(edge, prev_mode, prev_route)
+            time      += edge.time_min
+            wait      += w
+            co2       += edge.co2_g
+            transfers += int(is_tr)
+            prev_mode  = mode
+            prev_route = edge.route_id
+            clock     += (w + edge.time_min) / 60.0
+
+        return BFSResult(
+            found           = True,
+            path_ids        = path_ids,
+            path_edges      = path_edges,
+            total_time      = round(time,  2),
+            total_wait      = round(wait,  2),
+            total_price     = round(price, 2),
+            total_co2       = round(co2,   2),
+            num_transfers   = transfers,
+            nodes_expanded  = nodes_expanded,
+            nodes_generated = nodes_generated,
+        )
+
 
     def search(
         self,
         start:   str,
         goal:    str,
-        depart:  float = 8.0,
+        depart:  float           = 8.0,
         allowed: Optional[Set[str]] = None,
     ) -> BFSResult:
+       
         if not isinstance(start, str) or not isinstance(goal, str):
-            raise TypeError(f"start and goal must be str, got {type(start).__name__} and {type(goal).__name__}")
+            raise TypeError(
+                f"start and goal must be str, "
+                f"got {type(start).__name__} and {type(goal).__name__}"
+            )
         start, goal = start.strip(), goal.strip()
         if start not in self.stops:
             raise ValueError(f"Unknown stop id: {start!r}")
@@ -253,121 +395,77 @@ class BFSRouter:
         if not (0.0 <= depart < 24.0):
             raise ValueError(f"depart must be in [0.0, 24.0), got {depart}")
 
-        queue:   deque[Tuple[str, float, Optional[str], Optional[str]]] = deque(
-            [(start, depart, None, None)]
+        if allowed is None:
+            allowed = {'metro', 'tram', 'bus', 'train', 'telepherique', 'walk'}
+
+        
+        problem = TransitProblem(
+            router        = self,
+            initial_state = start,
+            goal_id       = goal,
         )
-        start_state = (start, None, None)
-        visited: Set[Tuple[str, Optional[str], Optional[str]]] = {start_state}
-        parent:  Dict[Tuple[str, Optional[str], Optional[str]], Tuple[Tuple[str, Optional[str], Optional[str]], Edge]] = {}
-        expanded = 0
 
-        while queue:
-            nid, clock, prev_mode, prev_route = queue.popleft()
-            curr_state = (nid, prev_mode, prev_route)
-            expanded += 1
+       
+        clock = depart
 
-            for edge in self.graph.get(nid, []):
-                nb   = edge.to_id
-                mode = edge.transport_type
-                next_state = (nb, mode, edge.route_id)
-
-                if next_state in visited:
-                    continue
-                if allowed and mode not in allowed:
-                    continue
-                if not self._in_service(mode, clock):
-                    continue
-
-                # Compute wait time at the NEXT node (nb) before boarding
-                if mode == 'train':
-                    # Arrival time at nb after riding this edge
-                    arr_at_nb = clock + edge.time_min / 60.0
-                    w = self._train_wait(nb, arr_at_nb)
-                    if w == float('inf'):
-                        # No more trains from this stop today — skip edge
-                        continue
-                else:
-                    w = self._avg_wait(mode)
-
-                parent[next_state] = (curr_state, edge)
-
-                if nb == goal:
-                    return self._build(start, next_state, parent, expanded, depart)
-
-                visited.add(next_state)
-                queue.append((nb, clock + (edge.time_min + w) / 60.0, mode, edge.route_id))
-
-        return BFSResult(found=False, nodes_expanded=expanded)
-
-    def _build(
-        self,
-        start:    str,
-        goal_state: Tuple[str, Optional[str], Optional[str]],
-        parent:   Dict[Tuple[str, Optional[str], Optional[str]], Tuple[Tuple[str, Optional[str], Optional[str]], Edge]],
-        expanded: int,
-        depart:   float = 0.0,
-    ) -> BFSResult:
-        """
-        Reconstruct path and compute exact costs.
-        For train edges, uses _train_wait(stop_id, arrival_hour) to get
-        the real waiting time at that station.
-        For all other modes, uses _avg_wait(mode) as before.
-        """
-        path_ids:   List[str]  = [goal_state[0]]
-        path_edges: List[Edge] = []
-        state = goal_state
-        while state[0] != start:
-            p_state, edge = parent[state]
-            path_ids.append(p_state[0])
-            path_edges.append(edge)
-            state = p_state
-        path_ids.reverse()
-        path_edges.reverse()
-
-        time = wait = price = co2 = 0.0
-        transfers  = 0
-        prev_mode  = prev_route = None
-        clock = depart  # track real clock time through the journey
-
-        for i, edge in enumerate(path_edges):
-            mode  = edge.transport_type
-            is_tr = (
-                prev_mode is not None
-                and prev_mode != "walk"
-                and mode != "walk"
-                and mode != prev_mode
-            )
-
-            # Waiting time at the CURRENT stop before boarding this edge
-            if mode == 'train':
-                w = self._train_wait(path_ids[i], clock)
-                if w == float('inf'):
-                    w = HEADWAY_MIN.get('train', 30.0) / 2.0  # safe fallback
-            else:
-                w = self._avg_wait(mode)
-
-            price += self._fare(edge, prev_mode, prev_route)
-            time  += edge.time_min
-            wait  += w
-            co2   += edge.co2_g
-            transfers  += is_tr
-            prev_mode   = mode
-            prev_route  = edge.route_id
-
-            # Advance clock: wait at stop + ride time
-            clock += (w + edge.time_min) / 60.0
-
-        return BFSResult(
-            found          = True,
-            path_ids       = path_ids,
-            path_edges     = path_edges,
-            total_time     = round(time,  2),
-            total_wait     = round(wait,  2),
-            total_price    = round(price, 2),
-            total_co2      = round(co2,   2),
-            num_transfers  = transfers,
-            nodes_expanded = expanded,
+       
+        root = Node(
+            state     = (start, None, None),
+            parent    = None,
+            action    = None,
+            path_cost = 0.0,
         )
+
+
+        if problem.goal_test(root.stop_id):
+            return self._solution(root, 0, 0, depart)
+
+        frontier:        deque      = deque([root])
+        frontier_states: Set[Tuple] = {root.state}   # O(1) membership mirror
+        explored:        Set[Tuple] = set()
+        nodes_expanded:  int        = 0
+        nodes_generated: int        = 0
+
+        while frontier:
+
+          
+            node = frontier.popleft()
+            frontier_states.discard(node.state)
+            nodes_expanded += 1
+
+           
+            explored.add(node.state)
+
+           
+            for action in problem.actions(node.stop_id, clock, allowed):
+
+               
+                child_state = problem.result(node.state, action)
+                child = Node(
+                    state     = child_state,
+                    parent    = node,
+                    action    = action,
+                    path_cost = node.path_cost + problem.step_cost(node.state, action),
+                )
+
+               
+                nodes_generated += 1
+
+               
+                if child.state not in explored and child.state not in frontier_states:
+
+                   
+                    if problem.goal_test(child.stop_id):
+                        return self._solution(
+                            child, nodes_expanded, nodes_generated, depart
+                        )
+
+                   
+                    frontier.append(child)
+                    frontier_states.add(child.state)
+
+        return BFSResult(found=False, nodes_expanded=nodes_expanded,
+                         nodes_generated=nodes_generated)
 
     def stop_name(self, stop_id: str) -> str:
         s = self.stops.get(stop_id)
@@ -389,5 +487,11 @@ if __name__ == "__main__":
               f"{n_sched} departure entries")
     else:
         print("  No stop_times.csv found — using average headway for trains")
+
     result = router.search(start, goal, depart)
     print(result)
+
+    if result.found:
+        print("\nStop names along route:")
+        for sid in result.path_ids:
+            print(f"  {sid:30s}  {router.stop_name(sid)}")
