@@ -344,15 +344,38 @@ function drawRouteSegments(origin, dest, segments) {
       const lon = p[1];
       return [lat, lon];
     });
-    latlngs.forEach(ll => allLatLngs.push(ll));
+    // Smooth simple polylines so they follow roads more naturally when
+    // only stop nodes are available. Uses a lightweight Chaikin subdivision.
+    function smoothLatLngs(points, iterations = 2) {
+      if (!points || points.length < 2) return points;
+      let pts = points.map(p => [Number(p[0]), Number(p[1])]);
+      for (let it = 0; it < iterations; it++) {
+        const out = [];
+        out.push(pts[0]);
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[i];
+          const p1 = pts[i + 1];
+          const q = [(0.75 * p0[0] + 0.25 * p1[0]), (0.75 * p0[1] + 0.25 * p1[1])];
+          const r = [(0.25 * p0[0] + 0.75 * p1[0]), (0.25 * p0[1] + 0.75 * p1[1])];
+          out.push(q);
+          out.push(r);
+        }
+        out.push(pts[pts.length - 1]);
+        pts = out;
+      }
+      return pts;
+    }
+    const smooth = smoothLatLngs(latlngs, 2);
+    // Use smoothed points for bounds so the viewport fits the visible curve
+    smooth.forEach(ll => allLatLngs.push(ll));
     const color = polylineColorForMode(seg.mode);
-    L.polyline(latlngs, {
+    L.polyline(smooth, {
       color: 'rgba(255,255,255,.35)',
       weight: 10,
       lineCap: 'round',
       lineJoin: 'round',
     }).addTo(rg);
-    L.polyline(latlngs, {
+    L.polyline(smooth, {
       color,
       weight: 6,
       opacity: 0.92,
