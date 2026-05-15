@@ -27,10 +27,10 @@ HEADWAY_MIN: Dict[str, float] = {
 
 FARES: Dict[str, float] = {
     'metro':        50.0,
-    'tram':         50.0,
+    'tram':         40.0,
     'train':        50.0,
-    'telepherique': 50.0,
-    'bus':          50.0,
+    'telepherique': 30.0,
+    'bus':          30.0,
 }
 
 
@@ -144,7 +144,6 @@ class BFSRouter:
         except (KeyError, ValueError) as exc:
             raise ValueError(f"Malformed edges.csv: {exc}") from exc
 
-        # ── Train schedule: stop_id → sorted list of departure hours ──
         self.train_schedule: Dict[str, List[float]] = {}
         stop_times_path = os.path.join(data_dir, "stop_times.csv")
         if os.path.isfile(stop_times_path):
@@ -156,25 +155,19 @@ class BFSRouter:
                         dep = row.get("departure_time", "").strip()
                         if not sid or not dep:
                             continue
-                        # Parse HH:MM:SS — GTFS allows hours >= 24
                         parts = dep.split(":")
                         if len(parts) != 3:
                             continue
                         try:
                             h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
                             dep_hour = h + m / 60.0 + s / 3600.0
-                            # Normalise past-midnight times into [0, 48)
-                            # We keep them as-is so that a 25:10 train
-                            # is still later than a 23:50 one on the same night.
                             raw_sched[sid].append(dep_hour)
                         except ValueError:
                             continue
             except Exception:
-                pass  # schedule is optional — fall back to avg wait
+                pass
             for sid, times in raw_sched.items():
                 self.train_schedule[sid] = sorted(times)
-        # If stop_times.csv is absent, self.train_schedule stays {}
-        # and _train_wait falls back to HEADWAY_MIN average.
 
     def _in_service(self, mode: str, t: float) -> bool:
         if mode == "walk":
@@ -183,49 +176,22 @@ class BFSRouter:
         return o <= t < c
 
     def _avg_wait(self, mode: str) -> float:
-        """
-        Average waiting time for non-train modes.
-        Train wait is computed exactly via _train_wait — do NOT call
-        this method for mode == 'train'.
-        """
         if mode == 'train':
-            # Should not be called for trains; return average as fallback
             return HEADWAY_MIN.get('train', 30.0) / 2.0
         return HEADWAY_MIN.get(mode, 0.0) / 2.0
 
     def _train_wait(self, stop_id: str, clock_hour: float) -> float:
-        """
-        Compute exact waiting time (minutes) for a train at stop_id,
-        given that the traveller arrives at clock_hour (fractional hours,
-        e.g. 8.5 = 08:30).
-
-        Logic:
-          1. Look up sorted departure list for this stop in self.train_schedule.
-          2. Find the first departure >= clock_hour using binary search.
-          3. If found: wait = (next_departure - clock_hour) * 60  minutes.
-          4. If none found today (past last train): service has ended,
-             return inf so the caller can mark the edge as out of service.
-          5. If stop has no schedule entry: fall back to HEADWAY_MIN['train']/2.
-
-        Clock values >= 24.0 are treated as next-day GTFS times and
-        compared directly against GTFS departure_time values that may
-        also exceed 24.
-        """
         import bisect
         schedule = self.train_schedule.get(stop_id)
         if not schedule:
-            # No schedule data for this stop — use average headway
             return HEADWAY_MIN.get('train', 30.0) / 2.0
 
-        # Binary search: index of first departure >= clock_hour
         idx = bisect.bisect_left(schedule, clock_hour)
         if idx >= len(schedule):
-            # Past the last train of the day
             return float('inf')
 
         next_dep = schedule[idx]
         wait_min = (next_dep - clock_hour) * 60.0
-        # Clamp negatives caused by float precision
         return max(0.0, round(wait_min, 2))
 
     def _fare(self, edge: Edge, prev_mode: Optional[str], prev_route: Optional[str]) -> float:
@@ -277,25 +243,31 @@ class BFSRouter:
                     continue
                 if allowed and mode not in allowed:
                     continue
-                if not self._in_service(mode, clock):
-                    continue
 
-                # Walking constraint: < 1 km except final destination
-                if (mode == 'walk'
-                        and edge.distance_km > MAX_WALK_KM
-                        and nb != goal):
-                    continue
-
-                # Compute wait time at the NEXT node (nb) before boarding
-                if mode == 'train':
-                    # Arrival time at nb after riding this edge
-                    arr_at_nb = clock + edge.time_min / 60.0
-                    w = self._train_wait(nb, arr_at_nb)
-                    if w == float('inf'):
-                        # No more trains from this stop today — skip edge
+                if mode == 'walk':
+                    if edge.distance_km > MAX_WALK_KM and nb != goal:
+                        continue
+                    w = 0.0
+                    if not self._in_service(mode, clock):
                         continue
                 else:
-                    w = self._avg_wait(mode)
+                    is_first_boarding = prev_mode is None
+                    is_line_change    = (prev_mode is not None
+                                        and (mode != prev_mode
+                                             or (mode == 'bus' and edge.route_id != prev_route)))
+
+                    if mode == 'train':
+                        w = self._train_wait(nid, clock)
+                        if w == float('inf'):
+                            continue
+                    elif is_first_boarding or is_line_change:
+                        w = self._avg_wait(mode)
+                    else:
+                        w = 0.0
+
+                    board_time = clock + w / 60.0
+                    if not self._in_service(mode, board_time):
+                        continue
 
                 parent[next_state] = (curr_state, edge)
 
@@ -303,7 +275,7 @@ class BFSRouter:
                     return self._build(start, next_state, parent, expanded, depart)
 
                 visited.add(next_state)
-                queue.append((nb, clock + (edge.time_min + w) / 60.0, mode, edge.route_id))
+                queue.append((nb, clock + (w + edge.time_min) / 60.0, mode, edge.route_id))
 
         return BFSResult(found=False, nodes_expanded=expanded)
 
@@ -315,12 +287,6 @@ class BFSRouter:
         expanded: int,
         depart:   float = 0.0,
     ) -> BFSResult:
-        """
-        Reconstruct path and compute exact costs.
-        For train edges, uses _train_wait(stop_id, arrival_hour) to get
-        the real waiting time at that station.
-        For all other modes, uses _avg_wait(mode) as before.
-        """
         path_ids:   List[str]  = [goal_state[0]]
         path_edges: List[Edge] = []
         state = goal_state
@@ -335,7 +301,7 @@ class BFSRouter:
         time = wait = price = co2 = 0.0
         transfers  = 0
         prev_mode  = prev_route = None
-        clock = depart  # track real clock time through the journey
+        clock = depart
 
         for i, edge in enumerate(path_edges):
             mode  = edge.transport_type
@@ -346,13 +312,18 @@ class BFSRouter:
                 and mode != prev_mode
             )
 
-            # Waiting time at the CURRENT stop before boarding this edge
-            if mode == 'train':
+            if mode == 'walk':
+                w = 0.0
+            elif mode == 'train':
                 w = self._train_wait(path_ids[i], clock)
                 if w == float('inf'):
-                    w = HEADWAY_MIN.get('train', 30.0) / 2.0  # safe fallback
+                    w = HEADWAY_MIN.get('train', 30.0) / 2.0
             else:
-                w = self._avg_wait(mode)
+                is_first_boarding = prev_mode is None
+                is_line_change    = (prev_mode is not None
+                                     and (mode != prev_mode
+                                          or (mode == 'bus' and edge.route_id != prev_route)))
+                w = self._avg_wait(mode) if (is_first_boarding or is_line_change) else 0.0
 
             price += self._fare(edge, prev_mode, prev_route)
             time  += edge.time_min
@@ -362,7 +333,6 @@ class BFSRouter:
             prev_mode   = mode
             prev_route  = edge.route_id
 
-            # Advance clock: wait at stop + ride time
             clock += (w + edge.time_min) / 60.0
 
         return BFSResult(
