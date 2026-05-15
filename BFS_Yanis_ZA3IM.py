@@ -6,24 +6,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
-from schedule import MAX_WALK_KM
-
-WORKING_HOURS: Dict[str, Tuple[float, float]] = {
-    'metro':        (5.0,  23.0),
-    'tram':         (5.0,  23.0),
-    'train':        (5.5,  22.0),
-    'telepherique': (8.0,  19.0),
-    'bus':          (5.5,  22.5),
-    'walk':         (0.0,  24.0),
-}
-
-HEADWAY_MIN: Dict[str, float] = {
-    'metro':        5.0,
-    'tram':         8.0,
-    'train':        30.0,
-    'telepherique': 10.0,
-    'bus':          15.0,
-}
+from schedule import in_service, avg_wait, train_wait, MAX_WALK_KM
 
 FARES: Dict[str, float] = {
     'metro':        50.0,
@@ -170,29 +153,13 @@ class BFSRouter:
                 self.train_schedule[sid] = sorted(times)
 
     def _in_service(self, mode: str, t: float) -> bool:
-        if mode == "walk":
-            return True
-        o, c = WORKING_HOURS.get(mode, (0.0, 24.0))
-        return o <= t < c
+        return in_service(mode, t)
 
-    def _avg_wait(self, mode: str) -> float:
-        if mode == 'train':
-            return HEADWAY_MIN.get('train', 30.0) / 2.0
-        return HEADWAY_MIN.get(mode, 0.0) / 2.0
+    def _avg_wait(self, mode: str, clock_hour: float) -> float:
+        return avg_wait(mode, clock_hour)
 
     def _train_wait(self, stop_id: str, clock_hour: float) -> float:
-        import bisect
-        schedule = self.train_schedule.get(stop_id)
-        if not schedule:
-            return HEADWAY_MIN.get('train', 30.0) / 2.0
-
-        idx = bisect.bisect_left(schedule, clock_hour)
-        if idx >= len(schedule):
-            return float('inf')
-
-        next_dep = schedule[idx]
-        wait_min = (next_dep - clock_hour) * 60.0
-        return max(0.0, round(wait_min, 2))
+        return train_wait(self.train_schedule, stop_id, clock_hour)
 
     def _fare(self, edge: Edge, prev_mode: Optional[str], prev_route: Optional[str]) -> float:
         mode = edge.transport_type
@@ -261,7 +228,7 @@ class BFSRouter:
                         if w == float('inf'):
                             continue
                     elif is_first_boarding or is_line_change:
-                        w = self._avg_wait(mode)
+                        w = self._avg_wait(mode, clock)
                     else:
                         w = 0.0
 
@@ -317,13 +284,13 @@ class BFSRouter:
             elif mode == 'train':
                 w = self._train_wait(path_ids[i], clock)
                 if w == float('inf'):
-                    w = HEADWAY_MIN.get('train', 30.0) / 2.0
+                    w = self._avg_wait('train', clock)
             else:
                 is_first_boarding = prev_mode is None
                 is_line_change    = (prev_mode is not None
                                      and (mode != prev_mode
                                           or (mode == 'bus' and edge.route_id != prev_route)))
-                w = self._avg_wait(mode) if (is_first_boarding or is_line_change) else 0.0
+                w = self._avg_wait(mode, clock) if (is_first_boarding or is_line_change) else 0.0
 
             price += self._fare(edge, prev_mode, prev_route)
             time  += edge.time_min

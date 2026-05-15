@@ -319,7 +319,12 @@ def print_bidir_bfs_waiting_checks(
     print(f'  runtime_ms:          {result.runtime_ms:.2f}')
 
     # CHECK G — wait vs manual sum (compare to ``total_wait``, not ride time)
-    expected_wait = sum(bfs_router._avg_wait(e.transport_type) for e in result.edges)
+    clock_g = depart
+    expected_wait = 0.0
+    for e in result.edges:
+        w = bfs_router._avg_wait(e.transport_type, clock_g)
+        expected_wait += w
+        clock_g += (w + e.time_min) / 60.0
     print('\n  CHECK G — Bidir BFS wait vs manual Σ avg_wait(edge mode)')
     if abs(expected_wait - result.total_wait) <= eps:
         print(f'    PASS  expected_wait={expected_wait:.4f}  total_wait={result.total_wait:.4f}')
@@ -727,7 +732,7 @@ def print_train_schedule_checks(
             if w == float('inf'):
                 w = HEADWAY_MIN.get('train', 30.0) / 2.0
         else:
-            w = bfs_router._avg_wait(mode)
+            w = bfs_router._avg_wait(mode, clock_e)
         clock_after = clock_e + (w + edge.time_min) / 60.0
         if clock_after < clock_e - eps:
             print(f'    FAIL  clock went backwards at edge {i}: '
@@ -754,7 +759,7 @@ def print_train_schedule_checks(
                 f_ok = False
             actual_w = w if w != float('inf') else HEADWAY_MIN.get('train', 30.0) / 2.0
         else:
-            actual_w = bfs_router._avg_wait(mode)
+            actual_w = bfs_router._avg_wait(mode, clock_f)
         clock_f += (actual_w + edge.time_min) / 60.0
     if f_ok:
         print('    PASS  all train waits are non-negative')
@@ -766,12 +771,12 @@ def print_train_schedule_checks(
     n_train_edges = sum(
         1 for e in result.path_edges if e.transport_type == 'train'
     )
-    flat_total_wait = (
-        sum(
-            bfs_router._avg_wait(e.transport_type)
-            for e in result.path_edges
-        )
-    )
+    flat_total_wait = 0.0
+    clock_g = depart
+    for e in result.path_edges:
+        w = bfs_router._avg_wait(e.transport_type, clock_g)
+        flat_total_wait += w
+        clock_g += (w + e.time_min) / 60.0
     exact_total_wait = result.total_wait
     diff_g = exact_total_wait - flat_total_wait
     print(f'    Train edges in path : {n_train_edges}')

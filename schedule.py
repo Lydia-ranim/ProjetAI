@@ -75,7 +75,7 @@ def in_service(mode: str, clock_hour: float) -> bool:
 
 def is_rush_hour(clock_hour: float) -> bool:
     """
-    Algeria rush-hour windows: 06:00-08:00 and 16:00-18:00.
+    Algeria rush-hour windows: 06:00-08:00 and 16:00-18:00. and 12:00-13:00.    
     """
     clock = clock_hour % 24.0
     return any(start <= clock < end for start, end in RUSH_HOURS)
@@ -85,10 +85,14 @@ def avg_wait(mode: str, clock_hour: Optional[float] = None) -> float:
     """
     Average waiting time (minutes) for a mode, computed as headway / 2.
 
+    For buses, rush-hour penalties depend on the current clock hour.
     For trains, prefer train_wait() with exact schedule when available.
     """
+    if mode == 'bus' and clock_hour is None:
+        raise ValueError("clock_hour is required for bus wait calculation")
+
     wait = HEADWAY_MIN.get(mode, 0.0) / 2.0
-    if mode == 'bus' and clock_hour is not None and is_rush_hour(clock_hour):
+    if mode == 'bus' and is_rush_hour(clock_hour):
         return wait * 2.0
     return wait
 
