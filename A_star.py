@@ -32,7 +32,7 @@ CLI:
 import heapq
 import sys
 import time as time_module
-
+from ucs import TRANSFER_PENALTY
 from ucs import TransitRouter, RouteResult, FARES
 from schedule import (
     in_service, avg_wait, train_wait,
@@ -62,34 +62,6 @@ class AStarRouter(TransitRouter):
         super().__init__(data_dir)
         self._vmax = self._compute_vmax()       # km/min
         self._vmax_kmh = self._vmax * 60        # km/h
-
-    @classmethod
-    def from_router(cls, router) -> 'AStarRouter':
-        """
-        Create an AStarRouter that shares the same loaded graph as
-        an existing TransitRouter — avoids reloading data from disk.
-
-        Used by BidirectionalSearch.compare_all() for efficient
-        side-by-side algorithm comparison.
-        """
-        instance = cls.__new__(cls)
-        instance.stops   = router.stops
-        instance.graph   = router.graph
-        instance._vmax   = instance._compute_vmax_from_graph(router.graph)
-        instance._vmax_kmh = instance._vmax * 60
-        return instance
-
-    def _compute_vmax_from_graph(self, graph) -> float:
-        """Compute vmax from an externally provided graph dict."""
-        vmax = 0.0
-        for edges in graph.values():
-            for e in edges:
-                if e.time_min > 0 and e.distance_km > 0:
-                    speed = e.distance_km / e.time_min
-                    if speed > vmax:
-                        vmax = speed
-        return vmax if vmax > 0 else 1.0
-
     @classmethod
     def from_router(cls, router) -> 'AStarRouter':
         """
@@ -205,7 +177,7 @@ class AStarRouter(TransitRouter):
         else:
             base = edge.time_min
 
-        from ucs import TRANSFER_PENALTY
+
         is_transfer = (last_route is not None and 
                        edge.transport_type != 'walk' and 
                        last_route != edge.route_id)
