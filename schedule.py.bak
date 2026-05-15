@@ -9,16 +9,35 @@ RUSH_HOURS: Tuple[Tuple[float, float], ...] = ((6.0, 8.0), (12.0, 13.0), (16.0, 
 MAX_WALK_KM = 1.0
 
 def in_service(mode: str, clock_hour: float) -> bool:
+    """
+    Check if a transport mode is operating at the given clock hour.
+
+    Args:
+        mode:       transport type string (metro, tram, bus, train, etc.)
+        clock_hour: fractional hour (e.g. 8.5 = 08:30)
+
+    Returns:
+        True if the mode is in service, False otherwise.
+    """
     if mode == 'walk':
         return True
     o, c = WORKING_HOURS.get(mode, (0.0, 24.0))
     return o <= clock_hour < c
 
 def is_rush_hour(clock_hour: float) -> bool:
+    """
+    Algeria rush-hour windows: 06:00-08:00 and 16:00-18:00. and 12:00-13:00.    
+    """
     clock = clock_hour % 24.0
     return any((start <= clock < end for start, end in RUSH_HOURS))
 
 def avg_wait(mode: str, clock_hour: Optional[float]=None) -> float:
+    """
+    Average waiting time (minutes) for a mode, computed as headway / 2.
+
+    For buses, rush-hour penalties depend on the current clock hour.
+    For trains, prefer train_wait() with exact schedule when available.
+    """
     if mode == 'bus' and clock_hour is None:
         raise ValueError('clock_hour is required for bus wait calculation')
     wait = HEADWAY_MIN.get(mode, 0.0) / 2.0
@@ -27,6 +46,14 @@ def avg_wait(mode: str, clock_hour: Optional[float]=None) -> float:
     return wait
 
 def train_wait(schedule: Dict[str, List[float]], stop_id: str, clock_hour: float) -> float:
+    """
+    Compute exact waiting time (minutes) for a train at stop_id.
+
+    Uses binary search on the sorted departure list from stop_times.csv.
+
+    Returns:
+        Wait in minutes, or float('inf') if past the last train.
+    """
     departures = schedule.get(stop_id)
     if not departures:
         return HEADWAY_MIN.get('train', 30.0) / 2.0
@@ -38,6 +65,13 @@ def train_wait(schedule: Dict[str, List[float]], stop_id: str, clock_hour: float
     return max(0.0, round(wait_min, 2))
 
 def load_train_schedule(data_dir: str) -> Dict[str, List[float]]:
+    """
+    Load train departure times from stop_times.csv.
+
+    Returns:
+        Dict mapping stop_id → sorted list of departure hours.
+        Empty dict if file not found.
+    """
     schedule: Dict[str, List[float]] = {}
     path = os.path.join(data_dir, 'stop_times.csv')
     if not os.path.isfile(path):
