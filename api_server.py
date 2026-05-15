@@ -68,35 +68,60 @@ def resolve_endpoint(r: TransitRouter, pt: GeoPoint) -> str:
 
 
 def segment_to_api(r: TransitRouter, seg: Segment) -> dict[str, Any]:
+    # Build polyline by concatenating per-link geometries (if available).
+    # This avoids duplicating all stop coordinates then appending link shapes,
+    # which produced jagged or mis-ordered polylines. We also normalize points
+    # to [lat, lon] and avoid duplicate consecutive points.
     poly: list[list[float]] = []
-    for sid in seg.stops:
-        s = r.stops.get(sid)
-        if s:
-            poly.append([s.lat, s.lon])
-    
-    if len(seg.stops) > 0:
-        for i in range(len(seg.stops) - 1):
-            s1 = seg.stops[i]
-            s2 = seg.stops[i+1]
-            
-            # Try to find the exact road geometry between the two stops
-            key1 = f"{s1}|{s2}|{seg.route_id}"
-            key2 = f"{s2}|{s1}|{seg.route_id}"
-            
-            if hasattr(r, 'bus_geometries') and key1 in r.bus_geometries:
-                poly.extend(r.bus_geometries[key1])
-            elif hasattr(r, 'bus_geometries') and key2 in r.bus_geometries:
-                # Reverse the geometry to match the travel direction
-                poly.extend(reversed(r.bus_geometries[key2]))
-            else:
-                s1_node = r.stops.get(s1)
-                if s1_node:
-                    poly.append([s1_node.lat, s1_node.lon])
-        
-        # Append the very last stop
-        last_stop = r.stops.get(seg.stops[-1])
-        if last_stop:
-            poly.append([last_stop.lat, last_stop.lon])
+
+    def _normalize_point(pt: list[float]) -> list[float]:
+        # If values look like (lon, lat) (lon outside [-90,90]) swap them.
+        if not isinstance(pt, (list, tuple)) or len(pt) < 2:
+            return pt
+        a, b = pt[0], pt[1]
+        try:
+            fa, fb = float(a), float(b)
+        except Exception:
+            return [a, b]
+        if abs(fa) > 90 and abs(fb) <= 90:
+            return [fb, fa]
+        return [fa, fb]
+
+    stops = seg.stops or []
+    for i in range(len(stops) - 1):
+        s1 = stops[i]
+        s2 = stops[i + 1]
+
+        key1 = f"{s1}|{s2}|{seg.route_id}"
+        key2 = f"{s2}|{s1}|{seg.route_id}"
+
+        geom = None
+        if hasattr(r, 'bus_geometries') and key1 in r.bus_geometries:
+            geom = r.bus_geometries[key1]
+        elif hasattr(r, 'bus_geometries') and key2 in r.bus_geometries:
+            geom = list(reversed(r.bus_geometries[key2]))
+
+        if geom and isinstance(geom, list) and len(geom) > 0:
+            # Normalize and append geometry points, avoiding duplicate consecutive points
+            for pt in geom:
+                np = _normalize_point(pt)
+                if not poly or poly[-1] != np:
+                    poly.append(np)
+        else:
+            # Fallback to using the stop coordinate for this link start
+            s1_node = r.stops.get(s1)
+            if s1_node:
+                np = [s1_node.lat, s1_node.lon]
+                if not poly or poly[-1] != np:
+                    poly.append(np)
+
+    # Ensure the final stop is appended
+    if stops:
+        last = r.stops.get(stops[-1])
+        if last:
+            np = [last.lat, last.lon]
+            if not poly or poly[-1] != np:
+                poly.append(np)
     mode = seg.transport_type
     if mode == "telepherique":
         pass  # keep backend spelling
@@ -256,7 +281,7 @@ def api_route(body: RouteRequest) -> dict[str, Any]:
         rec = r.find_route(start_id, end_id, metric="weighted", depart=depart, w1=w1, w2=w2, w3=w3)
         rec_algo = "UCS-weighted"
     else:
-        rec = r.find_route_astar(start_id, end_id, metric="weighted", w1=w1, w2=w2, w3=w3, departure_time=depart)
+        rec = r.find_route_astar(start_id, end_id, metric="weighted", w1=w1, w2=w2, w3=w3, depart=depart)
         rec_algo = "A*-weighted"
     routes_out.append(route_result_to_api(r, "recommended", rec, algo=rec_algo, depart=depart))
 
@@ -266,7 +291,7 @@ def api_route(body: RouteRequest) -> dict[str, Any]:
             res = r.find_route(start_id, end_id, metric=metric, depart=depart)
             algo_used = "UCS"
         else:
-            res = r.find_route_astar(start_id, end_id, metric=metric, w1=w1, w2=w2, w3=w3, departure_time=depart)
+            res = r.find_route_astar(start_id, end_id, metric=metric, w1=w1, w2=w2, w3=w3, depart=depart)
             algo_used = "A*"
         routes_out.append(route_result_to_api(r, label, res, algo=algo_used, depart=depart))
 
