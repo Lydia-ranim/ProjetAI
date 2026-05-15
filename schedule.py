@@ -10,7 +10,7 @@ import bisect
 import csv
 import os
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 # ═══════════════════════════════════════════
@@ -37,6 +37,12 @@ HEADWAY_MIN: Dict[str, float] = {
     'telepherique': 10.0,
     'bus':          15.0,
 }
+
+RUSH_HOURS: Tuple[Tuple[float, float], ...] = (
+    (6.0, 8.0),
+    (12.0,13.0),
+    (16.0, 18.0),
+)
 
 # ═══════════════════════════════════════════
 # WALKING CONSTRAINT
@@ -67,13 +73,24 @@ def in_service(mode: str, clock_hour: float) -> bool:
     return o <= clock_hour < c
 
 
-def avg_wait(mode: str) -> float:
+def is_rush_hour(clock_hour: float) -> bool:
+    """
+    Algeria rush-hour windows: 06:00-08:00 and 16:00-18:00.
+    """
+    clock = clock_hour % 24.0
+    return any(start <= clock < end for start, end in RUSH_HOURS)
+
+
+def avg_wait(mode: str, clock_hour: Optional[float] = None) -> float:
     """
     Average waiting time (minutes) for a mode, computed as headway / 2.
 
     For trains, prefer train_wait() with exact schedule when available.
     """
-    return HEADWAY_MIN.get(mode, 0.0) / 2.0
+    wait = HEADWAY_MIN.get(mode, 0.0) / 2.0
+    if mode == 'bus' and clock_hour is not None and is_rush_hour(clock_hour):
+        return wait * 2.0
+    return wait
 
 
 def train_wait(schedule: Dict[str, List[float]],

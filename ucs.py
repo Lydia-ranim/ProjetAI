@@ -360,7 +360,7 @@ class TransitRouter:
                             else:
                                 edge_cost += wait
                         else:
-                            wait = avg_wait(edge.transport_type)
+                            wait = avg_wait(edge.transport_type, clock)
                             if metric == 'weighted':
                                 edge_cost += w1 * wait
                             else:

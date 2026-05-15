@@ -56,12 +56,14 @@ class AStarRouter(TransitRouter):
       - 'co2':      carbon emissions in grams
       - 'weighted': w1*Time + w2*Price + w3*CO2
     """
-
+    
     def __init__(self, data_dir: str):
         """Load graph data and compute vmax for the heuristic."""
         super().__init__(data_dir)
         self._vmax = self._compute_vmax()       # km/min
         self._vmax_kmh = self._vmax * 60        # km/h
+
+
     @classmethod
     def from_router(cls, router) -> 'AStarRouter':
         """
@@ -74,6 +76,8 @@ class AStarRouter(TransitRouter):
         instance = cls.__new__(cls)
         instance.stops   = router.stops
         instance.graph   = router.graph
+        instance.bus_geometries = getattr(router, 'bus_geometries', {})
+        instance.train_schedule = getattr(router, 'train_schedule', {})
         instance._vmax   = instance._compute_vmax_from_graph(router.graph)
         instance._vmax_kmh = instance._vmax * 60
         return instance
@@ -89,9 +93,9 @@ class AStarRouter(TransitRouter):
                         vmax = speed
         return vmax if vmax > 0 else 1.0
 
-    # ═══════════════════════════════════════════
+  
     # VMAX COMPUTATION
-    # ═══════════════════════════════════════════
+   
 
     def _compute_vmax(self) -> float:
         """
@@ -107,9 +111,9 @@ class AStarRouter(TransitRouter):
                         vmax = speed
         return vmax if vmax > 0 else 1.0
 
-    # ═══════════════════════════════════════════
+  
     # HEURISTIC FUNCTION
-    # ═══════════════════════════════════════════
+  
 
     def _heuristic(self, node_id: str, goal_id: str,
                    metric: str, w1: float = 1.0) -> float:
@@ -143,9 +147,9 @@ class AStarRouter(TransitRouter):
             return w1 * (dist_km / self._vmax)
         return 0.0
 
-    # ═══════════════════════════════════════════
+   
     # EDGE COST
-    # ═══════════════════════════════════════════
+    
 
     def _edge_cost(self, edge, metric: str,
                    last_route: str | None,
@@ -177,7 +181,7 @@ class AStarRouter(TransitRouter):
         else:
             base = edge.time_min
 
-
+      
         is_transfer = (last_route is not None and 
                        edge.transport_type != 'walk' and 
                        last_route != edge.route_id)
@@ -186,9 +190,9 @@ class AStarRouter(TransitRouter):
             
         return base
 
-    # ═══════════════════════════════════════════
+   
     # A* SEARCH
-    # ═══════════════════════════════════════════
+    
 
     def find_route_astar(self, start_id: str, goal_id: str,
                          metric: str = 'time',
@@ -301,7 +305,7 @@ class AStarRouter(TransitRouter):
                                 continue  # Past last train
                             ec += w
                         else:
-                            ec += avg_wait(edge.transport_type)
+                            ec += avg_wait(edge.transport_type, clock)
 
                 new_g = g_cost[state_key] + ec
 
@@ -334,9 +338,9 @@ class AStarRouter(TransitRouter):
         edges.reverse()
         return path, edges
 
-    # ═══════════════════════════════════════════
+    
     # COMPARISON: A* vs UCS
-    # ═══════════════════════════════════════════
+    
 
     def compare_with_ucs(self, start_id: str, goal_id: str,
                          metric: str = 'time') -> dict:
@@ -377,9 +381,9 @@ class AStarRouter(TransitRouter):
         }
 
 
-# ═══════════════════════════════════════════
+
 # CLI INTERFACE
-# ═══════════════════════════════════════════
+
 
 def print_route(router: AStarRouter, result: RouteResult, label: str = ""):
     """Pretty-print a route result."""

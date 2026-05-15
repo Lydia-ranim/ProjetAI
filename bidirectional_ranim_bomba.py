@@ -459,7 +459,7 @@ class BidirectionalSearch:
                                     continue
                                 ec += w
                             else:
-                                ec += avg_wait(edge.transport_type)
+                                ec += avg_wait(edge.transport_type, clock)
 
                     new_g  = fwd_g.get(state, float('inf')) + ec
                     if new_g < fwd_g.get(next_state, float('inf')):
@@ -694,7 +694,7 @@ class BidirectionalSearch:
                         and edge.distance_km > MAX_WALK_KM
                         and nb != goal_id):
                     continue
-                w = self.bfs_router._avg_wait(edge.transport_type)
+                w = self.bfs_router._avg_wait(edge.transport_type, clock)
                 new_c = clock + (edge.time_min + w) / 60.0
                 visited_fwd[nb] = (nid, edge, new_c)
                 if nb in visited_bwd:
@@ -726,7 +726,7 @@ class BidirectionalSearch:
                         and fe.distance_km > MAX_WALK_KM
                         and pred != start_id):
                     continue
-                w = self.bfs_router._avg_wait(fe.transport_type)
+                w = self.bfs_router._avg_wait(fe.transport_type, clock)
                 new_c = clock + (fe.time_min + w) / 60.0
                 visited_bwd[pred] = (nid, fe, new_c)
                 if pred in visited_fwd:
@@ -778,10 +778,11 @@ class BidirectionalSearch:
         prev_mode: Optional[str] = None
         prev_route: Optional[str] = None
         fare_f = 0.0
+        clock = depart_f
 
         for edge in full_edges:
             mode = edge.transport_type
-            w = self.bfs_router._avg_wait(mode)
+            w = self.bfs_router._avg_wait(mode, clock)
             fare_f += self.bfs_router._fare(edge, prev_mode, prev_route)
             ride += edge.time_min
             wait += w
@@ -789,6 +790,7 @@ class BidirectionalSearch:
             dist += edge.distance_km
             prev_mode = mode
             prev_route = edge.route_id
+            clock += (w + edge.time_min) / 60.0
 
         return BiDirResult(
             found=True,
