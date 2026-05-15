@@ -110,6 +110,7 @@ class BidirectionalSearch:
 
     VMAX_KMH = 70.0   # km/h — used in A* heuristic (metro top speed)
     VMAX     = VMAX_KMH / 60.0  # km/min
+    _VMAX_PERCENTILE = 0.85
 
     def __init__(self, router: TransitRouter,
                  bfs_router: Optional[_BFSRouter] = None):
@@ -117,6 +118,10 @@ class BidirectionalSearch:
             raise TypeError("router must be a TransitRouter instance")
         self.router = router
         self._rev_adj = self._build_reverse_graph()
+        self._vmax = self._compute_vmax_from_graph(self.router.graph)
+        self._min_co2_per_km = self._compute_min_co2_per_km_from_graph(self.router.graph)
+        self._min_price_per_km = self._compute_min_price_per_km_from_graph(self.router.graph)
+        self._h_cache: Dict[Tuple[str, str, str, float, float, float], float] = {}
         self.bfs_router: Optional[_BFSRouter] = None
         self._bfs_rev_adj: Dict[str, List[BFSEdge]] = {}
         if bfs_router is not None:
@@ -195,27 +200,78 @@ class BidirectionalSearch:
              * math.sin(dlon / 2) ** 2)
         return 6371 * 2 * math.asin(math.sqrt(max(0.0, min(1.0, h))))
 
+    def _compute_vmax_from_graph(self, graph) -> float:
+        speeds = []
+        for edges in graph.values():
+            for e in edges:
+                if (e.time_min > 0 and e.distance_km > 0
+                        and e.transport_type != 'walk'):
+                    speeds.append(e.distance_km / e.time_min)
+        if not speeds:
+            return 1.0
+        speeds.sort()
+        idx = int(len(speeds) * self._VMAX_PERCENTILE)
+        return speeds[min(idx, len(speeds) - 1)]
+
+    def _compute_min_co2_per_km_from_graph(self, graph) -> float:
+        rates = []
+        for edges in graph.values():
+            for e in edges:
+                if (e.distance_km > 0 and e.co2_g > 0
+                        and e.transport_type != 'walk'):
+                    rates.append(e.co2_g / e.distance_km)
+        return min(rates) if rates else 0.0
+
+    def _compute_min_price_per_km_from_graph(self, graph) -> float:
+        rates = []
+        for edges in graph.values():
+            for e in edges:
+                if (e.distance_km > 0
+                        and e.transport_type != 'walk'):
+                    fare = FARES.get(e.transport_type, 0)
+                    if fare > 0:
+                        rates.append(fare * 0.1 / e.distance_km)
+        return min(rates) if rates else 0.0
+
     def _heuristic_ucs(self, node_id: str, goal_id: str,
-                        metric: str, w1: float = 1.0) -> float:
+                        metric: str, w1: float = 1.0,
+                        w2: float = 0.0, w3: float = 0.0) -> float:
         """Zero heuristic — degrades to Dijkstra/UCS."""
         return 0.0
 
     def _heuristic_astar(self, node_id: str, goal_id: str,
-                          metric: str, w1: float = 1.0) -> float:
+                          metric: str, w1: float = 1.0,
+                          w2: float = 0.0, w3: float = 0.0) -> float:
         """
-        Admissible heuristic h(n) = d(n, goal) / vmax.
-        Same formula as A_star.py for consistency.
+        Admissible heuristic matching A_star.py.
+
+        Uses graph-derived constants:
+          - _vmax: 85th-percentile transit speed
+          - _min_co2_per_km
+          - _min_price_per_km
         """
+        cache_key = (node_id, goal_id, metric, w1, w2, w3)
+        cached = self._h_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         dist_km = self._haversine(node_id, goal_id)
         if metric == 'time':
-            return w1 * (dist_km / self.VMAX)
+            h = w1 * (dist_km / self._vmax)
         elif metric == 'distance':
-            return dist_km
+            h = dist_km
         elif metric == 'co2':
-            return 0.0
+            h = dist_km * self._min_co2_per_km
         elif metric == 'weighted':
-            return w1 * (dist_km / self.VMAX)
-        return 0.0
+            h_time = w1 * (dist_km / self._vmax)
+            h_price = w2 * (dist_km * self._min_price_per_km)
+            h_co2 = w3 * (dist_km * self._min_co2_per_km)
+            h = h_time + h_price + h_co2
+        else:
+            h = 0.0
+
+        self._h_cache[cache_key] = h
+        return h
 
     # ───────────────────────────────────────────────────────────
     # EDGE COST FUNCTION
@@ -465,7 +521,7 @@ class BidirectionalSearch:
                     if new_g < fwd_g.get(next_state, float('inf')):
                         fwd_g[next_state]    = new_g
                         fwd_pred[next_state] = (state, edge)
-                        h = heuristic_fn(edge.to_id, goal_id, metric, w1)
+                        h = heuristic_fn(edge.to_id, goal_id, metric, w1, w2, w3)
                         push(fwd_heap, new_g + h, edge.to_id, new_last)
                         if new_g < fwd_node_g.get(edge.to_id, float('inf')):
                             fwd_node_g[edge.to_id] = new_g
@@ -514,7 +570,7 @@ class BidirectionalSearch:
                         bwd_g[next_state]    = new_g
                         bwd_pred[next_state] = (state, edge)
                         # Backward heuristic: from neighbor toward start
-                        h = heuristic_fn(edge.to_id, start_id, metric, w1)
+                        h = heuristic_fn(edge.to_id, start_id, metric, w1, w2, w3)
                         push(bwd_heap, new_g + h, edge.to_id, new_last)
                         if new_g < bwd_node_g.get(edge.to_id, float('inf')):
                             bwd_node_g[edge.to_id] = new_g
@@ -854,11 +910,7 @@ class BidirectionalSearch:
 
         # 2. Unidirectional A*
         try:
-            astar_router = AStarRouter.__new__(AStarRouter)
-            astar_router.stops  = self.router.stops
-            astar_router.graph  = self.router.graph
-            astar_router._vmax  = self.VMAX
-            astar_router._vmax_kmh = self.VMAX_KMH
+            astar_router = AStarRouter.from_router(self.router)
             t0 = time_module.time()
             astar_r = astar_router.find_route_astar(start_id, goal_id, metric, w1, w2, w3)
             results['astar'] = {
