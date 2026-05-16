@@ -115,3 +115,34 @@ const MODE_LINE_COLOR_HEX = {
   escalator: '#78909C',
   default: '#5C6BC0',
 };
+
+/* ═══════════════════════════════════════════════════════════
+   Working-hours schedule  (populated from GET /api/working-hours)
+═══════════════════════════════════════════════════════════ */
+
+/** @type {Record<string, {open:number, close:number}>} */
+let WORKING_HOURS_MAP = {};
+
+/** Store the schedule fetched from the API. */
+function setWorkingHours(data) {
+  WORKING_HOURS_MAP = data && typeof data === 'object' ? data : {};
+}
+
+/**
+ * Check whether a transport mode is currently in service.
+ * Walking is always allowed. Modes not present in the schedule are assumed in service.
+ * @param {string} modeKey  normalized mode key (metro, bus, tram, train, telepherique, walk)
+ * @param {number} [clockHour]  fractional hour (e.g. 8.5 = 08:30). Defaults to now.
+ * @returns {boolean}
+ */
+function isStopInService(modeKey, clockHour) {
+  if (modeKey === 'walk') return true;
+  if (!Object.keys(WORKING_HOURS_MAP).length) return true;  // schedule not loaded yet → show all
+  const entry = WORKING_HOURS_MAP[modeKey];
+  if (!entry) return true;  // unknown mode → assume in service
+  if (clockHour == null) {
+    const now = new Date();
+    clockHour = now.getHours() + now.getMinutes() / 60;
+  }
+  return clockHour >= entry.open && clockHour < entry.close;
+}

@@ -21,8 +21,9 @@ function acSearch(which, q) {
 
   const matches = STATIONS
     .filter(s =>
-      s.name.toLowerCase().includes(q.toLowerCase()) ||
-      s.short.toLowerCase().includes(q.toLowerCase())
+      (s.name.toLowerCase().includes(q.toLowerCase()) ||
+       s.short.toLowerCase().includes(q.toLowerCase())) &&
+      isStopInService(normalizeModeKey(s.type))
     )
     .slice(0, 8);
 

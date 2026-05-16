@@ -6,6 +6,8 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
+from schedule import MAX_WALK_KM
+
 WORKING_HOURS: Dict[str, Tuple[float, float]] = {
     'metro':        (5.0,  23.0),
     'tram':         (5.0,  23.0),
@@ -276,6 +278,12 @@ class BFSRouter:
                 if allowed and mode not in allowed:
                     continue
                 if not self._in_service(mode, clock):
+                    continue
+
+                # Walking constraint: < 1 km except final destination
+                if (mode == 'walk'
+                        and edge.distance_km > MAX_WALK_KM
+                        and nb != goal):
                     continue
 
                 # Compute wait time at the NEXT node (nb) before boarding

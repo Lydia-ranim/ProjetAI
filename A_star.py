@@ -34,6 +34,10 @@ import sys
 import time as time_module
 
 from ucs import TransitRouter, RouteResult, FARES
+from schedule import (
+    in_service, avg_wait, train_wait,
+    MAX_WALK_KM,
+)
 
 
 class AStarRouter(TransitRouter):
@@ -190,7 +194,8 @@ class AStarRouter(TransitRouter):
     def find_route_astar(self, start_id: str, goal_id: str,
                          metric: str = 'time',
                          w1: float = 1.0, w2: float = 0.0,
-                         w3: float = 0.0) -> RouteResult:
+                         w3: float = 0.0,
+                         depart: float = None) -> RouteResult:
         """
         Find optimal route using A* Search.
 
@@ -203,6 +208,8 @@ class AStarRouter(TransitRouter):
             goal_id:  destination stop ID
             metric:   'time' (min), 'distance' (km), 'co2' (g), or 'weighted'
             w1, w2, w3: weights for weighted cost (Time, Price, CO2)
+            depart: departure time as fractional hour (8.5 = 08:30).
+                    If None, schedule constraints are not applied.
 
         Returns:
             RouteResult with path, segments, totals, fare, and nodes_explored
@@ -266,7 +273,37 @@ class AStarRouter(TransitRouter):
                 if next_state_key in visited:
                     continue
 
+                # ── Walking constraint: < 1 km except final destination ──
+                if (edge.transport_type == 'walk'
+                        and edge.distance_km > MAX_WALK_KM
+                        and edge.to_id != goal_id):
+                    continue
+
+                # ── Schedule filter (only when departure time is given) ──
+                if depart is not None and edge.transport_type != 'walk':
+                    g_now = g_cost.get(state_key, 0.0)
+                    clock = depart + (g_now / 60.0) if metric == 'time' else depart
+                    if not in_service(edge.transport_type, clock):
+                        continue
+
                 ec = self._edge_cost(edge, metric, last_route, w1, w2, w3)
+
+                # ── Wait time (only for time metric with schedule) ──
+                if depart is not None and metric == 'time' and edge.transport_type != 'walk':
+                    g_now = g_cost.get(state_key, 0.0)
+                    clock = depart + (g_now / 60.0)
+                    is_first_boarding = (last_route is None)
+                    is_line_change = (last_route is not None
+                                      and edge.route_id != last_route)
+                    if is_first_boarding or is_line_change:
+                        if edge.transport_type == 'train':
+                            w = train_wait(self.train_schedule, node, clock)
+                            if w == float('inf'):
+                                continue  # Past last train
+                            ec += w
+                        else:
+                            ec += avg_wait(edge.transport_type)
+
                 new_g = g_cost[state_key] + ec
 
                 if next_state_key not in g_cost or new_g < g_cost[next_state_key]:

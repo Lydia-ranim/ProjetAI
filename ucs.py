@@ -21,6 +21,11 @@ import math
 from dataclasses import dataclass, field
 from typing import Optional
 
+from schedule import (
+    in_service, avg_wait, train_wait, load_train_schedule,
+    MAX_WALK_KM, WORKING_HOURS,
+)
+
 
 # ═══════════════════════════════════════════
 # DATA STRUCTURES
@@ -123,6 +128,7 @@ class TransitRouter:
         self.graph = {}      # stop_id → [Edge, ...]
         self.bus_geometries = {}  # "from|to|route" → [[lat,lon], ...]
         self._load(data_dir)
+        self.train_schedule = load_train_schedule(data_dir)
 
     def _load(self, data_dir: str):
         """Load from JSON (web/data/) or CSV (output/)."""
@@ -222,14 +228,21 @@ class TransitRouter:
     # ───────────────────────────────────────
 
     def find_route(self, start_id: str, goal_id: str,
-                   metric: str = 'time') -> RouteResult:
+                   metric: str = 'time',
+                   depart: float = None,
+                   w1: float = 1.0, w2: float = 0.0,
+                   w3: float = 0.0) -> RouteResult:
         """
         Find optimal route using Uniform Cost Search.
         
         Args:
             start_id: origin stop ID
             goal_id: destination stop ID
-            metric: 'time' (minutes), 'distance' (km), or 'co2' (grams)
+            metric: 'time' (minutes), 'distance' (km), 'co2' (grams),
+                    or 'weighted' (w1*Time + w2*Price + w3*CO2)
+            depart: departure time as fractional hour (8.5 = 08:30).
+                    If None, schedule constraints are not applied.
+            w1, w2, w3: weights for 'weighted' metric (Time, Price, CO2)
             
         Returns:
             RouteResult with path, segments, totals, and fare
@@ -244,6 +257,9 @@ class TransitRouter:
                 total_time=0, total_dist=0, total_co2=0, total_fare=0,
                 nodes_explored=0
             )
+
+        # For 'weighted' metric, track cumulative time separately for clock
+        time_so_far = {(start_id, None): 0.0}
 
         # Priority queue: (cost, counter, node_id, last_route)
         # counter breaks ties to maintain FIFO order
@@ -291,13 +307,65 @@ class TransitRouter:
                 if next_state_key in visited:
                     continue
 
+                # ── Walking constraint: < 1 km except final destination ──
+                if (edge.transport_type == 'walk'
+                        and edge.distance_km > MAX_WALK_KM
+                        and edge.to_id != goal_id):
+                    continue
+
+                # ── Schedule filter (only when departure time is given) ──
+                if depart is not None and edge.transport_type != 'walk':
+                    if metric == 'time':
+                        clock = depart + (cost / 60.0)
+                    elif metric == 'weighted':
+                        clock = depart + (time_so_far.get(state_key, 0.0) / 60.0)
+                    else:
+                        clock = depart
+                    if not in_service(edge.transport_type, clock):
+                        continue
+
+                # ── Edge cost by metric ──
                 if metric == 'time':
                     edge_cost = edge.time_min
                 elif metric == 'distance':
                     edge_cost = edge.distance_km
+                elif metric == 'weighted':
+                    price_est = 0.0
+                    if edge.transport_type != 'walk':
+                        price_est = FARES.get(edge.transport_type, 0) * 0.1
+                    edge_cost = (w1 * edge.time_min
+                                 + w2 * price_est
+                                 + w3 * edge.co2_g)
                 else:  # co2
                     edge_cost = edge.co2_g
-                    
+
+                # ── Wait time (for time or weighted metric with schedule) ──
+                if (depart is not None
+                        and metric in ('time', 'weighted')
+                        and edge.transport_type != 'walk'):
+                    if metric == 'time':
+                        clock = depart + (cost / 60.0)
+                    else:
+                        clock = depart + (time_so_far.get(state_key, 0.0) / 60.0)
+                    is_first_boarding = (last_route is None)
+                    is_line_change = (last_route is not None
+                                      and edge.route_id != last_route)
+                    if is_first_boarding or is_line_change:
+                        if edge.transport_type == 'train':
+                            wait = train_wait(self.train_schedule, node, clock)
+                            if wait == float('inf'):
+                                continue  # Past last train
+                            if metric == 'weighted':
+                                edge_cost += w1 * wait
+                            else:
+                                edge_cost += wait
+                        else:
+                            wait = avg_wait(edge.transport_type)
+                            if metric == 'weighted':
+                                edge_cost += w1 * wait
+                            else:
+                                edge_cost += wait
+
                 is_transfer = (last_route is not None and 
                                edge.transport_type != 'walk' and 
                                last_route != edge.route_id)
@@ -308,6 +376,10 @@ class TransitRouter:
 
                 if next_state_key not in best or new_cost < best[next_state_key][0]:
                     best[next_state_key] = (new_cost, state_key, edge)
+                    # Track cumulative time for weighted clock
+                    if metric == 'weighted':
+                        time_so_far[next_state_key] = (
+                            time_so_far.get(state_key, 0.0) + edge.time_min)
                     counter += 1
                     heapq.heappush(pq, (new_cost, counter, edge.to_id, new_last_route))
 

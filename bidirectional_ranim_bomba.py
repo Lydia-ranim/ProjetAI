@@ -61,6 +61,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Callable, Dict, List, Tuple, Any
 
 from ucs import TransitRouter, RouteResult, Segment, FARES, TRANSFER_PENALTY, Edge as UCSEdge
+from schedule import in_service, avg_wait, train_wait, MAX_WALK_KM
 
 from BFS_Yanis_ZA3IM import BFSRouter as _BFSRouter, Edge as BFSEdge
 
@@ -331,7 +332,8 @@ class BidirectionalSearch:
                       metric: str, heuristic_fn: Callable,
                       w1: float = 1.0, w2: float = 0.0,
                       w3: float = 0.0,
-                      algorithm_label: str = 'bidir') -> BiDirResult:
+                      algorithm_label: str = 'bidir',
+                      depart: float = None) -> BiDirResult:
         """
         Core bidirectional search loop.
 
@@ -429,7 +431,36 @@ class BidirectionalSearch:
                     next_state = (edge.to_id, new_last)
                     if next_state in fwd_vis:
                         continue
+
+                    # Walking constraint: < 1 km except final destination
+                    if (edge.transport_type == 'walk'
+                            and edge.distance_km > MAX_WALK_KM
+                            and edge.to_id != goal_id):
+                        continue
+
+                    # Schedule filter on forward frontier
+                    if depart is not None and edge.transport_type != 'walk':
+                        g_now = fwd_g.get(state, 0.0)
+                        clock = depart + (g_now / 60.0) if metric == 'time' else depart
+                        if not in_service(edge.transport_type, clock):
+                            continue
+
                     ec     = self._edge_cost(edge, metric, last_route, w1, w2, w3)
+
+                    # Wait time on forward frontier (time metric only)
+                    if depart is not None and metric == 'time' and edge.transport_type != 'walk':
+                        g_now = fwd_g.get(state, 0.0)
+                        clock = depart + (g_now / 60.0)
+                        is_boarding = (last_route is None or last_route != edge.route_id)
+                        if is_boarding:
+                            if edge.transport_type == 'train':
+                                w = train_wait(self.router.train_schedule, node, clock)
+                                if w == float('inf'):
+                                    continue
+                                ec += w
+                            else:
+                                ec += avg_wait(edge.transport_type)
+
                     new_g  = fwd_g.get(state, float('inf')) + ec
                     if new_g < fwd_g.get(next_state, float('inf')):
                         fwd_g[next_state]    = new_g
@@ -470,6 +501,13 @@ class BidirectionalSearch:
                     next_state = (edge.to_id, new_last)
                     if next_state in bwd_vis:
                         continue
+
+                    # Walking constraint: < 1 km except reaching start
+                    if (edge.transport_type == 'walk'
+                            and edge.distance_km > MAX_WALK_KM
+                            and edge.to_id != start_id):
+                        continue
+
                     ec    = self._edge_cost(edge, metric, last_route, w1, w2, w3)
                     new_g = bwd_g.get(state, float('inf')) + ec
                     if new_g < bwd_g.get(next_state, float('inf')):
@@ -554,7 +592,8 @@ class BidirectionalSearch:
                metric: str = 'time',
                algorithm: str = 'ucs',
                w1: float = 1.0, w2: float = 0.0,
-               w3: float = 0.0) -> BiDirResult:
+               w3: float = 0.0,
+               depart: float = None) -> BiDirResult:
         """
         Run bidirectional search paired with a chosen algorithm.
 
@@ -564,6 +603,8 @@ class BidirectionalSearch:
             metric:    'time' | 'distance' | 'co2' | 'weighted'
             algorithm: 'ucs' | 'astar'
             w1, w2, w3: weights for weighted metric
+            depart: departure time as fractional hour (8.5 = 08:30).
+                    If None, schedule constraints are not applied.
 
         Returns:
             BiDirResult
@@ -579,7 +620,7 @@ class BidirectionalSearch:
             )
         hfn, label = algo_map[algorithm]
         return self._bidir_search(start_id, goal_id, metric,
-                                  hfn, w1, w2, w3, label)
+                                  hfn, w1, w2, w3, label, depart)
 
     def search_bfs(self, start_id: str, goal_id: str,
                     depart: float = 8.0) -> BiDirResult:
@@ -648,6 +689,11 @@ class BidirectionalSearch:
                     continue
                 if not self.bfs_router._in_service(edge.transport_type, clock):
                     continue
+                # Walking constraint: < 1 km except final destination
+                if (edge.transport_type == 'walk'
+                        and edge.distance_km > MAX_WALK_KM
+                        and nb != goal_id):
+                    continue
                 w = self.bfs_router._avg_wait(edge.transport_type)
                 new_c = clock + (edge.time_min + w) / 60.0
                 visited_fwd[nb] = (nid, edge, new_c)
@@ -674,6 +720,11 @@ class BidirectionalSearch:
                 if pred in visited_bwd:
                     continue
                 if not self.bfs_router._in_service(fe.transport_type, clock):
+                    continue
+                # Walking constraint: < 1 km except reaching start
+                if (fe.transport_type == 'walk'
+                        and fe.distance_km > MAX_WALK_KM
+                        and pred != start_id):
                     continue
                 w = self.bfs_router._avg_wait(fe.transport_type)
                 new_c = clock + (fe.time_min + w) / 60.0
